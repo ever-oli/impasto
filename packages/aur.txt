@@ -37,11 +37,13 @@ lavat                        # the lava function
 
 # ── THEMED APPLICATIONS ─────────────────────────────────────────────────────
 
-vscodium-bin                 # extensions and settings · ./setup vscodium
-zen-browser-bin
-vesktop-bin
-spotify
-spicetify-cli                # applies the palette to Spotify · ./setup spotify
+# ever: not wanted on this desk — omarchy already chose Spotify/browser state,
+# and the shell does not need them. Uncomment to bring impasto's full set.
+# vscodium-bin                 # extensions and settings · ./setup vscodium
+# zen-browser-bin
+# vesktop-bin
+# spotify
+# spicetify-cli                # applies the palette to Spotify · ./setup spotify
 
 
 # ── VIRTUAL MACHINES ────────────────────────────────────────────────────────
