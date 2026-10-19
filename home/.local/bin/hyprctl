@@ -1,5 +1,5 @@
 #!/bin/bash
-# ever: a hyprctl shim for running impasto's shell under niri.
+# ever: a hyprctl for niri, shipped in home/.local/bin by setup —
 #
 # Reads are answered from `niri msg` and re-shaped into the Hyprland JSON the
 # shell expects. Writes (reload, eval, dispatch, setcursor) are no-ops: niri
