@@ -66,9 +66,9 @@ Singleton {
     // Waking matters: `key_press_enables_dpms` and `mouse_move_enables_dpms`
     // are off, so only this and `SUPER + SHIFT + D` turn the panel back on.
     // Only the first monitor is handled.
+    // NIRI PORT: the dpms Lua chunk becomes niri's own power actions, which
+    // are idempotent against the state they are given.
     function screen(on: bool): void {
-        const disagrees = on ? "not m.dpms_status" : "m.dpms_status"
-        Hyprland.dispatch(`function() local m = hl.get_monitors()[1]`
-            + ` if m and ${disagrees} then hl.dispatch(hl.dsp.dpms()) end end`)
+        HyprlandService.dispatch([on ? "power-on-monitors" : "power-off-monitors"])
     }
 }

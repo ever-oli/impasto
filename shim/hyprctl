@@ -1,0 +1,126 @@
+#!/bin/bash
+# ever: a hyprctl shim for running impasto's shell under niri.
+#
+# Reads are answered from `niri msg` and re-shaped into the Hyprland JSON the
+# shell expects. Writes (reload, eval, dispatch, setcursor) are no-ops: niri
+# re-reads its config itself, and the Lua chunks (animations, shadow, shake,
+# glass, keybinds) have no niri counterpart until each is patched at its call
+# site.
+#
+# Lives only on the PATH of the impasto instance (the launcher prepends
+# shim/), so nothing else on this system ever sees a fake hyprctl.
+set -euo pipefail
+
+NI() { niri msg -j "$@" 2>/dev/null || true; }
+
+VERB="${1-}"
+[[ $# -gt 0 ]] && shift
+
+case "$VERB" in
+  "" | reload | eval | monitor | version | setcursor | dispatch )
+    exit 0 ;;
+
+  _monitors )
+    # niri has no outputs listing over IPC; the focused output stands in for
+    # the display itself, the workspaces dump provides the active ids.
+    OUT=$(NI focused-output)
+    WS=$(NI workspaces)
+    [[ -z $OUT ]] && { echo "[]"; exit 0; }
+    python3 -c "
+import json, sys
+out = json.loads(sys.argv[1])
+ws = json.loads(sys.argv[2]) if sys.argv[2] else []
+name = out.get('name', '')
+active = next((w for w in ws if w.get('output') == name and w.get('is_focused')), None)
+print(json.dumps([{
+    'name': name,
+    'description': ' '.join(filter(None, [out.get('make', ''), out.get('model', '')])),
+    'make': out.get('make', ''), 'model': out.get('model', ''),
+    'activeWorkspace': { 'id': (active or {}).get('idx', 0) },
+}]))" "$OUT" "$WS" ;;
+
+  workspaces )
+    OUT=$(NI workspaces)
+    [[ -z $OUT ]] && { echo "[]"; exit 0; }
+    python3 -c "
+import json, sys
+def row(w):
+    return {
+        'id': w.get('idx'),
+        'name': w.get('name') or str(w.get('idx', '')),
+        'monitor': w.get('output', ''),
+        'windows': 1 if w.get('active_window_id') not in (None, 0) else 0,
+        'is_focused': bool(w.get('is_focused')),
+        'active': bool(w.get('is_active')),
+    }
+print(json.dumps([row(w) for w in json.loads(sys.argv[1])]))" "$OUT" ;;
+
+  activeworkspace )
+    OUT=$(NI workspaces)
+    [[ -z $OUT ]] && { echo '{}'; exit 0; }
+    python3 -c "
+import json, sys
+ws = json.loads(sys.argv[1])
+a = next((w for w in ws if w.get('is_focused')), None)
+print(json.dumps({'id': a.get('idx'), 'monitor': a.get('output', '')} if a else {}))" "$OUT" ;;
+
+  activewindow )
+    OUT=$(NI windows)
+    [[ -z $OUT ]] && { echo '{}'; exit 0; }
+    python3 -c "
+import json, sys
+ws = json.loads(sys.argv[1])
+w = next((x for x in ws if x.get('is_focused')), None)
+print(json.dumps({'address': str(w.get('id', '')), 'title': w.get('title', ''),
+                  'workspace': {'id': w.get('workspace_id')}} if w else {}))" "$OUT" ;;
+
+  clients )
+    OUT=$(NI windows)
+    [[ -z $OUT ]] && { echo '[]'; exit 0; }
+    python3 -c "
+import json, sys
+def row(w):
+    layout = w.get('layout') or {}
+    pos = layout.get('tile_pos_in_workspace_view') or [0, 0]
+    return {
+        'address': str(w.get('id', '')),
+        'title': w.get('title', ''),
+        'class': w.get('app_id', ''),
+        'initialClass': w.get('app_id', ''),
+        'workspace': {'id': w.get('workspace_id')},
+        'mapped': True,
+        'floating': bool(w.get('is_floating')),
+        'at': pos,
+        'size': layout.get('window_size') or [0, 0],
+    }
+print(json.dumps([row(w) for w in json.loads(sys.argv[1])]))" "$OUT" ;;
+
+  binds )
+    OUT=$(NI binds)
+    [[ -z $OUT ]] && { echo '[]'; exit 0; }
+    python3 -c "
+import json, sys
+def bits(mods):
+    value = 0
+    for mod in (mods or []):
+        mod = str(mod).upper()
+        if mod.startswith('SUPER'): value |= 64
+        elif mod.startswith('CTRL'): value |= 4
+        elif mod.startswith('ALT'): value |= 8
+        elif mod.startswith('SHIFT'): value |= 1
+    return value
+def row(b):
+    return {
+        'modmask': bits(b.get('mods')), 'key': b.get('key', '') or '',
+        'keycode': b.get('keycode', 0),
+        'description': b.get('description', '') or b.get('action', ''),
+        'arg': b.get('arg'), 'action': b.get('action', ''),
+    }
+print(json.dumps([row(b) for b in json.loads(sys.argv[1])]))" "$OUT" ;;
+
+  monitors )
+    "$0" _monitors ;;
+
+  * )
+    exit 0 ;;
+esac

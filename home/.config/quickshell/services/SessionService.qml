@@ -123,7 +123,8 @@ Singleton {
             LockService.lock()
             break
         case "logout":
-            Hyprland.dispatch("hl.dsp.exit()")
+            // NIRI PORT: hl.dsp.exit() becomes niri's quit action.
+            HyprlandService.dispatch(["quit"])
             break
         case "reboot":
             root.exec(["systemctl", "reboot"])
