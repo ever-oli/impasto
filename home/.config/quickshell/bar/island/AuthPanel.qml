@@ -159,8 +159,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             width: root.face
             height: root.face
-            source: AccountService.avatar
-            initials: AccountService.initials
+            initials: ""
         }
 
         TextInput {

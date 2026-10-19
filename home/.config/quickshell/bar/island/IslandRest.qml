@@ -16,13 +16,9 @@ import "../../services"
 import "../../components"
 import "../modules"
 
-// The island at rest: the clock in the middle, with a recording, countdown or
+// The island at rest: the clock in the middle, with a countdown or
 // track either side while one is running (one item split across both sides,
 // mark leading and figure trailing, or one item per side).
-//
-// A recording stops with one click here, since nothing else on screen can stop
-// it; the dot squares off under the pointer to show that. A countdown or a
-// track opens its detail.
 Item {
     id: root
 
@@ -99,19 +95,15 @@ Item {
         readonly property alias hovered: mouse.containsMouse
 
         readonly property var marks: ({
-            recorder: recorderMark, privacy: privacyMark, timer: timerMark, media: mediaMark,
-            machine: machineMark, workspace: workspaceMark
+            timer: timerMark, media: mediaMark, workspace: workspaceMark
         })
         readonly property var figures: ({
-            recorder: recorderFigure, privacy: privacyFigure, timer: timerFigure, media: mediaFigure,
-            machine: machineFigure, workspace: workspaceFigure
+            timer: timerFigure, media: mediaFigure, workspace: workspaceFigure
         })
 
         // Centred on its side, except the privacy mark split across both:
         // its glyphs and the program's name each keep to their outer edge,
         // by the same margin, so the pair is symmetric about the time.
-        readonly property bool hugs: segment.activityId === "privacy" && segment.part !== "both"
-
         Row {
             anchors.verticalCenter: parent.verticalCenter
             x: !segment.hugs ? (parent.width - width) / 2
@@ -126,118 +118,27 @@ Item {
                 sourceComponent: segment.marks[segment.activityId] ?? null
             }
 
-            // Sharing the island, the privacy mark is its glyphs alone: a
-            // side of two activities has no room for a program's name.
+
             Loader {
                 anchors.verticalCenter: parent.verticalCenter
                 active: segment.part !== "mark" && segment.activityId !== ""
-                    && !(segment.activityId === "privacy" && segment.part === "both")
                 visible: active
                 sourceComponent: segment.figures[segment.activityId] ?? null
             }
         }
 
-        // The privacy mark has nothing to open, so its sides take neither the
-        // pointer nor a click: over them the island does what it does over
-        // the time, the glance and then the control centre.
         MouseArea {
             id: mouse
 
             anchors.fill: parent
-            enabled: segment.activityId !== "privacy"
+            enabled: segment.activityId !== ""
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: {
-                if (segment.activityId === "recorder")
-                    RecorderService.toggle()
-                else if (segment.activityId === "workspace")
+                if (segment.activityId === "workspace")
                     ModuleService.togglePanel("overview")
-                else if (segment.activityId === "machine")
-                    ModuleService.togglePanel("machines")
                 else
                     ModuleService.activate(segment.activityId)
-            }
-        }
-
-        // ── RECORDING ───────────────────────────────────────────────────────
-        //
-        // `indicatorBad`, not the palette's red: warnings do not follow the
-        // palette. It breathes rather than blinks, and under the pointer it
-        // stops and squares off into a stop button.
-        Component {
-            id: recorderMark
-
-            Rectangle {
-                width: segment.hovered ? 9 : 8
-                height: width
-                radius: segment.hovered ? 2 : width / 2
-                color: Theme.indicatorBad
-
-                Behavior on radius { NumberAnimation { duration: Theme.durationFast } }
-
-                SequentialAnimation on opacity {
-                    running: !segment.hovered && Theme.lively
-                    loops: Animation.Infinite
-                    onRunningChanged: if (!running) parent.opacity = 1
-                    NumberAnimation { to: 0.4; duration: 900; easing.type: Theme.easing }
-                    NumberAnimation { to: 1;   duration: 900; easing.type: Theme.easing }
-                }
-            }
-        }
-
-        Component {
-            id: recorderFigure
-
-            Text {
-                text: RecorderService.display
-                font.family: Theme.fontMono
-                font.pixelSize: Theme.fontSizeSmall
-                font.weight: Font.DemiBold
-                color: Theme.text
-            }
-        }
-
-        // ── PRIVACY ─────────────────────────────────────────────────────────
-        //
-        // What is in use, each in its fixed colour, and who is using it.
-        Component {
-            id: privacyMark
-
-            Row {
-                spacing: 6
-
-                Repeater {
-                    model: [
-                        { on: PrivacyService.microphone, glyph: "󰍬", tint: Theme.privacyMicrophone },
-                        { on: PrivacyService.cameraOn,   glyph: "󰄀", tint: Theme.privacyCamera },
-                        { on: PrivacyService.screen,     glyph: "󰍹", tint: Theme.privacyScreen }
-                    ].filter(kind => kind.on)
-
-                    Text {
-                        required property var modelData
-
-                        text: modelData.glyph
-                        font.family: Theme.fontMono
-                        font.pixelSize: Theme.fontSizeRegular + 1
-                        color: modelData.tint
-                    }
-                }
-            }
-        }
-
-        Component {
-            id: privacyFigure
-
-            Text {
-                width: Math.min(implicitWidth, ModuleService.privacyNameLimit,
-                                ModuleService.activitySide - 2 * ModuleService.activityInset)
-                text: PrivacyService.who
-                elide: Text.ElideRight
-                // The time's type, muted: the name is the lesser of the two.
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSizeRegular
-                font.weight: Font.DemiBold
-                color: Theme.textMuted
             }
         }
 
@@ -269,8 +170,7 @@ Item {
 
         // ── TRACK ───────────────────────────────────────────────────────────
         //
-        // The artwork, and the real spectrum: bars animated on a timer keep
-        // moving through silence.
+        // The artwork.
         Component {
             id: mediaMark
 
@@ -309,45 +209,17 @@ Item {
         Component {
             id: mediaFigure
 
-            Spectrum {
-                height: 14
-                barWidth: 2
-                minimum: 2
-                active: MediaService.playing
-                barColor: Theme.indicator
-
-                Component.onCompleted: CavaService.subscribe()
-                Component.onDestruction: CavaService.release()
-            }
-        }
-
-        // ── A VIRTUAL MACHINE ───────────────────────────────────────────────
-        //
-        // The system's mark, and how long it has run; with more than one
-        // running, how many.
-        Component {
-            id: machineMark
-
+            // EVER LEAN: the cava spectrum went with cava; the playing
+            // glyph keeps the slot.
             Text {
-                text: VmService.mark(VmService.running[0]?.os ?? "")
-                font.family: Theme.fontMono
-                font.pixelSize: Theme.fontSizeMedium
-                color: VmService.running[0]?.paused ? Theme.textMuted : Theme.text
-            }
-        }
-
-        Component {
-            id: machineFigure
-
-            Text {
-                width: Math.min(implicitWidth, ModuleService.activitySide - 2 * ModuleService.activityInset)
-                elide: Text.ElideRight
-                text: VmService.running.length > 1 ? `${VmService.running.length} ${Tr.t("running")}`
-                    : VmService.uptime(VmService.running[0]?.started ?? 0)
+                text: MediaService.playing ? "▶" : "⏸"
                 font.family: Theme.fontMono
                 font.pixelSize: Theme.fontSizeSmall
                 font.weight: Font.DemiBold
-                color: Theme.text
+                color: Theme.indicator
+
+                Component.onCompleted: MediaService.subscribe()
+                Component.onDestruction: MediaService.release()
             }
         }
 

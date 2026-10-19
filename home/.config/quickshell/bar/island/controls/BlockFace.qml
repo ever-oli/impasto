@@ -40,15 +40,8 @@ Item {
         brightness: brightnessBlock,
         appearance: appearanceBlock,
         media: mediaBlock,
-        weather: weatherBlock,
-        calendar: calendarBlock,
         notifications: notificationsBlock,
-        impasto: impastoBlock,
-        pet: petBlock,
         clock: clockBlock,
-        games: gamesBlock,
-        notes: notesBlock,
-        tasks: tasksBlock,
         session: sessionBlock,
         shortcuts: shortcutsBlock
     })
@@ -140,45 +133,8 @@ Item {
     }
 
     Component {
-        id: weatherBlock
-        WeatherCard {
-            cols: root.shape.cols
-            rows: root.shape.rows
-        }
-    }
-
-    Component {
-        id: calendarBlock
-        CalendarCard { onPanelRequested: panel => root.panelRequested(panel) }
-    }
-
-    Component {
         id: notificationsBlock
         NotificationList {}
-    }
-
-    Component {
-        id: impastoBlock
-        ImpastoBlock {
-            cols: root.shape.cols
-            rows: root.shape.rows
-        }
-    }
-
-    Component {
-        id: petBlock
-        PetBlock {
-            rows: root.shape.rows
-            onPanelRequested: panel => root.panelRequested(panel)
-        }
-    }
-
-    Component {
-        id: gamesBlock
-        GamesBlock {
-            rows: root.shape.rows
-            onPanelRequested: panel => root.panelRequested(panel)
-        }
     }
 
     Component {
@@ -186,42 +142,6 @@ Item {
         ClockBlock {
             cols: root.shape.cols
             rows: root.shape.rows
-        }
-    }
-
-    // A note with no card around it. Clicking opens it for editing.
-    Component {
-        id: notesBlock
-        Item {
-            readonly property var note: NotesService.noteFor(null)
-
-            Sticky {
-                anchors.fill: parent
-                note: parent.note
-                placeholder: "No notes yet"
-                padding: root.shape.cols === 1 ? 12 : 14
-                titleSize: root.shape.rows >= 4 ? Theme.fontSizeRegular : Theme.fontSizeSmall
-                bodySize: root.shape.rows >= 4 ? 20 : 16
-            }
-
-            HoverHandler { cursorShape: Qt.PointingHandCursor }
-
-            TapHandler {
-                gesturePolicy: TapHandler.ReleaseWithinBounds
-                onTapped: {
-                    NotesService.open(parent.note ? parent.note.key : "")
-                    root.panelRequested("notes")
-                }
-            }
-        }
-    }
-
-    Component {
-        id: tasksBlock
-        TasksBlock {
-            cols: root.shape.cols
-            rows: root.shape.rows
-            onPanelRequested: panel => root.panelRequested(panel)
         }
     }
 }

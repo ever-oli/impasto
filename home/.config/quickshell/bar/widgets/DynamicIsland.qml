@@ -34,14 +34,9 @@ Rectangle {
     // live one opens anything, and `IslandState` is where that is enforced.
     property bool active: true
 
-    // While a note is open the island is the note: paper to the edge, with no
-    // rim or padding.
-    readonly property bool paper: islandState.openPanel === "notes" && NotesService.opened !== ""
-    readonly property var paperNote: NotesService.entry(NotesService.opened)
-    readonly property color paperColor: NotesService.paperOf(root.paperNote ? root.paperNote.tint : "yellow")
     // A module detail brings its own margins.
-    readonly property int panelPad: root.paper
-        ? 0 : (islandState.openPanel === "module" ? Theme.cardInset : Theme.panelPadding)
+    readonly property int panelPad: islandState.openPanel === "module"
+        ? Theme.cardInset : Theme.panelPadding
 
     // For the bar: attached, the notch fillets have to light with the island.
     readonly property bool hovered: hover.hovered
@@ -92,25 +87,11 @@ Rectangle {
         // The control centre's volume, opened out.
         sound:      { width: AudioService.panelWidth, height: AudioService.panelHeight },
         microphone: { width: AudioService.panelWidth, height: AudioService.microphoneHeight },
-        nightlight: { width: SunsetService.panelWidth, height: SunsetService.panelHeight },
         brightness: { width: BrightnessService.panelWidth, height: BrightnessService.panelHeight },
         bluetooth:  { width: 420,  height: 500 },
         session:    { width: 720,  height: 180 },
         // A program asking for root (`PolkitService`).
         auth:       { width: 460,  height: 236 },
-        machines:   { width: 860,  height: 580 },
-        // A row per creature, plus one for the next egg.
-        pet:        { width: 560,  height: 205 + 62 * PetService.family.length },
-        // The shelf of cards, or the game being played at its own size.
-        games:      GamesService.playing !== ""
-            ? GamesService.panelSize(GamesService.playing)
-            : { width: GamesService.shelfWidth, height: GamesService.shelfHeight },
-        // Declared by their services, which the panels read back for layout.
-        notes:      { width: NotesService.panelWidth, height: NotesService.panelHeight },
-        board:      { width: TasksService.panelWidth, height: TasksService.panelHeight },
-        // The key sheet's columns come from the compositor's bind list.
-        keys:       { width: ShortcutService.sheetWidth, height: ShortcutService.sheetHeight },
-        packages:   { width: PackagesService.panelWidth, height: PackagesService.panelHeight },
         module:     root.moduleSize,
         // A tray item's menu, a row per entry.
         tray:       { width: TrayService.menuWidth, height: TrayService.menuHeight },
@@ -204,10 +185,10 @@ Rectangle {
             root.open(panel)
     }
 
-    // Under everything the island holds; a note's paper is not glass.
+    // Under everything the island holds.
     GlassSheen {
         shape: root
-        visible: Theme.glass && !root.paper && !root.hosted
+        visible: Theme.glass && !root.hosted
         edges: !SettingsService.islandAttached
     }
 
@@ -339,8 +320,6 @@ Rectangle {
     // In one capsule the band behind is the ground and covers the island
     // whole; a see-through island painted over it would double the glass.
     color: {
-        if (root.paper)
-            return root.paperColor
         if (root.hosted && !Theme.solid)
             return "transparent"
         return islandState.expanded ? Theme.islandGround : root.surfaceColor
@@ -352,7 +331,7 @@ Rectangle {
     // edge. `Bar.qml` draws the outline over both. Attached, `Bar.qml` draws
     // it too, down the fillets and open along the screen edge.
     readonly property bool inBand: root.hosted
-    border.width: root.paper || root.inBand || SettingsService.islandAttached ? 0 : 1
+    border.width: root.inBand || SettingsService.islandAttached ? 0 : 1
     clip: true
 
     // Attached, the upper corners go square: the curve is added outside the

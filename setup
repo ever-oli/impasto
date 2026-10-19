@@ -901,7 +901,9 @@ verb_install() {
     note_shell
     if (( ! SKIP_PACKAGES )); then verb_packages; fi
     folders
-    omz
+    # EVER LEAN: no oh-my-zsh — the shell owns no terminal configuration, and
+    # omarchy's zsh setup stays untouched.
+
     verb_sync
     if (( ! SKIP_SYSTEM )); then verb_system; fi
     if (( ! SKIP_PLUGINS )); then verb_plugins; fi

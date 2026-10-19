@@ -45,14 +45,6 @@ Singleton {
           detail: "Processor, memory, disks, the network", panel: "stats" },
         { id: "settings",   icon: "󰒓", label: "Settings",
           detail: "The whole desk, in a window",           panel: "" },
-        { id: "pet",        icon: "󰏩", label: "Pet",
-          detail: "The creature living on the bar",        panel: "pet" },
-        { id: "games",      icon: "󰊗", label: "Games",
-          detail: "The arcade",                            panel: "games" },
-        { id: "notes",      icon: "󰎞", label: "Notes",
-          detail: "The deck of sticky notes",              panel: "notes" },
-        { id: "board",      icon: "󰄲", label: "Task board",
-          detail: "To do, doing, done",                    panel: "board" },
         { id: "overview",   icon: "󰕰", label: "Workspace overview",
           detail: "Every workspace side by side",          panel: "overview" },
         { id: "launcher",   icon: "󰍉", label: "Launcher",
@@ -60,14 +52,10 @@ Singleton {
         { id: "appearance", icon: "󰏘", label: "Appearance",
           detail: "The wallpaper and the palette",         panel: "appearance" },
         { id: "session",    icon: "󰐥", label: "Session menu",
-          detail: "Lock, log out, suspend, restart, off",  panel: "session" },
-        { id: "keys",       icon: "󰌌", label: "Keys",
-          detail: "Every shortcut, on one sheet",          panel: "keys" },
-        { id: "packages",   icon: "󰏗", label: "Packages",
-          detail: "Updates, what is installed, the AUR",   panel: "packages" }
+          detail: "Log out, suspend, restart, off",        panel: "session" }
     ]
 
-    readonly property var defaultButtons: ["stats", "settings", "pet", "games", "notes", "board"]
+    readonly property var defaultButtons: ["stats", "settings"]
 
     // The grid when nothing is chosen, which the default layout fills.
     readonly property int defaultColumns: 6
@@ -281,14 +269,6 @@ Singleton {
             }
         },
         Toggle {
-            key: "nightlight"; icon: SunsetService.icon; label: "Night light"
-            detail: SunsetService.detail
-            active: SunsetService.on
-            available: SunsetService.available
-            expandable: SunsetService.available; panel: "nightlight"
-            action: () => SunsetService.toggle()
-        },
-        Toggle {
             key: "output"; icon: AudioService.icon; label: "Output"
             detail: AudioService.muted ? "Muted" : `${AudioService.volume}%`
             active: !AudioService.muted
@@ -328,31 +308,6 @@ Singleton {
             action: () => SettingsService.set("gameMode", !SettingsService.gameMode)
         },
         Toggle {
-            key: "screenshot"; icon: "󰹑"; label: "Capture"
-            detail: "Photo or video"
-            available: CaptureService.can("grim")
-            closes: true
-            // Waits for the panel to close so it is not in the screenshot.
-            // Empty arguments reuse the capture surface's last choices.
-            action: () => CaptureService.open("", "", "", CaptureService.settle)
-        },
-        Toggle {
-            key: "annotate"; icon: "󰏫"; label: "Annotate"
-            detail: "A region, in satty"
-            available: CaptureService.can("editor")
-            closes: true
-            action: () => CaptureService.open("region", "photo", "editor",
-                                              CaptureService.settle)
-        },
-        Toggle {
-            key: "text"; icon: "󱄽"; label: "Read text"
-            detail: "A region, to the clipboard"
-            available: CaptureService.can("text")
-            closes: true
-            action: () => CaptureService.open("region", "photo", "text",
-                                              CaptureService.settle)
-        },
-        Toggle {
             key: "picker"; icon: PickerService.icon; label: "Colour"
             detail: "A pixel"
             active: PickerService.picking
@@ -362,16 +317,6 @@ Singleton {
             // to close. The delay is passed by the caller because a keybind
             // with nothing open needs none.
             action: () => PickerService.pick(PickerService.settle)
-        },
-        Toggle {
-            key: "record"; icon: RecorderService.recording ? "󰑊" : "󰕧"
-            label: "Record"
-            detail: RecorderService.recording
-                ? RecorderService.display : RecorderService.subject
-            active: RecorderService.recording
-            available: RecorderService.available
-            closes: true
-            action: () => RecorderService.toggle()
         },
         Toggle {
             key: "clearClipboard"; icon: "󰅍"; label: "Clear clipboard"
@@ -476,22 +421,14 @@ Singleton {
         { id: "brightness",    name: "Brightness",    icon: "󰃠", sizes: ["2x1", "3x1", "4x1"] },
         { id: "appearance",    name: "Appearance",    icon: "󰏘", sizes: ["2x2", "2x3", "2x4", "3x3", "4x2"] },
         { id: "media",         name: "Media",         icon: "󰝚", sizes: ["2x2", "2x3", "3x2", "4x2"] },
-        { id: "weather",       name: "Weather",       icon: "󰖐", sizes: ["2x1", "2x2", "2x3", "4x2"] },
-        { id: "calendar",      name: "Calendar",      icon: "󰃭", sizes: ["2x3", "2x4", "3x4"] },
         { id: "notifications", name: "Notifications", icon: "󰂚", sizes: ["3x2", "3x3", "2x4", "3x4", "2x6", "2x8", "3x8"] },
-        { id: "impasto",       name: "impasto",       icon: "󰏘", sizes: ["1x2", "2x2", "2x4"] },
-        { id: "pet",           name: "Pet",           icon: "󰏩", sizes: ["2x2", "2x3"] },
         { id: "clock",         name: "Clock",         icon: "󰥔", sizes: ["1x2", "2x2", "2x4"] },
-        { id: "games",         name: "Games",         icon: "󰊗", sizes: ["2x1", "2x2"] },
-        { id: "notes",         name: "Notes",         icon: "󰎞", sizes: ["1x2", "2x2", "2x4"] },
-        { id: "tasks",         name: "Tasks",         icon: "󰄲", sizes: ["1x2", "2x2", "2x3", "2x4"] },
         { id: "session",       name: "Session",       icon: "󰐥", sizes: ["1x1", "2x1", "3x1", "1x2", "2x2", "4x1"] },
         { id: "shortcuts",     name: "Shortcuts",     icon: "󰕰", sizes: ["1x1", "2x1", "3x1", "1x2", "2x2", "4x1", "6x1"] }
     ]
 
-    // Toggles, sliders, appearance and the session on the left; media,
-    // weather, calendar and the shortcuts in the middle; notifications on the
-    // right.
+    // Toggles, sliders, appearance and the session on the left; media, the
+    // clock and the shortcuts in the middle; notifications on the right.
     readonly property var defaultBlocks: [
         { id: "toggles",       col: 0, row: 0, size: "2x3" },
         { id: "volume",        col: 0, row: 3, size: "2x1" },
@@ -499,8 +436,7 @@ Singleton {
         { id: "appearance",    col: 0, row: 5, size: "2x2" },
         { id: "session",       col: 0, row: 7, size: "2x1" },
         { id: "media",         col: 2, row: 0, size: "2x2" },
-        { id: "weather",       col: 2, row: 2, size: "2x2" },
-        { id: "calendar",      col: 2, row: 4, size: "2x3" },
+        { id: "clock",         col: 2, row: 2, size: "2x2" },
         { id: "shortcuts",     col: 2, row: 7, size: "2x1" },
         { id: "notifications", col: 4, row: 0, size: "2x8" }
     ]
@@ -540,7 +476,8 @@ Singleton {
 
     // ── BOARD ───────────────────────────────────────────────────────────────
     //
-    // Computed from the grid rather than measured, so the island can size
+    // The control centre's size ("board" is its grid's name), computed from
+    // the grid rather than measured, so the island can size
     // itself before the panel exists.
     readonly property int columns: Math.max(2, Math.min(Theme.centreColumns,
         SettingsService.centreColumns > 0 ? SettingsService.centreColumns : root.defaultColumns))

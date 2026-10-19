@@ -40,6 +40,9 @@ Item {
         { id: "session", label: Tr.t("THE SESSION") }
     ]
 
+    // EVER LEAN: the desktop / monitors / keys / input / session / system
+    // pages went with their services.
+
     // ── THE SECTIONS ────────────────────────────────────────────────────────
     //
     // One row per page. `keywords` are extra search terms beyond the label.
@@ -88,43 +91,7 @@ Item {
                  { id: "type", label: Tr.t("Type") },
                  { id: "motion", label: Tr.t("Motion") }],
           keywords: "appearance theme colour color wallpaper transition fade wipe wave circle random greeting fastfetch fa terminal scene lava lamp critters koi invaders shadow shadows depth ground glass classic rounding blur gaps border opacity glass rules font family sans mono nerd icons typeface animation speed curve easing preset motion game mode performance window layout dwindle master scrolling",
-          page: appearancePage },
-
-        { id: "monitors", category: "desk", icon: "󰍹", label: Tr.t("Displays"),
-          blurb: Tr.t("Screen layout, modes and the laptop lid."),
-          tabs: [{ id: "arrangement", label: Tr.t("Arrangement") },
-                 { id: "screen", label: Tr.t("The screen") },
-                 { id: "lid", label: Tr.t("The lid") }],
-          keywords: "displays monitor screen resolution refresh scale rotate transform vrr mirror extend primary lid clamshell laptop close workspaces",
-          page: monitorsPage },
-
-        { id: "input", category: "desk", icon: "󰍽", label: Tr.t("Input"),
-          blurb: Tr.t("The keyboard, the pointer and the cursor."),
-          tabs: [{ id: "keyboard", label: Tr.t("Keyboard") },
-                 { id: "pointer", label: Tr.t("Pointer") }],
-          keywords: "input keyboard layout repeat mouse sensitivity pointer cursor size theme shake find",
-          page: inputPage },
-
-        { id: "keys", category: "desk", icon: "󰌌", label: Tr.t("Keys"),
-          blurb: Tr.t("Every keybinding, the shell's and Hyprland's."),
-          tabs: [{ id: "shell", label: Tr.t("The shell's own") },
-                 { id: "compositor", label: Tr.t("The compositor's") }],
-          keywords: "keys shortcut binding hotkey super rebind",
-          page: keysPage },
-
-        { id: "session", category: "session", icon: "󰌾", label: Tr.t("Session"),
-          blurb: Tr.t("Your account, the lock screen and idle behaviour."),
-          tabs: [{ id: "lock", label: Tr.t("Lock screen") },
-                 { id: "idle", label: Tr.t("When you leave") }],
-          keywords: "session lock blur password suspend security idle timeout sleep screen off dpms away never lock after avatar picture name account clock stacked inline flip face unlock howdy camera infrared enrol enroll scan faces recognise music song lyrics cover now playing",
-          page: sessionPage },
-
-        { id: "system", category: "session", icon: "󰍛", label: Tr.t("System"),
-          blurb: Tr.t("Profiles, language, this machine and reset."),
-          tabs: [{ id: "profiles", label: Tr.t("Profiles") },
-                 { id: "machine", label: Tr.t("This machine") }],
-          keywords: "system about version update updates upgrade changelog commits cpu memory uptime reset defaults language spanish english profile profiles switch rename duplicate delete import export backup file json changed files edited deleted restore wallpapers .new config dotfiles keep mine",
-          page: systemPage }
+          page: appearancePage }
     ]
 
     // ── THE GUIDE ───────────────────────────────────────────────────────────
@@ -568,9 +535,4 @@ Item {
     Component { id: launcherPage;   LauncherSection {} }
     Component { id: appearancePage; AppearanceSection {
         onPanelRequested: name => root.panelRequested(name) } }
-    Component { id: inputPage;      InputSection {} }
-    Component { id: monitorsPage;   MonitorsSection {} }
-    Component { id: keysPage;       KeysSection {} }
-    Component { id: sessionPage;    SessionSection {} }
-    Component { id: systemPage;     SystemSection {} }
 }

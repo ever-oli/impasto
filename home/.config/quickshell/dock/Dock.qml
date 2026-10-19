@@ -146,11 +146,11 @@ PanelWindow {
     mask: Region {
         x: root.menuItem ? 0 : shelf.x - (root.edge === "left" ? root.bridge : 0)
         y: root.menuItem ? 0 : shelf.y
-        width: DesktopService.editing ? 0 : (root.menuItem ? root.width
-            : shelf.width + (root.vertical ? root.bridge : 0))
-        height: DesktopService.editing ? 0 : (root.menuItem ? root.height
-            : shelf.height + (root.vertical ? 0 : root.bridge))
-        regions: DockService.autohide && !root.menuItem && !DesktopService.editing ? [sliver] : []
+        width: root.menuItem ? root.width
+            : shelf.width + (root.vertical ? root.bridge : 0)
+        height: root.menuItem ? root.height
+            : shelf.height + (root.vertical ? 0 : root.bridge)
+        regions: DockService.autohide && !root.menuItem ? [sliver] : []
     }
 
     Region {

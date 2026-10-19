@@ -28,32 +28,12 @@ Item {
     readonly property string menu: root.moduleId === "network"
         ? "wifi" : (root.moduleId === "bluetooth" ? "bluetooth" : "")
 
-    // The calendar reuses the control centre's month rather than drawing a
-    // second one.
-    readonly property bool month: root.moduleId === "calendar"
-
-    // The music opens out round its lyrics once they are known.
-    readonly property bool lyrics: root.moduleId === "media" && LyricsService.available
-
     Loader {
         anchors.fill: parent
         // A card brings its own margins; a menu takes the same ones.
         anchors.margins: root.menu !== "" ? Theme.cardPadding : 0
         sourceComponent: root.menu === "wifi" ? wifi
-            : root.menu === "bluetooth" ? bluetooth
-            : root.month ? calendar
-            : root.lyrics ? lyrics : card
-    }
-
-    Component {
-        id: calendar
-
-        // Bare: the island is the card.
-        CalendarCard {
-            bare: true
-            padding: Theme.cardPadding
-            onPanelRequested: panel => ModuleService.requestPanel(panel)
-        }
+            : root.menu === "bluetooth" ? bluetooth : card
     }
 
     Component {
@@ -72,12 +52,6 @@ Item {
             backable: false
             onBack: root.closed()
         }
-    }
-
-    Component {
-        id: lyrics
-
-        LyricsDetail {}
     }
 
     Component {

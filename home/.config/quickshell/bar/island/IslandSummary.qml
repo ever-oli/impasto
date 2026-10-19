@@ -21,8 +21,7 @@ import "../../components"
 // it with its controls, and the time large at the far end with the day and
 // the date under it. The face is the running thing with the most to press
 // (`ModuleService.glanceFace`); everything else running is a chip on a strip
-// under it. With nothing running the weather is the face, and without the
-// weather the time is alone. The square is a slot, not a box: a cover fills
+// With nothing running the time is alone. The square is a slot, not a box: a cover fills
 // it, and every other mark is drawn to fill it on the black.
 //
 // The square, the controls and the chips are the only things on it to
@@ -35,48 +34,15 @@ Item {
         precision: SystemClock.Minutes
     }
 
-    Component.onCompleted: LyricsService.subscribe()
-    Component.onDestruction: LyricsService.release()
-
     readonly property string face: ModuleService.glanceFace
     readonly property var locale: Qt.locale(SettingsService.language)
     readonly property int margin: ModuleService.glanceMargin
     readonly property int square: ModuleService.glanceFaceHeight - 2 * root.margin
 
-    // What is in use, each in its fixed colour, as the island marks it.
-    readonly property var privacyMarks: [
-        { on: PrivacyService.microphone, glyph: "󰍬", tint: Theme.privacyMicrophone },
-        { on: PrivacyService.cameraOn,   glyph: "󰄀", tint: Theme.privacyCamera },
-        { on: PrivacyService.screen,     glyph: "󰍹", tint: Theme.privacyScreen }
-    ].filter(mark => mark.on)
-    // The first machine running, and what it is doing.
-    readonly property var machine: VmService.running[0] ?? null
-    readonly property string machineState: !root.machine ? ""
-        : root.machine.paused ? Tr.t("Paused")
-        : [Tr.t("Running"), VmService.uptime(root.machine.started),
-           VmService.running.length > 1 ? `${VmService.running.length} ${Tr.t("running")}` : ""]
-            .filter(part => part !== "").join(" · ")
-
-    readonly property string privacyName: Tr.t(PrivacyService.microphone ? "Microphone"
-        : PrivacyService.cameraOn ? "Camera" : "Screen")
-
-    // The line being sung, once the lyrics have a first one; a gap between
-    // verses is a note rather than the artist coming back.
-    readonly property bool singing: LyricsService.available && LyricsService.synced
-        && LyricsService.current >= 0
-    readonly property string lyric: root.singing
-        ? (LyricsService.currentText !== "" ? LyricsService.currentText : "♪") : ""
-
-    // What a mark does at rest, for the square and the chips alike: the
-    // take stops, the machine opens its panel, the rest open their detail
-    // — the music's opens out round its lyrics when it has them.
+    // What a mark does at rest, for the square and the chips alike: it
+    // opens its detail.
     function press(id: string): void {
-        if (id === "recorder")
-            RecorderService.stop()
-        else if (id === "machine")
-            ModuleService.togglePanel("machines")
-        else
-            ModuleService.activate(id)
+        ModuleService.activate(id)
     }
 
     function title(id: string): string {
@@ -85,15 +51,6 @@ Item {
             return MediaService.title || MediaService.identity
         case "timer":
             return TimerService.label || Tr.t("Timer")
-        case "recorder":
-            return Tr.t("Recording")
-        case "machine":
-            return root.machine?.title ?? ""
-        case "privacy":
-            return root.privacyName
-        case "weather":
-            return [`${WeatherService.temperature}°`, WeatherService.description]
-                .filter(part => part !== "").join(" · ")
         }
         return ""
     }
@@ -104,15 +61,6 @@ Item {
             return MediaService.artist
         case "timer":
             return TimerService.display
-        case "recorder":
-            return `${Tr.t(RecorderService.subject)} · ${RecorderService.display}`
-        case "machine":
-            return root.machineState
-        case "privacy":
-            return PrivacyService.who
-        case "weather":
-            return [WeatherService.place, `${WeatherService.high}° / ${WeatherService.low}°`]
-                .filter(part => part !== "").join(" · ")
         }
         return ""
     }
@@ -130,8 +78,7 @@ Item {
 
         MouseArea {
             anchors.fill: parent
-            enabled: root.face !== "privacy"
-            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+            cursorShape: Qt.PointingHandCursor
             onClicked: root.press(root.face)
         }
 
@@ -173,61 +120,7 @@ Item {
             fillColor: TimerService.tint
         }
 
-        // The dot, and a faint ring round it for the room it would fill.
-        Rectangle {
-            anchors.centerIn: parent
-            visible: root.face === "recorder"
-            width: Math.round(slot.width * 0.86)
-            height: width
-            radius: width / 2
-            color: "transparent"
-            border.width: 3
-            border.color: Theme.indicatorBad
-            opacity: 0.35
-        }
-
-        Rectangle {
-            anchors.centerIn: parent
-            visible: root.face === "recorder"
-            width: Math.round(slot.width * 0.5)
-            height: width
-            radius: width / 2
-            color: Theme.indicatorBad
-        }
-
-        Glyph {
-            visible: root.face === "machine"
-            text: VmService.mark(root.machine?.os ?? "")
-            font.pixelSize: Math.round(slot.width * 0.82)
-        }
-
-        Glyph {
-            visible: root.face === "weather"
-            text: WeatherService.glyph
-            font.pixelSize: Math.round(slot.width * 0.86)
-        }
-
-        Row {
-            anchors.centerIn: parent
-            visible: root.face === "privacy"
-            spacing: 4
-
-            Repeater {
-                model: root.privacyMarks
-
-                Text {
-                    required property var modelData
-
-                    text: modelData.glyph
-                    font.family: Theme.fontMono
-                    font.pixelSize: Math.round(slot.width
-                        * (root.privacyMarks.length > 2 ? 0.34 : root.privacyMarks.length > 1 ? 0.48 : 0.72))
-                    color: modelData.tint
-                }
-            }
-        }
     }
-
     Column {
         anchors.left: slot.right
         anchors.leftMargin: 16
@@ -247,34 +140,14 @@ Item {
             color: Theme.text
         }
 
-        // Under the music's title, the line being sung once there is one.
         Text {
-            id: line
-
             width: parent.width
             visible: text !== ""
-            text: root.lyric !== "" ? root.lyric : root.value(root.face)
+            text: root.value(root.face)
             elide: Text.ElideRight
-            wrapMode: root.lyric !== "" ? Text.Wrap : Text.NoWrap
-            maximumLineCount: 2
             font.family: root.face === "timer" ? Theme.fontMono : Theme.fontFamily
             font.pixelSize: Theme.fontSizeRegular
-            color: root.lyric !== "" ? Theme.text : Theme.textMuted
-
-            onTextChanged: {
-                if (root.lyric !== "")
-                    turn.restart()
-            }
-
-            NumberAnimation {
-                id: turn
-                target: line
-                property: "opacity"
-                from: 0
-                to: 1
-                duration: Theme.durationMedium
-                easing.type: Theme.easing
-            }
+            color: Theme.textMuted
         }
 
         Item {
@@ -286,7 +159,7 @@ Item {
         Row {
             id: controls
 
-            visible: ["media", "timer", "machine", "recorder"].includes(root.face)
+            visible: root.face === "media" || root.face === "timer"
             spacing: 8
 
             Control {
@@ -334,34 +207,6 @@ Item {
                 onPressed: TimerService.cancel()
             }
 
-            Control {
-                visible: root.face === "machine"
-                glyph: "󰍹"
-                size: 17
-                onPressed: VmService.open(root.machine?.name ?? "")
-            }
-
-            Control {
-                visible: root.face === "machine"
-                glyph: root.machine?.paused ? "󰐊" : "󰏤"
-                size: 22
-                onPressed: root.machine?.paused ? VmService.resume(root.machine.name)
-                                                : VmService.pause(root.machine?.name ?? "")
-            }
-
-            Control {
-                visible: root.face === "machine"
-                glyph: "󰐥"
-                size: 17
-                onPressed: VmService.stop(root.machine?.name ?? "")
-            }
-
-            Control {
-                visible: root.face === "recorder"
-                glyph: "󰓛"
-                size: 22
-                onPressed: RecorderService.stop()
-            }
         }
     }
 
@@ -397,8 +242,7 @@ Item {
 
                 MouseArea {
                     anchors.fill: parent
-                    enabled: chip.modelData !== "privacy"
-                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    cursorShape: Qt.PointingHandCursor
                     onClicked: root.press(chip.modelData)
                 }
 
@@ -410,38 +254,8 @@ Item {
 
                     Item {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: chip.modelData === "privacy" ? privacyChip.width : 24
+                        width: 24
                         height: 24
-
-                        Rectangle {
-                            anchors.centerIn: parent
-                            visible: chip.modelData === "recorder"
-                            width: 10
-                            height: 10
-                            radius: 5
-                            color: Theme.indicatorBad
-                        }
-
-                        Row {
-                            id: privacyChip
-
-                            anchors.centerIn: parent
-                            visible: chip.modelData === "privacy"
-                            spacing: 2
-
-                            Repeater {
-                                model: root.privacyMarks
-
-                                Text {
-                                    required property var modelData
-
-                                    text: modelData.glyph
-                                    font.family: Theme.fontMono
-                                    font.pixelSize: Theme.fontSizeMedium
-                                    color: modelData.tint
-                                }
-                            }
-                        }
 
                         RingIndicator {
                             anchors.centerIn: parent
@@ -452,15 +266,6 @@ Item {
                             progress: TimerService.progress
                             trackColor: Theme.indicatorDim
                             fillColor: TimerService.tint
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            visible: chip.modelData === "machine"
-                            text: VmService.mark(root.machine?.os ?? "")
-                            font.family: Theme.fontMono
-                            font.pixelSize: Theme.fontSizeMedium
-                            color: Theme.text
                         }
                     }
 
@@ -479,12 +284,11 @@ Item {
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: ModuleService.glanceStrip.length < 3
-                            || chip.modelData === "recorder" || chip.modelData === "timer"
+                            || chip.modelData === "timer"
                         width: Math.min(implicitWidth, 110)
                         elide: Text.ElideRight
-                        text: chip.modelData === "recorder" ? RecorderService.display
-                            : root.value(chip.modelData)
-                        font.family: chip.modelData === "recorder" || chip.modelData === "timer"
+                        text: root.value(chip.modelData)
+                        font.family: chip.modelData === "timer"
                             ? Theme.fontMono : Theme.fontFamily
                         font.pixelSize: Theme.fontSizeRegular
                         color: Theme.textMuted

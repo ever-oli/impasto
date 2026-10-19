@@ -40,7 +40,7 @@ Item {
             anchors.fill: parent
             // The revision is a fragment: a new key for the image cache, and
             // the same file read, so a picture replaced in place shows.
-            source: root.source !== "" ? `file://${root.source}#${AccountService.revision}` : ""
+            source: root.source !== "" ? `file://${root.source}` : ""
             visible: root.source !== "" && picture.status === Image.Ready
             fillMode: Image.PreserveAspectCrop
             asynchronous: true

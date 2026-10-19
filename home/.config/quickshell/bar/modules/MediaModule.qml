@@ -29,14 +29,8 @@ Item {
     implicitWidth: holder.implicitWidth
     implicitHeight: holder.implicitHeight
 
-    Component.onCompleted: {
-        MediaService.subscribe()
-        CavaService.subscribe()
-    }
-    Component.onDestruction: {
-        MediaService.release()
-        CavaService.release()
-    }
+    Component.onCompleted: MediaService.subscribe()
+    Component.onDestruction: MediaService.release()
 
     function clock(seconds: real): string {
         const total = Math.max(0, Math.floor(seconds))
@@ -74,7 +68,7 @@ Item {
                 RingIndicator {
                     anchors.fill: parent
                     thickness: 2.5
-                    progress: MediaService.playing ? CavaService.level : 0
+                    progress: MediaService.playing ? 1 : 0
                     trackColor: Theme.indicatorDim
                     // White: loudness has no level worth colouring, unlike
                     // charge or a countdown.
@@ -125,10 +119,6 @@ Item {
         id: detail
 
         ModuleCard {
-            // Opened, the player asks for the lyrics, and opens out round
-            // them once they come (`DetailFace`).
-            Component.onCompleted: LyricsService.subscribe()
-            Component.onDestruction: LyricsService.release()
 
             title: MediaService.title !== "" ? MediaService.title : MediaService.identity
             subtitle: MediaService.artist !== "" ? MediaService.artist : MediaService.identity
@@ -281,14 +271,16 @@ Item {
                     }
                 }
 
-                Spectrum {
+                // EVER LEAN: the cava spectrum went with cava; the playing
+                // glyph keeps this end of the row.
+                Text {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
-                    height: 18
-                    barWidth: 3
-                    minimum: 2
-                    active: MediaService.playing
-                    barColor: Theme.indicator
+                    visible: MediaService.playing
+                    text: "󰎇"
+                    font.family: Theme.fontMono
+                    font.pixelSize: 16
+                    color: Theme.indicator
                 }
             }
         }

@@ -214,10 +214,8 @@ PanelWindow {
         ? Math.max(root.bandX + root.bandWidth, root.islandRight) : root.islandRight
     readonly property bool wholeScreen: root.holding && ControlsService.editing
 
-    // No input at all while desktop widgets are being arranged: dragging one
-    // over the bar would move the pointer to this surface, and the desktop
-    // would drop the widget. None either where nothing is painted.
-    readonly property bool inert: DesktopService.editing || !root.painted || root.away
+    // No input where nothing is painted.
+    readonly property bool inert: !root.painted || root.away
 
     // Zen (`barHidden`): the bar waits above the screen and the island comes
     // down only for what it has to show — a panel, a notification, a
@@ -255,12 +253,9 @@ PanelWindow {
     // open. The grab keeps the keyboard here when the pointer crosses a window
     // (with `follow_mouse`, on-demand focus alone loses it), and a click on any
     // other surface clears it, which closes the island. The compositor
-    // restores focus when the grab ends. Both stand down while the capture
-    // surface is up, so an open panel waits under it instead of closing, and
-    // while the session is locked, where a grab would keep the keyboard from
-    // the other screens' lock.
+    // restores focus when the grab ends.
     readonly property bool holdsKeyboard: root.live && island.expanded
-        && !CaptureService.active && !LockService.locked
+    
 
     WlrLayershell.keyboardFocus: root.holdsKeyboard
         ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
