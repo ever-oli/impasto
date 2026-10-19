@@ -24,7 +24,9 @@ mpvpaper                     # plays an animated wallpaper
 
 # ── CAPTURE ─────────────────────────────────────────────────────────────────
 
-wl-screenrec                 # the recorder's GPU encoder, tried before wf-recorder
+# ever: wf-recorder already serves the recorder; this GPU-encoder variant
+# costs a rust build the disk cannot fit. Uncomment to bring it back.
+# wl-screenrec                 # the recorder's GPU encoder, tried before wf-recorder
 
 
 # ── TERMINAL PROGRAMS ───────────────────────────────────────────────────────
