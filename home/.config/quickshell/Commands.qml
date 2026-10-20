@@ -225,6 +225,12 @@ Scope {
             AskService.mode = id
             return root.ok({ mode: id })
         }
+
+        // Start over: a fresh session with the same durable memory.
+        function reset(): string {
+            AskService.reset()
+            return root.ok()
+        }
     }
 
     // `notch picker theme|wallpaper`: the carousel in the notch.

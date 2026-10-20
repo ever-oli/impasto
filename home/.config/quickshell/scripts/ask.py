@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""ask.py — the notch assistant's bridge to an ACP agent (`opencode acp`).
+"""ask.py — the notch assistant's bridge to its agent: Pi (the default and only visible engine) or `opencode acp` (hidden fallback,
+`notch ask backend opencode`) Pi with OptChat durable memory (`--backend pi`, or "pi" in
+~/.config/notch/ask-backend). Pi keeps one never-ending chat under
+~/.local/state/notch/pi; its tool calls go through notch-gate.ts.
 
 Reads one JSON command per line on stdin:
   {"op":"ask","text":..,"screen":"none|screen|region","context":bool,"act":bool}
@@ -22,6 +25,23 @@ import ask_extras as extras
 HOME = os.path.expanduser("~")
 STATE = os.environ.get("XDG_STATE_HOME", f"{HOME}/.local/state") + "/notch"
 HISTORY = f"{STATE}/ask-history.jsonl"
+CONF = f"{HOME}/.config/notch"
+def _backend():
+    if "--backend" in sys.argv:
+        return sys.argv[sys.argv.index("--backend") + 1]
+    try:
+        return open(f"{CONF}/ask-backend").read().strip() or "pi"
+    except OSError:
+        return os.environ.get("ASK_BACKEND", "pi")
+BACKEND = _backend()
+PI = os.environ.get("ASK_PI", f"{HOME}/.local/share/mise/installs/node/latest/bin/pi")
+# ASK_PI_STATE / ASK_PI_SESSION let tests use their own chat, never the live notch one.
+PI_STATE = os.environ.get("ASK_PI_STATE", f"{STATE}/pi")
+PI_SESSION = os.environ.get("ASK_PI_SESSION", "notch")
+# One fresh transcript per roll: the session id stamps when it began. Pi
+# resumes the id it is given, so reusing the first is what let an answer
+# queue wait on a day's transcript; the durable memory is not inside it.
+pi_sess = [PI_SESSION + "-" + time.strftime("%m%d-%H%M%S")]
 AGENT = os.environ.get("ASK_AGENT", f"{HOME}/.local/share/mise/installs/opencode/latest/node_modules/.bin/opencode")
 SAFE = {"read", "search", "fetch", "think"}
 ACT = f"""You can operate Ever's Linux desktop (niri, Wayland) with shell commands:
@@ -32,6 +52,10 @@ pixels are logical (scale 1). Every command is shown to Ever for approval, so ex
 
 # `ask.py history` lists past questions (newest first, "question<TAB>n");
 # `ask.py answer n` prints that answer. The palette's Ask history uses both.
+if sys.argv[1:2] == ["backend"]:
+    if sys.argv[2:3]:
+        os.makedirs(CONF, exist_ok=True); open(f"{CONF}/ask-backend", "w").write(sys.argv[2] + "\n")
+    print(_backend()); sys.exit()
 if sys.argv[1:2] == ["modes"]:
     print(json.dumps([{k: m[k] for k in ("id", "name", "icon", "sources")} for m in extras.modes()]))
     sys.exit()
@@ -51,10 +75,30 @@ def emit(**event):
 
 env = dict(os.environ, OPENCODE_CONFIG_CONTENT=json.dumps(
     {"permission": {"edit": "ask", "bash": "ask", "webfetch": "allow"}}))
-agent = subprocess.Popen([AGENT, "acp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+if BACKEND == "pi":
+    def spawn_pi():
+        """Start (or restart, after a roll or a reset) the Pi process and its stdout reader."""
+        global agent
+        os.makedirs(PI_STATE, exist_ok=True)
+        env = dict(os.environ, NOTCH_PI_ACT=f"{PI_STATE}/act",
+                   PATH=os.path.dirname(PI) + ":" + os.environ.get("PATH", ""))
+        agent = subprocess.Popen([PI, "--mode", "rpc", "--session-dir", PI_STATE, "--session-id", pi_sess[0],
+                                  "--optchat-channel", "notch", "--no-context-files",
+                                  # Low thinking keeps notch answers fast; ASK_PI_THINKING=medium for more.
+                                  "--thinking", os.environ.get("ASK_PI_THINKING", "low"),
+                                  "-e", os.path.join(os.path.dirname(os.path.abspath(__file__)), "notch-gate.ts")]
+                                 + (["--model", os.environ["ASK_PI_MODEL"]] if os.environ.get("ASK_PI_MODEL") else []),
+                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                 stderr=open(f"{PI_STATE}/pi-stderr.log", "w"),  # one startup's worth; spawns rotate
+                                 env=env, cwd=HOME)
+        threading.Thread(target=pi_reader, daemon=True).start()
+else:
+  agent = subprocess.Popen([AGENT, "acp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                          stderr=subprocess.DEVNULL, text=True, bufsize=1, env=env, cwd=HOME)
 next_id, waiting, pending = [0], {}, {}
 session, act_mode, turn = [None], [False], {"q": "", "a": ""}
+# {"op":"answer","allow":true,"session":true} approves the rest of this session.
+auto_ok = [False]
 # Rolling context: after ROLL turns the session is summarised and replaced by
 # a fresh one seeded with the summary and the last KEEP turns.
 ROLL, KEEP = 12, 4
@@ -63,7 +107,11 @@ quiet = [False]
 conversation = [str(int(time.time() * 1000))]
 
 def send(msg):
-    agent.stdin.write(json.dumps(msg) + "\n"); agent.stdin.flush()
+    line = json.dumps(msg) + "\n"
+    try:
+        agent.stdin.write(line.encode() if BACKEND == "pi" else line); agent.stdin.flush()
+    except (OSError, ValueError, AttributeError):
+        pass  # The agent process is gone; the prompt's dead check spawns a new one.
 
 def request(method, params):
     next_id[0] += 1
@@ -126,6 +174,135 @@ def reader():
             box.update({k: msg[k] for k in ("result", "error") if k in msg}); box["event"].set()
     emit(type="error", text="The agent stopped.")
 
+# ── Pi (RPC JSONL) ─────────────────────────────────────────────────────────
+pi_done, pi_box = threading.Event(), {}
+# When pi last had something to say. A long quiet with no permission pending
+# is the one symptom of a wedged generation, and the prompt turns it out.
+pi_last = [time.time()]
+restarting = [False]
+
+def restart_pi():
+    """Kill the Pi process and start a fresh one: its session's own history
+    is what a long notch day grows until the model balks; OptChat durable
+    memory keeps every fact, so a fresh start loses nothing that matters."""
+    emit(type="tool", title="Starting a fresh answer", status="pending")
+    restarting[0] = True
+    try:
+        agent.terminate(); agent.wait(timeout=5)
+    except Exception:
+        try: agent.kill()
+        except Exception: pass
+    restarting[0] = False
+    pi_sess[0] = f"{PI_SESSION}-{time.strftime('%m%d-%H%M%S')}"
+    spawn_pi()
+    pi_request({"type": "get_state"})
+    pi_last[0] = time.time()
+    emit(type="tool", title="Fresh answer started", status="pending")
+
+def pi_request(cmd, timeout=None):
+    next_id[0] += 1
+    box = {"event": threading.Event()}
+    waiting[str(next_id[0])] = box
+    send(dict(cmd, id=str(next_id[0])))
+    if not box["event"].wait(timeout):
+        # The command was never taken (a wedged generation does it). Abort
+        # whatever may be live and report, so the turn ends in an error
+        # instead of a prompt that waits forever.
+        waiting.pop(str(next_id[0]), None)
+        send({"type": "abort"})
+        raise RuntimeError(cmd.get("type") == "prompt" and
+            f"The model never took the prompt ({int(timeout)}s) — stopped so the notch never hangs. "
+            "Say it again; a reset starts a fresh session in seconds." or
+            "The agent never answered the command.")
+    if not box.get("success"):
+        raise RuntimeError(box.get("error") or "Pi refused the command")
+    return box.get("data") or {}
+
+def pi_reader():
+    # This reader watches the process that started it; a later restart's
+    # reader watches the new one, so EOF here must only touch its own wants.
+    mine = agent
+    for raw in mine.stdout:  # bytes, split on LF only
+        try:
+            msg = json.loads(raw)
+        except ValueError:
+            continue
+        kind = msg.get("type")
+        if kind in ("message_update", "tool_execution_start", "tool_execution_end", "agent_settled"):
+            pi_last[0] = time.time()
+        if kind == "response" and msg.get("id") in waiting:
+            box = waiting.pop(msg["id"]); box.update(msg); box["event"].set()
+        elif kind == "message_update":
+            ev = msg.get("assistantMessageEvent") or {}
+            if ev.get("type") == "text_delta":
+                turn["a"] += ev["delta"]; emit(type="chunk", text=ev["delta"])
+            elif ev.get("type") == "thinking_delta":
+                emit(type="thought", text=ev["delta"])
+            elif ev.get("type") == "error":
+                pi_box["error"] = str(ev.get("error") or ev.get("reason"))
+        elif kind == "message_end":
+            m = msg.get("message") or {}
+            if m.get("role") == "assistant" and m.get("errorMessage"):
+                pi_box["error"] = m["errorMessage"]
+        elif kind == "tool_execution_start":
+            emit(type="tool", title=msg.get("toolName", "tool"), status="pending")
+        elif kind == "tool_execution_end":
+            emit(type="tool", title=msg.get("toolName", "tool"), status="failed" if msg.get("isError") else "completed")
+        elif kind == "agent_settled":
+            pi_box["stop"] = "cancelled" if msg.get("aborted") else "end_turn"; pi_done.set()
+        elif kind == "extension_ui_request" and msg.get("method") == "confirm":
+            rid = msg["id"]
+            def pick(allow, rid=rid):
+                send({"type": "extension_ui_response", "id": rid, "confirmed": bool(allow)})
+            if auto_ok[0]:
+                emit(type="tool", title=f"Auto-approved: {msg.get('title') or 'action'}", status="pending")
+                pick(True); continue
+            pending[rid] = pick
+            emit(type="permission", id=rid, title=msg.get("title") or "Action", detail=msg.get("message") or "")
+        elif kind == "extension_ui_request" and msg.get("method") in ("select", "input", "editor"):
+            send({"type": "extension_ui_response", "id": msg["id"], "cancelled": True})
+    # The process is gone, crash or kill: fail every wait this reader owns
+    # at once, so a turn ends on a clear note instead of riding a timeout.
+    if mine is agent:
+        for box in waiting.values():
+            box.update(success=False, error="The Pi agent died; a fresh one starts for the next ask.")
+            box["event"].set()
+        waiting.clear()
+        if not restarting[0]:
+            emit(type="error", text="The agent stopped.")
+
+def pi_prompt(text, images):
+    if agent is None or agent.poll() is not None:
+        # The process died mid-day (crash, kill, memory): a long quiet turn
+        # waiting on a dead pipe serves nobody; spawn fresh before asking.
+        pi_done.clear(); pi_box.clear()
+        pi_sess[0] = f"{PI_SESSION}-{time.strftime('%m%d-%H%M%S')}"
+        spawn_pi()
+    open(f"{PI_STATE}/act", "w").write("1" if act_mode[0] else "0")
+    pi_done.clear(); pi_box.clear()
+    # A wedged generation is silent: pi's own request timeout does not always
+    # come back as an event, so the bridge watches for the word. A permission
+    # pending is quiet because Ever is reading it; the clock waits on him too.
+    silence = float(os.environ.get("ASK_SILENCE_TIMEOUT", "300"))
+    span = float(os.environ.get("ASK_TURN_TIMEOUT", "1200"))
+    pi_last[0] = started = time.time()
+    data = pi_request({"type": "prompt", "message": text, "images": images}, timeout=silence)
+    if data.get("disposition") != "handled":
+        while not pi_done.wait(2.0):
+            if pending:
+                pi_last[0] = started = time.time()
+                continue
+            if time.time() - pi_last[0] >= silence:
+                send({"type": "abort"}); pi_done.wait(10)
+                raise RuntimeError(f"No word from the model for {int(silence)}s, so it was stopped. "
+                                   "Say it again; if it recurs, reset starts a fresh session.")
+            if time.time() - started >= span:
+                send({"type": "abort"}); pi_done.wait(10)
+                raise RuntimeError(f"The answer ran past {int(span)}s, so it was stopped before the notch hung.")
+    if pi_box.get("error"):
+        raise RuntimeError(pi_box["error"])
+    return {"stopReason": pi_box.get("stop", "end_turn")}
+
 def sh(cmd):
     try:
         return subprocess.run(cmd, shell=True, capture_output=True, timeout=30).stdout
@@ -148,15 +325,19 @@ def context():
 def compose(cmd):
     """The question with everything the mode and toggles put around it."""
     mode = extras.mode_of(cmd.get("mode", "general")) or {"id": "general", "body": "", "sources": [], "rules": "none"}
-    parts = [f"<mode name=\"{mode.get('name', 'General')}\">\n{mode['body']}\n</mode>", extras.VISUAL_RULES]
+    parts = [f"<mode name=\"{mode.get('name', 'General')}\">\n{mode['body']}\n</mode>", extras.VISUAL_RULES,
+             extras.rules()]  # the shared layers: security, voice — every mode
     if mode["rules"] == "grounded":
-        parts.append(extras.rules())
+        parts.append(extras.rules_grounded())  # interview contracts, grounded only
     if "profile" in mode["sources"] and extras.profile():
         parts.append(f"<candidate_profile>\n{extras.profile()}\n</candidate_profile>")
     if "files" in mode["sources"]:
         parts.append(extras.files_block(mode["id"], cmd.get("text", "")))
     if act_mode[0]:
         parts.append(ACT)
+    lessons = f"{CONF}/lessons.md"
+    if mode.get("act") == "on" and os.path.exists(lessons):
+        parts.append(f"<lessons source=\"Ever's past corrections\">\n{open(lessons).read()[-6000:]}\n</lessons>")
     if seed[0]:
         parts.append(seed[0]); seed[0] = ""
     if captured[0]:
@@ -199,21 +380,26 @@ def ask(cmd):
         answer_one(cmd)
 
 def answer_one(cmd):
-    act_mode[0] = bool(cmd.get("act"))
+    # A mode with `act: on` (Build) always works with tools, behind the gate.
+    act_mode[0] = bool(cmd.get("act")) or (extras.mode_of(cmd.get("mode", "general")) or {}).get("act") == "on"
     text = compose(cmd)
     blocks = []
-    shot = {"screen": "grim -o Virtual-1 -", "region": 'g=$(slurp) && grim -g "$g" -'}.get(cmd.get("screen"))
+    # JPEG, not PNG: Pi keeps every image in the durable chat, so keep it small.
+    shot = {"screen": "grim -o Virtual-1 -t jpeg -q 70 -", "region": 'g=$(slurp) && grim -g "$g" -t jpeg -q 70 -'}.get(cmd.get("screen"))
     if shot:
         png = sh(shot)
         if png:
-            blocks.append({"type": "image", "mimeType": "image/png", "data": base64.b64encode(png).decode()})
+            blocks.append({"type": "image", "mimeType": "image/jpeg", "data": base64.b64encode(png).decode()})
             # The text on it too, so a model without vision still sees the screen.
             seen = subprocess.run(["tesseract", "stdin", "-"], input=png, capture_output=True).stdout.decode(errors="replace").strip()
             if seen:
                 text += f"\n\n<screen_text source=\"OCR of the attached screenshot\">\n{seen[:6000]}\n</screen_text>"
     turn.update(q=cmd.get("text", ""), a="")
     try:
-        result = prompt([{"type": "text", "text": text}] + blocks)
+        if BACKEND == "pi":
+            result = pi_prompt(text, [dict(b) for b in blocks])
+        else:
+            result = prompt([{"type": "text", "text": text}] + blocks)
         for kind, png, source in extras.visuals(turn["a"]):
             emit(type="visual", kind=kind, path=png or "", source=source)
         emit(type="done", stop=result.get("stopReason", "end_turn"))
@@ -222,8 +408,28 @@ def answer_one(cmd):
     os.makedirs(STATE, exist_ok=True)
     with open(HISTORY, "a") as f:
         f.write(json.dumps({"t": time.time(), "s": conversation[0], "mode": cmd.get("mode", "general"), "q": turn["q"], "a": turn["a"]}) + "\n")
+    # The history is a log, not an archive: past what Help/Recent shows it is
+    # unread detail. Rotate like UniiChat pages: keep the tail, drop the rest.
+    try:
+        if os.path.getsize(HISTORY) > 2_000_000:
+            tail = open(HISTORY, "rb").readlines()[-500:]
+            open(HISTORY, "wb").writelines(tail)
+    except OSError:
+        pass
     turns.append({"q": turn["q"], "a": turn["a"]})
-    if len(turns) >= int(os.environ.get("ASK_ROLL", ROLL)):
+    if len(turns) > 64:  # the roll reaps it every ASK_ROLL; this bounds runs where rolls fail
+        del turns[:len(turns) - 64]
+    # The ACP backend rolls its transcript into a summary. Pi keeps the facts
+    # in its durable memory, so a fresh session is its roll — and a long
+    # day's transcript is exactly what made answers stall before.
+    if BACKEND == "pi":
+        if len(turns) >= int(os.environ.get("ASK_ROLL", 10)):
+            emit(type="rolled", summary="A fresh session; the memory keeps what matters")
+            try:
+                restart_pi()
+            except Exception as error:
+                emit(type="error", text=f"The agent could not restart: {error}")
+    elif len(turns) >= int(os.environ.get("ASK_ROLL", ROLL)):
         roll()
 
 def capture():
@@ -233,12 +439,20 @@ def capture():
     except Exception as error:
         emit(type="error", text=f"No browser page: start Helium (it listens on 127.0.0.1:9222). {error}")
 
-threading.Thread(target=reader, daemon=True).start()
-try:
+if BACKEND == "pi":
+    spawn_pi()
+    try:
+        pi_request({"type": "get_state"})
+        emit(type="ready", backend="pi")
+    except RuntimeError as error:
+        emit(type="error", text=str(error))
+else:
+  threading.Thread(target=reader, daemon=True).start()
+  try:
     request("initialize", {"protocolVersion": 1, "clientCapabilities":
             {"fs": {"readTextFile": False, "writeTextFile": False}, "terminal": False}})
-    emit(type="ready")
-except RuntimeError as error:
+    emit(type="ready", backend="opencode")
+  except RuntimeError as error:
     emit(type="error", text=str(error))
 
 for line in sys.stdin:
@@ -247,19 +461,33 @@ for line in sys.stdin:
     except ValueError:
         continue
     op = cmd.get("op")
-    if op == "ask":
+    if op == "ask" and "--once" in sys.argv:
+        ask(cmd)
+    elif op == "ask":
         threading.Thread(target=ask, args=(cmd,), daemon=True).start()
     elif op == "capture":
         threading.Thread(target=capture, daemon=True).start()
+    elif op == "cancel" and BACKEND == "pi":
+        send({"type": "abort"})
+        for pick in pending.values():
+            pick(False)
+        pending.clear()
     elif op == "cancel" and session[0]:
         send({"jsonrpc": "2.0", "method": "session/cancel", "params": {"sessionId": session[0]}})
         for pick in pending.values():
             pick(False)
         pending.clear()
     elif op == "answer" and cmd.get("id") in pending:
+        if cmd.get("allow") and cmd.get("session"):
+            auto_ok[0] = True
         pending.pop(cmd["id"])(bool(cmd.get("allow")))
     elif op == "reset":
-        session[0] = None
+        session[0] = None; auto_ok[0] = False
         turns.clear(); seed[0] = ""; captured[0] = None
         conversation[0] = str(int(time.time() * 1000))
+        if BACKEND == "pi":
+            try:
+                restart_pi()
+            except Exception as error:
+                emit(type="error", text=f"The agent could not restart: {error}")
 agent.terminate()
