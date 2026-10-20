@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Google Maps
+Comment=Google Maps web app (Helium)
+Exec=/home/ever/.local/bin/notch-webapp https://maps.google.com
+Icon=notch-web-google-maps
+Categories=Network;WebApp;
+StartupNotify=true

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=YouTube
+Comment=YouTube web app (Helium)
+Exec=/home/ever/.local/bin/notch-webapp https://www.youtube.com
+Icon=notch-web-youtube
+Categories=Network;WebApp;
+StartupNotify=true

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=X
+Comment=X web app (Helium)
+Exec=/home/ever/.local/bin/notch-webapp https://x.com
+Icon=notch-web-x
+Categories=Network;WebApp;
+StartupNotify=true

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=WhatsApp
+Comment=WhatsApp web app (Helium)
+Exec=/home/ever/.local/bin/notch-webapp https://web.whatsapp.com
+Icon=notch-web-whatsapp
+Categories=Network;WebApp;
+StartupNotify=true
