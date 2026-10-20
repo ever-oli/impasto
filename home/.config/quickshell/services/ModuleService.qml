@@ -45,7 +45,7 @@ Singleton {
         { id: "bluetooth",     name: "Bluetooth",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "notifications", name: "Notifications", bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(7, 0) },
         { id: "clock",         name: "Clock",         bar: false,
-          width: SettingsService.clockShowsDate ? 240 : 150, height: Theme.capsuleHeight }
+          width: (SettingsService.clockShowsDate ? 240 : 150) + root.clock12hExtra, height: Theme.capsuleHeight }
     ]
 
     function entry(id: string): var {
@@ -185,8 +185,19 @@ Singleton {
     readonly property int overflow: Math.max(0, root.running.length - 2)
     readonly property int overflowWidth: 30
 
-    readonly property int clockCore: SettingsService.clockShowsDate
-        ? 150 : (SettingsService.clockShowsSeconds ? 88 : 72)
+    // The conversion beside the clock is the island's small size; measure
+    // the widest it can be ("08:48:59 PM") at a fixed time, as the glance
+    // measures its own time, and let the band plan for it.
+    readonly property FontMetrics clockOtherMetrics: FontMetrics {
+        font.family: Theme.fontBar
+        font.pixelSize: Theme.fontSizeSmall
+    }
+    readonly property int clock12hExtra: !SettingsService.clockShows12h ? 0
+        : Math.ceil(root.clockOtherMetrics.advanceWidth(
+            Qt.formatTime(new Date(2000, 0, 1, 20, 48, 58), SettingsService.clockOtherFormat))) + 8
+
+    readonly property int clockCore: (SettingsService.clockShowsDate
+        ? 150 : (SettingsService.clockShowsSeconds ? 88 : 72)) + root.clock12hExtra
     readonly property int activitySide: root.activities.length > 1 ? 92 : 64
     readonly property int activityInset: 14
 

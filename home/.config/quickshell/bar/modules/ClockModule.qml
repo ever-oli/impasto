@@ -57,6 +57,17 @@ Item {
                     color: Theme.text
                 }
 
+                // The conversion the clock has not chosen: the 12-hour
+                // beside the 24-hour, faint but legible at a glance.
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: SettingsService.clockShows12h
+                    text: Qt.formatDateTime(clock.date, SettingsService.clockOtherFormat)
+                    font.family: Theme.fontBar
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.textMuted
+                }
+
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     visible: SettingsService.clockShowsDate

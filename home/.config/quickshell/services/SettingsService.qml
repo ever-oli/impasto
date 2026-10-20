@@ -27,6 +27,14 @@ Singleton {
     readonly property alias clockFormat: config.clockFormat
     readonly property alias clockShowsDate: config.clockShowsDate
     readonly property alias clockShowsSeconds: config.clockShowsSeconds
+    readonly property alias clockShows12h: config.clockShows12h
+
+    // The conversion beside the clock: when the chosen format is the day's
+    // 24-hour, the mate is the 12-hour with its meridiem, and the other way
+    // round. Seconds follow the clock, appended as the clock itself appends.
+    readonly property string clockOtherFormat: config.clockFormat.startsWith("HH")
+        ? (clockShowsSeconds ? "hh:mm:ss AP" : "hh:mm AP")
+        : (clockShowsSeconds ? "HH:mm:ss" : "HH:mm")
     readonly property alias barHeight: config.barHeight
     readonly property alias barMargin: config.barMargin
     readonly property bool islandAttached: true
@@ -499,6 +507,7 @@ Singleton {
         property string clockFormat: "HH:mm"
         property bool clockShowsDate: false
         property bool clockShowsSeconds: false
+        property bool clockShows12h: true
 
         // Capsule height and distance from the top edge. Every other bar
         // metric derives from `barHeight`.

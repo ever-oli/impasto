@@ -57,6 +57,20 @@ Card {
             color: Theme.text
         }
 
+        // The conversion the clock has not chosen: the 12-hour under the
+        // 24-hour (or the 24-hour under the 12-hour), the clock's own size.
+        Text {
+            width: parent.width
+            visible: SettingsService.clockShows12h
+            text: Qt.formatDateTime(clock.date, SettingsService.clockOtherFormat)
+            horizontalAlignment: Text.AlignHCenter
+            fontSizeMode: Text.HorizontalFit
+            minimumPixelSize: 10
+            font.family: Theme.fontBar
+            font.pixelSize: root.tall ? Theme.fontSizeMedium : Theme.fontSizeSmall
+            color: Theme.textMuted
+        }
+
         Text {
             width: parent.width
             text: Qt.formatDateTime(clock.date, root.wide || root.tall ? "dddd d MMMM" : "ddd d MMM")
