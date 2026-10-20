@@ -154,8 +154,13 @@ Singleton {
             }
         }
         onExited: {
+            const wasBusy = root.busy
             root.busy = false
             root.permission = null
+            // Gone without an answer rather than hung: say so, so the island
+            // is never left on "Thinking…" with a queue of lost questions.
+            if (wasBusy)
+                root.push("tool", "󰅚 The assistant's bridge stopped — its answer is lost. Ask again.")
         }
     }
 }

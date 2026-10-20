@@ -231,6 +231,12 @@ Scope {
             AskService.setBackend(name)
             return root.ok({ backend: AskService.backend })
         }
+
+        // Start over: a fresh session with the same durable memory.
+        function reset(): string {
+            AskService.reset()
+            return root.ok()
+        }
     }
 
     // `notch picker theme|wallpaper`: the carousel in the notch.

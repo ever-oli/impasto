@@ -27,3 +27,4 @@ _mock*.qml
 id_rsa
 id_ed25519
 home/.local/state/notch/theme.lock
+home/.config/quickshell/scripts/ask.py.bak*
