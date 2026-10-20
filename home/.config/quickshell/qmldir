@@ -25,6 +25,8 @@ singleton ClipboardService   1.0 services/ClipboardService.qml
 singleton EmojiService       1.0 services/EmojiService.qml
 singleton PolkitService      1.0 services/PolkitService.qml
 singleton TrayService        1.0 services/TrayService.qml
+singleton MenuService      1.0 services/MenuService.qml
+singleton AskService       1.0 services/AskService.qml
 
 Card             1.0 components/Card.qml
 QuickTile        1.0 components/QuickTile.qml
@@ -64,6 +66,7 @@ OsdLayer         1.0 bar/island/OsdLayer.qml
 NotificationLayer 1.0 bar/island/NotificationLayer.qml
 ControlsPanel    1.0 bar/island/ControlsPanel.qml
 LauncherPanel    1.0 bar/island/LauncherPanel.qml
+AskPanel         1.0 bar/island/AskPanel.qml
 
 Module           1.0 bar/modules/Module.qml
 ClockModule      1.0 bar/modules/ClockModule.qml

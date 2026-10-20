@@ -48,7 +48,7 @@ Scope {
         root.island?.open("launcher")
     }
 
-    readonly property var panels: ["launcher", "controls", "session", "keys", "t3",
+    readonly property var panels: ["launcher", "ask", "controls", "session", "keys", "t3",
         "bluetooth", "sound", "microphone", "clipboard", "emoji"]
 
     IpcHandler {
@@ -198,6 +198,37 @@ Scope {
                 return root.fail("say something")
             OsdService.requested(icon || "󰍡", text, -1)
             return root.ok()
+        }
+    }
+
+    // `impasto ask "question" [screen|region]` asks from a script or a bind.
+    IpcHandler {
+        target: "ask"
+
+        function ask(text: string, screen: string): string {
+            root.island?.open("ask")
+            AskService.ask(text, screen || "none")
+            return root.ok()
+        }
+    }
+
+    // `impasto palette Style/Theme` opens the palette at that folder.
+    IpcHandler {
+        target: "palette"
+
+        function open(path: string): string {
+            MenuService.reset()
+            let nodes = MenuService.tree
+            for (const name of (path || "").split("/").filter(n => n !== "")) {
+                const node = nodes.find(n => n.name.toLowerCase() === name.toLowerCase())
+                if (!node)
+                    return root.fail(`no folder "${name}"`)
+                MenuService.push(node)
+                nodes = node.items ?? []
+            }
+            LauncherService.query = ""
+            root.island?.open("launcher")
+            return root.ok({ path: path })
         }
     }
 

@@ -5,6 +5,8 @@
 #   impasto open|toggle <panel>   launcher controls session keys t3 wifi
 #                                 bluetooth sound microphone clipboard emoji
 #   impasto close
+#   impasto ask "<question>" [screen|region]  the notch assistant
+#   impasto palette [Folder/Sub]           the palette, opened at a folder
 #   impasto capture [region|window|screen] | text | record
 #   impasto volume <0-100> | mute [on|off|toggle]
 #   impasto focus [on|off|toggle]            do not disturb
@@ -20,6 +22,8 @@ verb=${1:-help}; shift || true
 case $verb in
     open|toggle)  call panel "$verb" "${1:?which panel}" ;;
     close)        call panel close ;;
+    palette)      call palette open "${1:-}" ;;
+    ask)          call ask ask "${1:?question}" "${2:-none}" ;;
     panels)       call panel list ;;
     capture)
         case ${1:-} in

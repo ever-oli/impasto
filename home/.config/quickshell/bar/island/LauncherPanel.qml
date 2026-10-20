@@ -66,6 +66,7 @@ ColumnLayout {
     Component.onDestruction: {
         LauncherService.query = ""
         EmojiService.group = ""
+        MenuService.reset()
     }
 
     // The list wraps around at both ends. The grid stops at its edges, since
@@ -107,6 +108,19 @@ ColumnLayout {
                 root.settingsRequested()
             else
                 root.panelRequested(entry.panel)
+            return
+        }
+        if (entry.kind === "menu" || entry.kind === "command") {
+            const next = MenuService.run(entry.node)
+            if (next === "stay") {
+                LauncherService.query = ""
+                searchField.text = ""
+                resultList.currentIndex = 0
+                searchField.forceActiveFocus()
+            } else if (next === "close")
+                root.closed()
+            else
+                root.panelRequested(next)
             return
         }
         if (entry.kind === "mode") {
@@ -152,12 +166,22 @@ ColumnLayout {
 
         // The current mode's glyph rather than a magnifier.
         Text {
-            text: root.mode.icon
+            text: MenuService.top ? MenuService.top.icon : root.mode.icon
             font.family: Theme.fontMono
             font.pixelSize: 17
             color: Theme.accent
 
             Behavior on text { enabled: false }
+        }
+
+        // Where in the palette the field is: Esc or Backspace steps out.
+        Text {
+            visible: MenuService.top !== null
+            text: MenuService.trail
+            font.family: Theme.fontBar
+            font.pixelSize: 16
+            font.weight: Font.DemiBold
+            color: Theme.accent
         }
 
         TextInput {
@@ -209,7 +233,21 @@ ColumnLayout {
                     event.accepted = false
                 }
             }
-            // Escape is handled by the island for every panel.
+            // Escape steps out of a palette folder; at the top the island
+            // closes the panel, as it does for every panel.
+            Keys.onEscapePressed: event => {
+                event.accepted = MenuService.top !== null
+                if (event.accepted) {
+                    MenuService.pop()
+                    LauncherService.query = ""
+                }
+            }
+            Keys.onPressed: event => {
+                if (event.key === Qt.Key_Backspace && text === "" && MenuService.top) {
+                    MenuService.pop()
+                    event.accepted = true
+                }
+            }
 
             // The query can be set from outside (a key that opens the launcher
             // in a mode). Typing breaks the `text` binding, so it is resynced
@@ -226,7 +264,7 @@ ColumnLayout {
             // Only while the field is empty; it would draw over a typed sigil.
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Search…"
+                text: MenuService.top?.input ? MenuService.top.input.hint : "Search…"
                 visible: searchField.text === ""
                 color: Theme.textMuted
                 font: searchField.font

@@ -95,7 +95,8 @@ Rectangle {
         module:     root.moduleSize,
         // A tray item's menu, a row per entry.
         tray:       { width: TrayService.menuWidth, height: TrayService.menuHeight },
-        t3:         { width: T3Service.panelWidth, height: T3Service.panelHeight }
+        t3:         { width: T3Service.panelWidth, height: T3Service.panelHeight },
+        ask:        { width: 640, height: AskService.messages.length ? 460 : 220 }
     })
 
 
@@ -151,6 +152,7 @@ Rectangle {
         auth: authPanel,
         keys: keysPanel,
         t3: t3Panel,
+        ask: askPanel,
         module: moduleDetail,
         tray: trayMenu
     })
@@ -381,7 +383,7 @@ Rectangle {
             cursorShape: Qt.PointingHandCursor
             onClicked: {
                 root.summaryHeld = true
-                root.open("controls")
+                root.open("launcher")
             }
         }
 
@@ -515,6 +517,11 @@ Rectangle {
         }
     }
 
+
+    Component {
+        id: askPanel
+        AskPanel { onClosed: root.close() }
+    }
 
     Component {
         id: launcherPanel

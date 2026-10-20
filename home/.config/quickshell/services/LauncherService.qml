@@ -229,7 +229,19 @@ QtObject {
             return root.emoji(term)
         }
 
-        return root.rank(term).slice(0, root.maxResults)
+        // Inside a palette folder the tree answers; at the top the folders
+        // (and, once typed, every command under them) sit with the apps.
+        if (MenuService.top)
+            return MenuService.results(term)
+        const ask = { kind: "panel", id: "ask", panel: "ask", icon: "󰚩", name: "Ask",
+                      subtitle: "The assistant, with your screen as context" }
+        if (term === "")
+            return [ask].concat(MenuService.tree.map(MenuService.row), root.rank(term))
+        const commands = MenuService.filter(MenuService.leaves, term).map(MenuService.row)
+        const lead = commands.filter(c => c.name.toLowerCase().startsWith(term))
+        const rest = commands.filter(c => !c.name.toLowerCase().startsWith(term))
+        const asks = "ask".startsWith(term) ? [ask] : []
+        return asks.concat(lead, root.rank(term).slice(0, root.maxResults), rest)
     }
 
     // All applications matching `term`, sorted by:

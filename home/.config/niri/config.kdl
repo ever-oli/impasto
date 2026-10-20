@@ -107,8 +107,12 @@ binds {
     // ── shell (impasto) ──
     Alt+Space { spawn "impasto" "toggle" "launcher"; }
     Mod+Space { spawn "impasto" "toggle" "launcher"; }
-    Ctrl+Alt+T { spawn "impasto-theme" "next"; }
-    Ctrl+Alt+B { spawn "impasto-theme" "next-wallpaper"; }
+    Ctrl+Alt+Space { spawn "impasto" "toggle" "launcher"; }
+    Alt+A { spawn "impasto" "toggle" "ask"; }
+    Mod+A { spawn "impasto" "toggle" "ask"; }
+    Mod+Ctrl+Space { spawn "impasto" "toggle" "launcher"; }
+    Ctrl+Alt+T { spawn "impasto" "palette" "Style/Theme"; }
+    Ctrl+Alt+B { spawn "impasto" "palette" "Style/Wallpaper"; }
     Ctrl+Alt+V { spawn "impasto" "toggle" "clipboard"; }
     Ctrl+Alt+E { spawn "impasto" "toggle" "emoji"; }
     Ctrl+Alt+S { spawn "impasto" "capture" "region"; }
@@ -120,8 +124,8 @@ binds {
     Ctrl+Alt+N { spawn "impasto" "focus" "toggle"; }
     Ctrl+Alt+Escape { spawn "impasto" "toggle" "session"; }
     Ctrl+Alt+Q { spawn "impasto" "toggle" "session"; }
-    Mod+Ctrl+T { spawn "impasto-theme" "next"; }
-    Mod+Ctrl+B { spawn "impasto-theme" "next-wallpaper"; }
+    Mod+Ctrl+T { spawn "impasto" "palette" "Style/Theme"; }
+    Mod+Ctrl+B { spawn "impasto" "palette" "Style/Wallpaper"; }
     Mod+Ctrl+V { spawn "impasto" "toggle" "clipboard"; }
     Mod+Ctrl+E { spawn "impasto" "toggle" "emoji"; }
     Mod+Ctrl+S { spawn "impasto" "capture" "region"; }
@@ -152,6 +156,8 @@ binds {
     Alt+Right { focus-column-right; }
     Alt+Up { focus-window-up; }
     Alt+Down { focus-window-down; }
+    Alt+H { focus-column-left; }
+    Alt+L { focus-column-right; }
     Mod+Left { focus-column-left; }
     Mod+Right { focus-column-right; }
     Mod+Up { focus-window-up; }
@@ -177,6 +183,7 @@ binds {
 
     // ── workspaces ──
     Alt+Tab { toggle-overview; }
+    Alt+O { toggle-overview; }
     Mod+D { toggle-overview; }
     Mod+O { toggle-overview; }
     Alt+1 { focus-workspace 1; }
@@ -209,6 +216,7 @@ binds {
     // ── niri ──
     Mod+K { show-hotkey-overlay; }
     Print { screenshot; }
+    Alt+Shift+E { quit; }
     Mod+Shift+E { quit; }
 }
 
