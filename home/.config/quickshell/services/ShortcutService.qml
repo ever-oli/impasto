@@ -29,7 +29,7 @@ Singleton {
                                        "Session", "Utilities", "Media"]
 
     readonly property var modifierCaps: [
-        { bit: 64, cap: "Super" },
+        { bit: 64, cap: "Cmd" },
         { bit: 4,  cap: "Ctrl" },
         { bit: 8,  cap: "Alt" },
         { bit: 1,  cap: "Shift" }
@@ -95,7 +95,8 @@ Singleton {
 
         return ranked.map(category => ({
             name: category,
-            rows: groups[category].map(row => {
+            // Cmd (Super) binds first; Alt fallbacks after, config order kept within each.
+            rows: groups[category].slice().sort((a, b) => ((b.modmask & 64) ? 1 : 0) - ((a.modmask & 64) ? 1 : 0)).map(row => {
                 const caps = root.modifierCaps
                     .filter(modifier => row.modmask & modifier.bit)
                     .map(modifier => modifier.cap)

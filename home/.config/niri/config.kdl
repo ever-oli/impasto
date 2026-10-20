@@ -107,25 +107,36 @@ binds {
     // ── shell (impasto) ──
     Alt+Space { spawn "impasto" "toggle" "launcher"; }
     Mod+Space { spawn "impasto" "toggle" "launcher"; }
-    Alt+Shift+C { spawn "impasto" "toggle" "controls"; }
-    Alt+Shift+T { spawn "impasto" "toggle" "t3"; }
-    Alt+Shift+K { spawn "impasto" "toggle" "keys"; }
-    Ctrl+Alt+K { spawn "impasto" "toggle" "keys"; }
-    Alt+Shift+V { spawn "impasto" "toggle" "clipboard"; }
-    Alt+Shift+Period { spawn "impasto" "toggle" "emoji"; }
-    Alt+Shift+E { spawn "impasto" "toggle" "session"; }
-    Alt+Shift+N { spawn "impasto" "focus" "toggle"; }
-    Alt+Shift+S { spawn "impasto" "capture" "region"; }
+    Ctrl+Alt+T { spawn "impasto-theme" "next"; }
+    Ctrl+Alt+B { spawn "impasto-theme" "next-wallpaper"; }
+    Ctrl+Alt+V { spawn "impasto" "toggle" "clipboard"; }
+    Ctrl+Alt+E { spawn "impasto" "toggle" "emoji"; }
     Ctrl+Alt+S { spawn "impasto" "capture" "region"; }
-    Alt+Shift+A { spawn "impasto" "capture"; }
-    Alt+Shift+R { spawn "impasto" "record"; }
-    Alt+Shift+Y { spawn "impasto-theme" "next"; }
-    Alt+Shift+W { spawn "impasto-theme" "next-wallpaper"; }
+    Ctrl+Alt+A { spawn "impasto" "capture"; }
+    Ctrl+Alt+R { spawn "impasto" "record"; }
+    Ctrl+Alt+K { spawn "impasto" "toggle" "keys"; }
+    Ctrl+Alt+C { spawn "impasto" "toggle" "controls"; }
+    Ctrl+Alt+3 { spawn "impasto" "toggle" "t3"; }
+    Ctrl+Alt+N { spawn "impasto" "focus" "toggle"; }
+    Ctrl+Alt+Escape { spawn "impasto" "toggle" "session"; }
+    Ctrl+Alt+Q { spawn "impasto" "toggle" "session"; }
+    Mod+Ctrl+T { spawn "impasto-theme" "next"; }
+    Mod+Ctrl+B { spawn "impasto-theme" "next-wallpaper"; }
+    Mod+Ctrl+V { spawn "impasto" "toggle" "clipboard"; }
+    Mod+Ctrl+E { spawn "impasto" "toggle" "emoji"; }
+    Mod+Ctrl+S { spawn "impasto" "capture" "region"; }
+    Mod+Ctrl+A { spawn "impasto" "capture"; }
+    Mod+Ctrl+R { spawn "impasto" "record"; }
+    Mod+Ctrl+K { spawn "impasto" "toggle" "keys"; }
+    Mod+Ctrl+C { spawn "impasto" "toggle" "controls"; }
+    Mod+Ctrl+3 { spawn "impasto" "toggle" "t3"; }
+    Mod+Ctrl+N { spawn "impasto" "focus" "toggle"; }
+    Mod+Ctrl+Escape { spawn "impasto" "toggle" "session"; }
+    Mod+Ctrl+Q { spawn "impasto" "toggle" "session"; }
 
     // ── apps ──
     Alt+Return { spawn "ghostty"; }
     Mod+Return { spawn "ghostty"; }
-    Ctrl+Alt+T { spawn "ghostty"; }
     Alt+Shift+Return { spawn "helium-browser"; }
     Mod+Shift+Return { spawn "helium-browser"; }
 
