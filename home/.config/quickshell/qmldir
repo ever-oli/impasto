@@ -30,6 +30,7 @@ singleton MenuService      1.0 services/MenuService.qml
 singleton AskService       1.0 services/AskService.qml
 singleton PickerService    1.0 services/PickerService.qml
 singleton FontSizeService  1.0 services/FontSizeService.qml
+singleton CloudService     1.0 services/CloudService.qml
 
 Card             1.0 components/Card.qml
 QuickTile        1.0 components/QuickTile.qml

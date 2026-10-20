@@ -392,7 +392,7 @@ Singleton {
     // right.
     readonly property var defaultBlocks: [
         { id: "toggles",       col: 0, row: 0, size: "2x3" },
-        { id: "volume",        col: 0, row: 3, size: "2x1" },
+        { id: "textsize",      col: 0, row: 3, size: "2x1" },
         { id: "clock",         col: 0, row: 4, size: "2x2" },
         { id: "session",       col: 0, row: 6, size: "2x1" },
         { id: "shortcuts",     col: 0, row: 7, size: "2x1" },

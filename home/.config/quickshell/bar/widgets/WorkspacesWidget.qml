@@ -35,7 +35,9 @@ Rectangle {
     property bool overWallpaper: false
     readonly property color dim: root.overWallpaper ? Theme.barInkDim : Theme.indicatorDim
     // `SettingsService.workspaceStyle` unless a picker draws another.
-    property string style: SettingsService.workspaceStyle
+    // On the bar only the workspace you are on is drawn, as its number.
+    property string style: root.preview || ["roman", "kanji", "greek"].indexOf(SettingsService.workspaceStyle) >= 0
+        ? SettingsService.workspaceStyle : "numbers"
     // A still strip for the settings: five, the second focused, the first and
     // third occupied, and nothing to click.
     property bool preview: false
@@ -83,7 +85,7 @@ Rectangle {
     }
 
     function isShown(n: int): bool {
-        return root.preview ? n <= 5 : NiriService.isVisibleOn(n, root.screenName)
+        return root.preview ? n <= 5 : n === root.activeId
     }
 
     function isOccupied(n: int): bool {
@@ -104,6 +106,13 @@ Rectangle {
     GlassSheen {
         shape: root
         visible: Theme.glass && !root.chromeless
+    }
+
+    // Scroll steps through the workspaces.
+    WheelHandler {
+        enabled: !root.preview
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onWheel: event => NiriService.action(event.angleDelta.y > 0 ? "focus-workspace-up" : "focus-workspace-down")
     }
 
     // The written styles' focus: one pill that slides to the focused number
