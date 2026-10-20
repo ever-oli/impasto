@@ -30,13 +30,12 @@ Singleton {
     // ── TREE ────────────────────────────────────────────────────────────────
     // Pending pacman + AUR updates (notch-updates), checked at start and hourly.
     property int updates: 0
-    Process {
-        id: updateCheck
+    readonly property Process updateCheck: Process {
         command: ["sh", "-c", `PATH="$HOME/.local/bin:$PATH"; notch-updates count`]
         running: true
         stdout: StdioCollector { onStreamFinished: root.updates = parseInt(text) || 0 }
     }
-    Timer { interval: 3600000; repeat: true; running: true; onTriggered: updateCheck.running = true }
+    readonly property Timer updateTimer: Timer { interval: 3600000; repeat: true; running: true; onTriggered: root.updateCheck.running = true }
 
     readonly property var tree: [
         // Listed by LauncherService (`apps`), which owns the application index.
@@ -146,7 +145,7 @@ Singleton {
     ])
 
     // Recount a few minutes after an update was started from the palette.
-    Timer { id: refreshAfterUpdate; interval: 300000; onTriggered: updateCheck.running = true }
+    readonly property Timer refreshAfterUpdate: Timer { interval: 300000; onTriggered: root.updateCheck.running = true }
 
     // ── NAVIGATION ──────────────────────────────────────────────────────────
     property var stack: []
@@ -278,7 +277,7 @@ Singleton {
         else if (node.term)
             Quickshell.execDetached(["ghostty", "-e", "bash", "-c", `PATH="$HOME/.local/bin:$PATH"; ${node.term}${root.done}`])
         if (node.term && node.term.indexOf("notch-updates run") >= 0)
-            refreshAfterUpdate.restart()
+            root.refreshAfterUpdate.restart()
         else if (node.sh)
             Quickshell.execDetached(["sh", "-c", `PATH="$HOME/.local/bin:$PATH"; ${node.sh}`])
         else
