@@ -272,6 +272,7 @@ PanelWindow {
 
     // niri has no focus grab, so an open island takes the keyboard outright
     // and a transparent sheet under it catches the click that closes it.
+    // focus-exclusive-ok: palette/island; niri has no focus grab (see above).
     WlrLayershell.keyboardFocus: root.holdsKeyboard
         ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 

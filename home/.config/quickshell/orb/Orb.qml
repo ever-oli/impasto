@@ -139,7 +139,10 @@ Scope {
         color: "transparent"
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "notch-orb"
-        WlrLayershell.keyboardFocus: root.opened ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+        // OnDemand, never Exclusive: the overlay takes keys only when opened or
+        // clicked, and closes itself the moment focus goes to another window,
+        // so it can never swallow typing meant for something else.
+        WlrLayershell.keyboardFocus: root.opened ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         readonly property var placement: Model.placement(root.pointer.x, root.pointer.y, width, height,
             Theme.capsuleHeight + Theme.barTopMargin, root.diameter)
 
@@ -158,6 +161,11 @@ Scope {
             id: keys
             anchors.fill: parent
             focus: root.opened
+            property bool hadFocus: false
+            onActiveFocusChanged: {
+                if (activeFocus) hadFocus = true;
+                else if (hadFocus && root.opened) { hadFocus = false; root.close() }
+            }
             function press(key, mods) {
                 if (key === Qt.Key_Escape || key === Qt.Key_Backspace || (root.submenuTitle && key === Qt.Key_Left)) root.back();
                 else if (key === Qt.Key_Home) { root.keyboardMode = true; root.selected = -2; }

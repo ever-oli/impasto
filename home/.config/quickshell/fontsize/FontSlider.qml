@@ -49,7 +49,10 @@ Scope {
         color: "transparent"
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "notch-fontsize"
-        WlrLayershell.keyboardFocus: root.opened ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+        // OnDemand, never Exclusive: the overlay takes keys only when opened or
+        // clicked, and closes itself the moment focus goes to another window,
+        // so it can never swallow typing meant for something else.
+        WlrLayershell.keyboardFocus: root.opened ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
         MouseArea { anchors.fill: parent; onClicked: root.close() }
 
@@ -57,6 +60,11 @@ Scope {
             id: keys
             anchors.fill: parent
             focus: root.opened
+            property bool hadFocus: false
+            onActiveFocusChanged: {
+                if (activeFocus) hadFocus = true;
+                else if (hadFocus && root.opened) { hadFocus = false; root.close() }
+            }
             function press(k) {
                 if (k === Qt.Key_Escape) root.cancel();
                 else if (k === Qt.Key_Return || k === Qt.Key_Enter) root.close();
