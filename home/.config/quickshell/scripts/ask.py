@@ -77,6 +77,8 @@ if BACKEND == "pi":
                PATH=os.path.dirname(PI) + ":" + os.environ.get("PATH", ""))
     agent = subprocess.Popen([PI, "--mode", "rpc", "--session-dir", PI_STATE, "--session-id", PI_SESSION,
                               "--optchat-channel", "notch", "--no-context-files",
+                              # Low thinking keeps notch answers fast; ASK_PI_THINKING=medium for more.
+                              "--thinking", os.environ.get("ASK_PI_THINKING", "low"),
                               "-e", os.path.join(os.path.dirname(os.path.abspath(__file__)), "notch-gate.ts")]
                              + (["--model", os.environ["ASK_PI_MODEL"]] if os.environ.get("ASK_PI_MODEL") else []),
                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
@@ -303,11 +305,12 @@ def answer_one(cmd):
     act_mode[0] = bool(cmd.get("act")) or (extras.mode_of(cmd.get("mode", "general")) or {}).get("act") == "on"
     text = compose(cmd)
     blocks = []
-    shot = {"screen": "grim -o Virtual-1 -", "region": 'g=$(slurp) && grim -g "$g" -'}.get(cmd.get("screen"))
+    # JPEG, not PNG: Pi keeps every image in the durable chat, so keep it small.
+    shot = {"screen": "grim -o Virtual-1 -t jpeg -q 70 -", "region": 'g=$(slurp) && grim -g "$g" -t jpeg -q 70 -'}.get(cmd.get("screen"))
     if shot:
         png = sh(shot)
         if png:
-            blocks.append({"type": "image", "mimeType": "image/png", "data": base64.b64encode(png).decode()})
+            blocks.append({"type": "image", "mimeType": "image/jpeg", "data": base64.b64encode(png).decode()})
             # The text on it too, so a model without vision still sees the screen.
             seen = subprocess.run(["tesseract", "stdin", "-"], input=png, capture_output=True).stdout.decode(errors="replace").strip()
             if seen:
