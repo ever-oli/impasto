@@ -22,7 +22,10 @@ tests() {
     local bad=0
     notch-doctor || bad=1
     notch-theme audit || bad=1
-    for t in "$REPO"/tests/*.sh; do bash "$t" || { echo "✗ $t"; bad=1; }; done
+    for t in "$REPO"/tests/*.sh; do
+        # Tests that drive the live palette open it on Ever's screen: only with NOTCH_DEV_LIVE=1.
+        if sed -n 2p "$t" | grep -q "Run in the desktop session" && [ -z "${NOTCH_DEV_LIVE:-}" ]; then echo "skip $(basename "$t") (live; NOTCH_DEV_LIVE=1)"; continue; fi
+        bash "$t" || { echo "✗ $t"; bad=1; }; done
     return $bad
 }
 commit_pr() { # repo base title body
