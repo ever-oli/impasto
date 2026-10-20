@@ -164,8 +164,10 @@ binds {
     Alt+L { focus-column-right; }
     Mod+Left { focus-column-left; }
     Mod+Right { focus-column-right; }
-    Mod+Up { focus-window-up; }
-    Mod+Down { focus-window-down; }
+    // Desktops, as the bell wants: Super+Up/Down across workspaces. Window
+    // focus keeps H/L; Alt+Shift+Up/Down still carries a window between them.
+    Mod+Up { focus-workspace-up; }
+    Mod+Down { focus-workspace-down; }
     Mod+H { focus-column-left; }
     Mod+L { focus-column-right; }
     Alt+Shift+Left { move-column-left; }
@@ -190,6 +192,7 @@ binds {
     Alt+O { toggle-overview; }
     Mod+D { toggle-overview; }
     Mod+O { toggle-overview; }
+    Mod+Alt+O hotkey-overlay-title="Orb" { spawn "qs" "ipc" "call" "orb" "toggle"; }
     Alt+1 { focus-workspace 1; }
     Alt+2 { focus-workspace 2; }
     Alt+3 { focus-workspace 3; }
@@ -222,6 +225,7 @@ binds {
     Print { screenshot; }
     Alt+Shift+E { quit; }
     Mod+Shift+E { quit; }
+    Ctrl+Shift+Z repeat=false { spawn "gdbus" "call" "--session" "--dest" "com.t3tools.T3Code.SnapShot" "--object-path" "/com/t3tools/SnapShot" "--method" "com.t3tools.SnapShot.Capture"; }
 }
 
 // ==== windows.kdl ====
