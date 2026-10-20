@@ -48,7 +48,7 @@ impasto volume <n> | volume mute     impasto focus toggle
 impasto-theme set e-ink|e-ink-dark|red-ink|red-ink-dark · next · next-wallpaper
 ```
 
-`impasto-theme` writes the colours for the shell (`~/.local/state/impasto/theme.json`), alacritty,
+`impasto-theme` writes the colours for the shell (`~/.local/state/impasto/theme.json`), ghostty,
 helix, niri's focus ring and border, mako and fuzzel, and runs swaybg as the `impasto-wallpaper` user unit.
 
 ## Keys (Alt is the main key; Super still works)
@@ -56,7 +56,7 @@ helix, niri's focus ring and border, mako and fuzzel, and runs swaybg as the `im
 | Key | Does |
 |---|---|
 | Alt+Space | Launcher |
-| Alt+Return / Alt+Shift+Return | Terminal / Helium |
+| Alt+Return / Alt+Shift+Return | Ghostty / Helium |
 | Alt+Q, Alt+F, Alt+Shift+F | Close, maximise, fullscreen |
 | Alt+arrows, Alt+Shift+arrows | Focus, move |
 | Alt+1…5, Alt+Shift+1…5 | Workspace, move to workspace |

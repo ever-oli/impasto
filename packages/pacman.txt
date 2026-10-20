@@ -35,7 +35,7 @@ wf-recorder                  # recording
 
 # ── THEMES ──────────────────────────────────────────────────────────────────
 swaybg                       # the wallpaper
-alacritty                    # themed by impasto-theme
+ghostty                      # the terminal, themed by impasto-theme
 fuzzel
 mako                         # themed; not run, the shell is the notification server
 helix

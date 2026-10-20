@@ -123,9 +123,9 @@ binds {
     Alt+Shift+W { spawn "impasto-theme" "next-wallpaper"; }
 
     // ── apps ──
-    Alt+Return { spawn "alacritty"; }
-    Mod+Return { spawn "alacritty"; }
-    Ctrl+Alt+T { spawn "alacritty"; }
+    Alt+Return { spawn "ghostty"; }
+    Mod+Return { spawn "ghostty"; }
+    Ctrl+Alt+T { spawn "ghostty"; }
     Alt+Shift+Return { spawn "helium-browser"; }
     Mod+Shift+Return { spawn "helium-browser"; }
 
