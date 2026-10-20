@@ -188,6 +188,123 @@ QtObject {
         history.launches = next
     }
 
+    // ── PALETTE PREFS ───────────────────────────────────────────────────────
+    //
+    // Pins, aliases, hidden rows, learned terms (typed query -> the row picked
+    // for it) and recent queries, keyed by `keyOf`. One small JSON file.
+    property var prefs: ({ pins: [], aliases: {}, hidden: [], learned: {}, recent: [] })
+
+    readonly property FileView prefsFile: FileView {
+        path: `${SettingsService.stateDirectory}/palette.json`
+        watchChanges: true
+        onFileChanged: reload()
+        onAdapterUpdated: writeAdapter()
+        onLoaded: root.prefs = Object.assign({ pins: [], aliases: {}, hidden: [], learned: {}, recent: [] }, prefsAdapter.prefs ?? {})
+        onLoadFailed: error => { if (error === FileViewError.FileNotFound) writeAdapter() }
+        JsonAdapter { id: prefsAdapter; property var prefs: ({}) }
+    }
+
+    function keyOf(e: var): string {
+        if (!e) return ""
+        if (e.key) return e.key
+        if (e.kind === "app") return `app:${e.id}`
+        if (e.kind === "menu" || e.kind === "command") return `cmd:${e.node?.path ?? ""}/${e.node?.name ?? e.name}`
+        return `${e.kind}:${e.id}`
+    }
+
+    function savePrefs(change: var): void {
+        const next = Object.assign({}, root.prefs, change)
+        root.prefs = next
+        prefsAdapter.prefs = next
+    }
+
+    function togglePin(e: var): void {
+        const k = root.keyOf(e), pins = root.prefs.pins.filter(p => p !== k)
+        root.savePrefs({ pins: pins.length === root.prefs.pins.length ? pins.concat([k]) : pins })
+    }
+    function hide(e: var): void { root.savePrefs({ hidden: root.prefs.hidden.concat([root.keyOf(e)]) }) }
+    function unhideAll(): void { root.savePrefs({ hidden: [] }) }
+    function setAlias(alias: string, e: var): void {
+        const a = Object.assign({}, root.prefs.aliases); a[alias.toLowerCase()] = root.keyOf(e)
+        root.savePrefs({ aliases: a })
+    }
+    function learn(term: string, e: var): void {
+        const t = term.trim().toLowerCase()
+        if (t === "" || !e) return
+        const l = Object.assign({}, root.prefs.learned); l[t] = root.keyOf(e)
+        root.savePrefs({ learned: l, recent: [term].concat(root.prefs.recent.filter(r => r !== term)).slice(0, 20) })
+        root.record(root.keyOf(e))
+    }
+
+    // Every pickable row at the root: apps and every palette leaf.
+    function catalogue(): var {
+        const rows = MenuService.leaves.map(MenuService.row).map(root.mark)
+        return rows.concat(root.applications)
+    }
+    function byKey(k: string): var {
+        return root.catalogue().find(e => root.keyOf(e) === k) ?? null
+    }
+
+    // ✓ on toggles that are on.
+    property bool nightOn: false
+    readonly property Process nightProbe: Process {
+        command: ["pgrep", "-x", "wlsunset"]
+        onExited: code => root.nightOn = code === 0
+    }
+    function mark(row: var): var {
+        const on = row.node?.on
+        if (!on) return row
+        const lit = on === "dnd" ? NotificationService.doNotDisturb
+            : on === "bar" ? !SettingsService.barHidden : root.nightOn
+        return lit ? Object.assign({}, row, { name: row.name + "  ✓" }) : row
+    }
+
+    // Pinned and learned rows to the front, hidden ones out, web rows when
+    // nothing else matched.
+    function arrange(list: var, term: string): var {
+        const hidden = root.prefs.hidden
+        let out = list.filter(e => hidden.indexOf(root.keyOf(e)) < 0)
+        const boost = e => {
+            const k = root.keyOf(e)
+            return (root.prefs.aliases[term] === k ? 2000 : 0) + (root.prefs.learned[term] === k ? 1000 : 0)
+                + (root.prefs.pins.indexOf(k) >= 0 ? 5 : 0) + (e.kind === "app" ? 0 : root.scoreOf(k))
+        }
+        for (const k of [root.prefs.aliases[term], root.prefs.learned[term]]) {
+            if (k && !out.some(e => root.keyOf(e) === k)) {
+                const e = root.byKey(k)
+                if (e && hidden.indexOf(k) < 0) out = [e].concat(out)
+            }
+        }
+        const front = out.filter(e => boost(e) >= 1).sort((a, b) => boost(b) - boost(a))
+        const rest = out.filter(e => boost(e) < 1)
+        out = front.concat(rest)
+        if (out.length === 0 && term !== "")
+            out = root.webRows(term)
+        return out
+    }
+
+    function webRows(term: string): var {
+        return [["DuckDuckGo", "https://duckduckgo.com/?q="], ["Google", "https://www.google.com/search?q="]]
+            .map(([n, u]) => ({ kind: "web", id: u + encodeURIComponent(term), icon: "󰖟",
+                                name: `Search ${n} for “${term}”`, subtitle: "Opens in Helium" }))
+    }
+
+    // ── ACTION PANEL (Ctrl+K) ───────────────────────────────────────────────
+    property var actionTarget: null
+    property var aliasTarget: null
+    signal pickRequested(int index)
+
+    function actionRows(e: var): var {
+        const pinned = root.prefs.pins.indexOf(root.keyOf(e)) >= 0
+        return [
+            { kind: "act", id: "open", icon: "󰐊", name: "Open", subtitle: e.name },
+            { kind: "act", id: "copy", icon: "󰆏", name: "Copy name", subtitle: "Ctrl+Enter does this from the list" },
+            { kind: "act", id: "pin", icon: "󰐃", name: pinned ? "Unpin" : "Pin to the top", subtitle: "Shown first on an empty search" },
+            { kind: "act", id: "alias", icon: "󰌌", name: "Set an alias…", subtitle: "Type a short word, then Enter" },
+            { kind: "act", id: "hide", icon: "󰈉", name: "Hide from search", subtitle: "Toggle › Show hidden commands brings it back" }
+        ]
+    }
+
     // ── FAVOURITES ──────────────────────────────────────────────────────────
     //
     // The dock's pinned apps, read from the settings rather than `DockService`
@@ -220,9 +337,18 @@ QtObject {
 
     function refresh(): void {
         root.applicationsProcess.running = true
+        root.nightProbe.running = true
     }
 
     function search(query: string): var {
+        if (root.actionTarget)
+            return root.actionRows(root.actionTarget)
+        if (root.aliasTarget) {
+            const a = (query ?? "").trim()
+            return [{ kind: "act", id: "alias-save", icon: "󰌌", alias: a,
+                      name: a ? `Alias “${a}” → ${root.aliasTarget.name}` : `Type an alias for ${root.aliasTarget.name}`,
+                      subtitle: "Enter saves, Esc cancels" }]
+        }
         const mode = root.modeFor(query)
         const raw = root.termFor(query)
         const term = raw.toLowerCase()
@@ -252,17 +378,20 @@ QtObject {
                       subtitle: "The assistant, with your screen as context" }
         const windowsFolder = { kind: "mode", id: "windows", icon: "󰖯", name: "Windows",
                                 subtitle: "Switch to an open window", sigil: SettingsService.launcherPrefix("windows") }
-        if (term === "")
-            return MenuService.tree.slice(0, 1).map(MenuService.row).concat([ask, windowsFolder],
-                MenuService.tree.slice(1).map(MenuService.row), root.rank(term))
+        if (term === "") {
+            const pins = root.prefs.pins.map(root.byKey).filter(e => e)
+                .map(e => Object.assign({}, e, { key: root.keyOf(e), subtitle: "󰐃 Pinned" + (e.subtitle ? "  ·  " + e.subtitle : "") }))
+            return pins.concat(MenuService.tree.slice(0, 1).map(MenuService.row).concat([ask, windowsFolder],
+                MenuService.tree.slice(1).map(MenuService.row), root.rank(term)))
+        }
         const top = root.calculate(raw).concat(root.quicklinkRows(raw))
         const extras = root.snippetRows(term).concat(root.windows(term).slice(0, 3))
-        const commands = MenuService.filter(MenuService.leaves, term).map(MenuService.row)
+        const commands = MenuService.filter(MenuService.leaves, term).map(MenuService.row).map(root.mark)
         const lead = commands.filter(c => c.name.toLowerCase().startsWith(term))
         const rest = commands.filter(c => !c.name.toLowerCase().startsWith(term))
         const asks = "ask".startsWith(term) ? [ask] : []
         const folders = root.fuzzyName(windowsFolder.name, term) ? [windowsFolder] : []
-        return top.concat(asks, lead, root.rank(term).slice(0, root.maxResults), extras, folders, rest)
+        return root.arrange(top.concat(asks, lead, root.rank(term).slice(0, root.maxResults), extras, folders, rest), term)
     }
 
     // All applications matching `term`, sorted by:
@@ -516,6 +645,8 @@ QtObject {
             FinderService.paste(entry.text)
         else if (entry.kind === "file")
             FinderService.open(entry.id)
+        else if (entry.kind === "web")
+            Quickshell.execDetached(["helium-browser", entry.id])
         // `panel` and `mode` entries are handled by the launcher panel: the
         // service does not know about the island, and a mode row keeps the
         // launcher open.

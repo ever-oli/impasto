@@ -1,0 +1,26 @@
+#!/bin/bash
+# impasto doctor — is everything the palette leans on in place?
+bad=0
+ok()   { printf '  \e[32m✓\e[0m %s\n' "$1"; }
+no()   { printf '  \e[31m✗\e[0m %s\n' "$1"; bad=$((bad+1)); }
+warn() { printf '  \e[33m!\e[0m %s\n' "$1"; }
+export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$HOME/.bun/bin:$HOME/.local/share/mise/shims:$PATH"
+cfg=${XDG_CONFIG_HOME:-$HOME/.config}
+echo "Hotkeys (niri)"
+kdl=$cfg/niri/config.kdl
+if [ -f "$kdl" ]; then
+    for want in "launcher:palette" "ask:assistant" "picker.{0,4}theme:theme picker" "windows:window switcher" "files:file search"; do
+        pat=${want%%:*}; label=${want#*:}
+        grep -Eq "impasto.*($pat)" "$kdl" && ok "$label bound" || no "$label not bound in $kdl"
+    done
+    command -v niri >/dev/null && { niri validate -c "$kdl" >/dev/null 2>&1 && ok "niri config valid" || no "niri validate fails"; }
+else no "no $kdl"; fi
+echo "Shell"
+pgrep -u "$(id -u)" -x qs >/dev/null || pgrep -u "$(id -u)" -x quickshell >/dev/null && ok "quickshell running" || no "quickshell not running"
+qs ipc call palette rows >/dev/null 2>&1 && ok "palette IPC answers" || warn "palette IPC did not answer (no session env?)"
+echo "Dependencies"
+for d in qs niri qalc fd opencode wl-copy grim slurp tesseract helium-browser gtk-launch fuzzel ghostty helix notify-send python3; do
+    command -v "$d" >/dev/null && ok "$d" || no "$d missing"
+done
+echo
+[ $bad -eq 0 ] && echo "All good." || { echo "$bad problem(s)."; exit 1; }

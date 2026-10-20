@@ -272,9 +272,28 @@ Scope {
         // Open at the root with `text` typed, e.g. `palette search "5 ft to cm"`.
         function search(text: string): string {
             MenuService.reset()
+            LauncherService.actionTarget = null
+            LauncherService.aliasTarget = null
             LauncherService.query = text
             root.island?.open("launcher")
             return root.ok({ query: text })
+        }
+
+        // Ctrl+K on row `index`, and picking a row, without a keyboard.
+        function actions(index: int): string {
+            const e = LauncherService.results[index]
+            if (!e || e.kind === "act") return root.fail("no such row")
+            LauncherService.actionTarget = e
+            return root.ok({ target: e.name })
+        }
+        // Text into the field as it stands (keeps an alias prompt open).
+        function type(text: string): string {
+            LauncherService.query = text
+            return root.ok({ query: text })
+        }
+        function pick(index: int): string {
+            LauncherService.pickRequested(index)
+            return root.ok()
         }
 
         // The rows the palette shows right now, for tests.

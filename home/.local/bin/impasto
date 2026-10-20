@@ -16,6 +16,7 @@
 #   impasto theme set <name> | get           (impasto-theme does the work)
 #   impasto say <text> [icon]                a line on the island
 #   impasto reload
+#   impasto doctor                         check binds, shell, dependencies
 set -euo pipefail
 
 call() { qs ipc call "$@"; }
@@ -54,5 +55,6 @@ case $verb in
         esac ;;
     say)          call osd say "${1:?say what}" "${2:-}" ;;
     reload)       call shell reload ;;
-    *)            sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    doctor)       exec "$HOME/.local/bin/impasto-doctor" ;;
+    *)            sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac

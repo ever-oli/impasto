@@ -65,6 +65,8 @@ ColumnLayout {
     // size the island for the last search and then resize it.
     Component.onDestruction: {
         LauncherService.query = ""
+        LauncherService.actionTarget = null
+        LauncherService.aliasTarget = null
         EmojiService.group = ""
         MenuService.reset()
     }
@@ -100,9 +102,58 @@ ColumnLayout {
     // Two kinds are not handed to the service. Panels and settings go up to
     // the island. A mode switches the field to that mode and keeps the
     // launcher open. Everything else the service runs, and the launcher closes.
+    property int historyAt: -1
+
+    function reset(): void {
+        LauncherService.query = ""
+        searchField.text = ""
+        resultList.currentIndex = 0
+        searchField.forceActiveFocus()
+    }
+
+    // Root-level picks teach the search (`LauncherService.learn`).
+    function remember(entry: var): void {
+        if (!MenuService.top && root.mode.id === "apps" && entry && entry.kind !== "act" && entry.kind !== "web")
+            LauncherService.learn(LauncherService.query, entry)
+    }
+
+    function act(entry: var): void {
+        const target = LauncherService.actionTarget
+        LauncherService.actionTarget = null
+        if (entry.id === "open")
+            return root.run(target)
+        if (entry.id === "copy") {
+            LauncherService.copy(target.name.replace(/  ✓$/, ""))
+            return root.closed()
+        }
+        if (entry.id === "pin")
+            LauncherService.togglePin(target)
+        else if (entry.id === "hide")
+            LauncherService.hide(target)
+        else if (entry.id === "alias")
+            LauncherService.aliasTarget = target
+        else if (entry.id === "alias-save") {
+            if (entry.alias)
+                LauncherService.setAlias(entry.alias, LauncherService.aliasTarget)
+            LauncherService.aliasTarget = null
+        }
+        root.reset()
+    }
+
+    function openActions(): void {
+        const entry = root.results[root.view.currentIndex]
+        if (!entry || entry.kind === "act")
+            return
+        LauncherService.actionTarget = entry
+        root.reset()
+    }
+
     function run(entry: var): void {
         if (!entry)
             return
+        if (entry.kind === "act")
+            return root.act(entry)
+        root.remember(entry)
         if (entry.kind === "panel") {
             if (entry.panel === "")
                 root.settingsRequested()
@@ -147,6 +198,12 @@ ColumnLayout {
             root.closed()
             return
         }
+        // Ctrl+Enter elsewhere: the secondary action, copy the name.
+        if (entry && entry.kind !== "act" && (modifiers & Qt.ControlModifier)) {
+            LauncherService.copy(entry.name.replace(/  ✓$/, ""))
+            root.closed()
+            return
+        }
         root.run(entry)
     }
 
@@ -159,6 +216,14 @@ ColumnLayout {
         const entry = root.results[root.view.currentIndex]
         if (entry)
             ClipboardService.forget(entry.id)
+    }
+
+    Connections {
+        target: LauncherService
+        function onPickRequested(index: int): void {
+            if (index === -1) root.openActions()
+            else root.run(root.results[index])
+        }
     }
 
     // ── FIELD ───────────────────────────────────────────────────────────────
@@ -203,10 +268,20 @@ ColumnLayout {
             selectionColor: Theme.accent
             selectedTextColor: Theme.accentText
 
-            onTextEdited: LauncherService.query = text
+            onTextEdited: { root.historyAt = -1; LauncherService.query = text }
             Keys.onReturnPressed: event => root.confirm(root.results[root.view.currentIndex], event.modifiers)
             Keys.onEnterPressed: event => root.confirm(root.results[root.view.currentIndex], event.modifiers)
-            Keys.onUpPressed: root.move(root.grid ? -LauncherService.emojiColumns : -1)
+            // ↑ on an empty root search walks back through past searches.
+            Keys.onUpPressed: {
+                const recent = LauncherService.prefs.recent ?? []
+                if (!root.grid && !MenuService.top && recent.length
+                        && (text === "" || root.historyAt >= 0) && root.historyAt < recent.length - 1) {
+                    root.historyAt++
+                    LauncherService.query = recent[root.historyAt]
+                    return
+                }
+                root.move(root.grid ? -LauncherService.emojiColumns : -1)
+            }
             Keys.onDownPressed: root.move(root.grid ? LauncherService.emojiColumns : 1)
             // In the grid the arrows move along a line; the field is a search
             // term, rarely edited in the middle.
@@ -242,6 +317,20 @@ ColumnLayout {
             // Escape steps out of a palette folder; at the top the island
             // closes the panel, as it does for every panel.
             Keys.onEscapePressed: event => {
+                if (LauncherService.actionTarget || LauncherService.aliasTarget) {
+                    LauncherService.actionTarget = null
+                    LauncherService.aliasTarget = null
+                    root.reset()
+                    event.accepted = true
+                    return
+                }
+                // Shift+Esc: straight back to the root.
+                if (event.modifiers & Qt.ShiftModifier) {
+                    MenuService.reset()
+                    root.reset()
+                    event.accepted = true
+                    return
+                }
                 event.accepted = MenuService.top !== null
                 if (event.accepted) {
                     MenuService.pop()
@@ -249,6 +338,17 @@ ColumnLayout {
                 }
             }
             Keys.onPressed: event => {
+                if (event.modifiers & Qt.ControlModifier) {
+                    const k = event.key
+                    if (k === Qt.Key_K) { root.openActions(); event.accepted = true; return }
+                    if (k === Qt.Key_N) { root.move(1); event.accepted = true; return }
+                    if (k === Qt.Key_P) { root.move(-1); event.accepted = true; return }
+                    if (k >= Qt.Key_1 && k <= Qt.Key_9) {
+                        root.run(root.results[k - Qt.Key_1])
+                        event.accepted = true
+                        return
+                    }
+                }
                 if (event.key === Qt.Key_Backspace && text === "" && MenuService.top) {
                     MenuService.pop()
                     event.accepted = true

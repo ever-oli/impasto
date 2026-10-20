@@ -56,10 +56,11 @@ Singleton {
               sh: 'c=$(hyprpicker -a -n) && notify-send "Colour copied" "$c"' }
         ] },
         { icon: "󰔡", name: "Toggle", subtitle: "Do not disturb, bar, night light", items: [
-            { icon: "󰂛", name: "Do not disturb", sh: "impasto focus toggle" },
-            { icon: "󰍜", name: "Show or hide the bar", fn: "bar" },
-            { icon: "󰖔", name: "Night light", subtitle: "Warm screen, 4000 K",
-              sh: "pkill -x wlsunset || setsid -f wlsunset -t 4000 -T 4001 -S 00:00 -s 00:01 -d 1" }
+            { icon: "󰂛", name: "Do not disturb", on: "dnd", sh: "impasto focus toggle" },
+            { icon: "󰍜", name: "Show or hide the bar", on: "bar", fn: "bar" },
+            { icon: "󰖔", name: "Night light", subtitle: "Warm screen, 4000 K", on: "night",
+              sh: "pkill -x wlsunset || setsid -f wlsunset -t 4000 -T 4001 -S 00:00 -s 00:01 -d 1" },
+            { icon: "󰈈", name: "Show hidden commands", subtitle: "Bring back everything hidden with Ctrl+K", fn: "unhide" }
         ] },
         { icon: "󰀠", name: "Reminders", subtitle: "Set, list, clear", items: [
             { icon: "󰀠", name: "Set a reminder", subtitle: "Type minutes then text: 10 stretch",
@@ -182,7 +183,7 @@ Singleton {
             for (const n of nodes) {
                 if (n.items)
                     walk(n.items, path.concat([n.name]))
-                out.push(Object.assign({}, n, { subtitle: path.length ? path.join(" › ") + (n.subtitle ? "  ·  " + n.subtitle : "") : n.subtitle }))
+                out.push(Object.assign({}, n, { path: path.join("/"), subtitle: path.length ? path.concat([n.name]).join(" › ") + (n.subtitle ? "  ·  " + n.subtitle : "") : n.subtitle }))
             }
         }
         walk(root.tree, [])
@@ -249,7 +250,9 @@ Singleton {
             root.pop()
             return "stay"
         }
-        if (node.fn === "bar")
+        if (node.fn === "unhide")
+            LauncherService.unhideAll()
+        else if (node.fn === "bar")
             SettingsService.set("barHidden", !SettingsService.barHidden)
         else if (node.panel)
             return node.panel
