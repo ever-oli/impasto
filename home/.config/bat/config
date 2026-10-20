@@ -1,0 +1,2 @@
+# bat follows the terminal palette, which notch-theme already sets in Ghostty
+--theme=ansi

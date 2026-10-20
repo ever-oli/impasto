@@ -17,7 +17,7 @@ switches from interleaving.
 Reads ~/.local/share/notch/themes/<name>/colors.toml; the shell (bar and
 notifications) watches ~/.local/state/notch/theme.json. Templates go to
 ghostty (USR2), helix theme "notch" (USR1), niri include, fuzzel, btop (USR2), fastfetch,
-fzf (sourced by .bashrc), gtk 3/4 css, qt6ct (if installed) and T3 Code;
+fzf (sourced by .bashrc), starship, lazygit (bat uses the ansi theme, so it follows Ghostty), gtk 3/4 css, qt6ct (if installed) and T3 Code;
 gsettings handles libadwaita light/dark and icons; Helium gets a Chromium
 color policy through the notch-browser-color helper.
 The wallpaper runs under swaybg as a user service so it survives this script.
@@ -196,6 +196,8 @@ TARGETS = {
     "gtk.css.tpl": [f"{CFG}/gtk-3.0/gtk.css", f"{CFG}/gtk-4.0/gtk.css"],
     "qt6ct.conf.tpl": f"{CFG}/qt6ct/colors/notch.conf",
     "t3code.json.tpl": f"{HOME}/.t3/userdata/themes/notch.json",
+    "starship.toml.tpl": f"{CFG}/starship.toml",
+    "lazygit.yml.tpl": f"{CFG}/lazygit/config.yml",
 }
 
 

@@ -40,3 +40,19 @@ ghostty                      # the terminal, themed by notch-theme
 fuzzel
 mako                         # themed; not run, the shell is the notification server
 helix
+eza
+zoxide
+bat
+ripgrep
+starship
+atuin
+bash-preexec
+lazygit
+yazi
+tmux
+imv
+mpv
+papers
+obsidian
+signal-desktop
+pacman-contrib
