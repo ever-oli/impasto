@@ -80,6 +80,7 @@ def shell(c, name):
 
 def ghostty(c):
     lines = ["# written by impasto-theme",
+             "font-family = AnnotationM Nerd Font Mono",
              f"background = {c['background']}",
              f"foreground = {c['foreground']}",
              f"cursor-color = {c['accent']}",
@@ -182,14 +183,14 @@ progress-color=over {c['selection_background']}
 border-size=2
 border-radius=10
 default-timeout=5000
-font=Inter 11
+font=AnnotationM Nerd Font 11
 """
 
 
 def fuzzel(c):
     return f"""# written by impasto-theme
 [main]
-font=Inter:size=12
+font=AnnotationM Nerd Font:size=12
 terminal=ghostty -e
 [colors]
 background={h(c['background'])}f2

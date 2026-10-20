@@ -32,7 +32,7 @@ Card {
 
             Text {
                 text: "Notifications"
-                font.family: Theme.fontFamily
+                font.family: Theme.fontBar
                 font.pixelSize: Theme.fontSizeMedium
                 font.weight: Font.DemiBold
                 color: Theme.text
@@ -49,7 +49,7 @@ Card {
                     id: count
                     anchors.centerIn: parent
                     text: NotificationService.history.length
-                    font.family: Theme.fontFamily
+                    font.family: Theme.fontBar
                     font.pixelSize: Theme.fontSizeLabel
                     font.weight: Font.DemiBold
                     color: Theme.textMuted
@@ -61,7 +61,7 @@ Card {
             Text {
                 visible: NotificationService.history.length > 0
                 text: "Clear"
-                font.family: Theme.fontFamily
+                font.family: Theme.fontBar
                 font.pixelSize: Theme.fontSizeSmall
                 color: clearMouse.containsMouse ? Theme.accent : Theme.textMuted
 
@@ -85,7 +85,7 @@ Card {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             text: "Nothing new"
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.textMuted
         }
@@ -175,7 +175,7 @@ Card {
                             Layout.fillWidth: true
                             text: entry.modelData.summary
                             elide: Text.ElideRight
-                            font.family: Theme.fontFamily
+                            font.family: Theme.fontBar
                             font.pixelSize: Theme.fontSizeSmall
                             font.weight: Font.DemiBold
                             color: Theme.text
@@ -188,7 +188,7 @@ Card {
                             textFormat: Text.StyledText
                             elide: Text.ElideRight
                             maximumLineCount: 1
-                            font.family: Theme.fontFamily
+                            font.family: Theme.fontBar
                             font.pixelSize: Theme.fontSizeLabel
                             color: Theme.textMuted
                         }
@@ -197,7 +197,7 @@ Card {
                             Layout.fillWidth: true
                             text: entry.modelData.appName
                             elide: Text.ElideRight
-                            font.family: Theme.fontFamily
+                            font.family: Theme.fontBar
                             font.pixelSize: 9
                             color: Theme.textMuted
                             opacity: 0.7

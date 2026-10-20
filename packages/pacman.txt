@@ -21,6 +21,7 @@ inter-font                   # the shell's type
 ttf-jetbrains-mono-nerd      # every glyph on the bar
 noto-fonts
 noto-fonts-emoji
+noto-fonts-cjk                # CJK fallback behind AnnotationMono
 papirus-icon-theme           # application icons in the launcher
 unicode-emoji                # the launcher's emoji mode
 unicode-cldr-annotations

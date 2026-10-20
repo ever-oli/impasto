@@ -83,7 +83,7 @@ Item {
 
             Text {
                 text: Tr.t("Authentication required")
-                font.family: Theme.fontFamily
+                font.family: Theme.fontBar
                 font.pixelSize: Theme.fontSizeLarge
                 font.weight: Font.Bold
                 color: Theme.text
@@ -95,7 +95,7 @@ Item {
                 wrapMode: Text.WordWrap
                 maximumLineCount: 2
                 elide: Text.ElideRight
-                font.family: Theme.fontFamily
+                font.family: Theme.fontBar
                 font.pixelSize: Theme.fontSizeRegular
                 color: Theme.textMuted
             }
@@ -171,7 +171,7 @@ Item {
             passwordCharacter: "●"
             passwordMaskDelay: 0
             enabled: !root.waiting
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: Theme.fontSizeSmall
             font.letterSpacing: echoMode === TextInput.Password ? 3 : 0
             color: Theme.text
@@ -194,7 +194,7 @@ Item {
                     : root.flow?.supplementaryIsError && root.flow?.supplementaryMessage
                         ? root.flow.supplementaryMessage
                     : (root.flow?.inputPrompt ?? "").replace(/:\s*$/, "") || Tr.t("Password")
-                font.family: Theme.fontFamily
+                font.family: Theme.fontBar
                 font.pixelSize: Theme.fontSizeRegular
                 color: PolkitService.failed || root.flow?.supplementaryIsError
                     ? Theme.indicatorBad : Theme.textMuted
@@ -242,7 +242,7 @@ Item {
         // for a refused password.
         text: root.capsLock ? `󰪛  ${Tr.t("Caps Lock is on")}` : (root.flow?.actionId ?? "")
         elide: Text.ElideMiddle
-        font.family: root.capsLock ? Theme.fontFamily : Theme.fontMono
+        font.family: root.capsLock ? Theme.fontBar : Theme.fontMono
         font.pixelSize: Theme.fontSizeSmall
         font.weight: root.capsLock ? Font.DemiBold : Font.Normal
         color: root.capsLock ? Theme.indicatorWarn : Theme.textMuted

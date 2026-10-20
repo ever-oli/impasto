@@ -515,6 +515,8 @@ QtObject {
 
     readonly property string fontFamily: root.fontOf(SettingsService.fontFamily)
     readonly property string fontMono: root.fontOf(SettingsService.fontMono)
+    // The bar and the notch: Tinos. Glyphs keep coming from fontMono.
+    readonly property string fontBar: root.fontOf(SettingsService.fontBar)
 
     // Type drawn very large: Inter's display cut, tighter and finer at that
     // size, when the family is Inter; any other family as it is.

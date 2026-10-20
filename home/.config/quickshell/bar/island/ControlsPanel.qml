@@ -104,7 +104,7 @@ ColumnLayout {
             anchors.centerIn: parent
             visible: root.editing && !ControlsService.hasTop
             text: Tr.t("The top row: click to choose its buttons")
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.textMuted
         }

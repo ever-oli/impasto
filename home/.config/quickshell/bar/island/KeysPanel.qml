@@ -59,7 +59,7 @@ ColumnLayout {
             // An arrow is a glyph from the icon font, which only the mono
             // face carries; everything else is a word or a letter.
             readonly property bool glyph: parent.label.codePointAt(0) >= 0xE000
-            font.family: capText.glyph ? Theme.fontMono : Theme.fontFamily
+            font.family: capText.glyph ? Theme.fontMono : Theme.fontBar
             font.pixelSize: capText.glyph ? Theme.fontSizeRegular : Theme.fontSizeSmall
             font.weight: Font.DemiBold
             color: Theme.text
@@ -84,7 +84,7 @@ ColumnLayout {
             id: field
 
             Layout.fillWidth: true
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: 16
             color: Theme.text
             clip: true
@@ -115,7 +115,7 @@ ColumnLayout {
         Text {
             text: field.text === "" ? `${ShortcutService.sheetCount} keys`
                 : `${root.shown} of ${ShortcutService.sheetCount}`
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.textMuted
         }
@@ -137,7 +137,7 @@ ColumnLayout {
             anchors.centerIn: parent
             visible: root.entries.length === 0
             text: NiriService.binds.length === 0 ? "Reading the keys…" : "No key does that."
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: Theme.fontSizeRegular
             color: Theme.textMuted
         }
@@ -178,7 +178,7 @@ ColumnLayout {
                             anchors.bottom: parent.bottom
                             anchors.bottomMargin: 6
                             text: entry.modelData.heading ? entry.modelData.name.toUpperCase() : ""
-                            font.family: Theme.fontFamily
+                            font.family: Theme.fontBar
                             font.pixelSize: Theme.fontSizeLabel
                             font.weight: Font.DemiBold
                             font.letterSpacing: 0.8
@@ -205,7 +205,7 @@ ColumnLayout {
                                     Layout.fillWidth: true
                                     text: entry.modelData.action ?? ""
                                     elide: Text.ElideRight
-                                    font.family: Theme.fontFamily
+                                    font.family: Theme.fontBar
                                     font.pixelSize: Theme.fontSizeRegular
                                     color: Theme.text
                                 }

@@ -113,6 +113,7 @@ Singleton {
     readonly property alias greeting: config.greeting
     readonly property alias fontFamily: config.fontFamily
     readonly property alias fontMono: config.fontMono
+    readonly property alias fontBar: config.fontBar
     readonly property alias notificationTimeout: config.notificationTimeout
     readonly property alias compositor: config.compositor
     readonly property alias keyboard: config.keyboard
@@ -677,8 +678,9 @@ Singleton {
         // after every reload; `animations.lua` deliberately has no preset.
         property string animationPreset: "macos"
 
-        property string fontFamily: "Inter, Cantarell, SF Pro Text, sans-serif"
-        property string fontMono: "JetBrainsMono Nerd Font Mono, monospace"
+        property string fontFamily: "AnnotationM Nerd Font, Inter, sans-serif"
+        property string fontMono: "AnnotationM Nerd Font Mono, JetBrainsMono Nerd Font Mono, monospace"
+        property string fontBar: "Tinos Nerd Font, AnnotationM Nerd Font, serif"
 
         property int notificationTimeout: 5000
 

@@ -35,7 +35,7 @@ Rectangle {
         width: parent.width - 64
         elide: Text.ElideRight
         text: root.text
-        font.family: Theme.fontFamily
+        font.family: Theme.fontBar
         font.pixelSize: Theme.fontSizeRegular - 1
         color: Theme.text
     }

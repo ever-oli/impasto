@@ -174,7 +174,7 @@ Item {
                             Layout.maximumWidth: 150
                             text: entry.modelData.summary
                             elide: Text.ElideRight
-                            font.family: Theme.fontFamily
+                            font.family: Theme.fontBar
                             font.pixelSize: Theme.fontSizeSmall
                             font.weight: Font.DemiBold
                             color: Theme.text
@@ -186,7 +186,7 @@ Item {
                             textFormat: Text.StyledText
                             elide: Text.ElideRight
                             maximumLineCount: 1
-                            font.family: Theme.fontFamily
+                            font.family: Theme.fontBar
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.textMuted
                         }
@@ -198,7 +198,7 @@ Item {
                             visible: !hover.hovered
                             text: entry.modelData.appName
                             elide: Text.ElideRight
-                            font.family: Theme.fontFamily
+                            font.family: Theme.fontBar
                             font.pixelSize: Theme.fontSizeLabel
                             color: Theme.textMuted
                         }

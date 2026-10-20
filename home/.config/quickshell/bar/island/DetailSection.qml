@@ -27,7 +27,7 @@ ColumnLayout {
         Layout.preferredHeight: Theme.detailTitle
         verticalAlignment: Text.AlignVCenter
         text: root.title
-        font.family: Theme.fontFamily
+        font.family: Theme.fontBar
         font.pixelSize: Theme.fontSizeLabel
         font.weight: Font.DemiBold
         font.capitalization: Font.AllUppercase

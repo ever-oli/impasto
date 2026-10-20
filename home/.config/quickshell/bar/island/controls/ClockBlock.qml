@@ -51,7 +51,7 @@ Card {
             horizontalAlignment: Text.AlignHCenter
             fontSizeMode: Text.HorizontalFit
             minimumPixelSize: Theme.fontSizeLarge
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: root.timeSize
             font.weight: Font.DemiBold
             color: Theme.text
@@ -62,7 +62,7 @@ Card {
             text: Qt.formatDateTime(clock.date, root.wide || root.tall ? "dddd d MMMM" : "ddd d MMM")
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: root.tall ? Theme.fontSizeMedium : Theme.fontSizeSmall
             color: Theme.textMuted
         }

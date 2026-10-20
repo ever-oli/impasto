@@ -64,7 +64,7 @@ Item {
                 Text {
                     Layout.fillWidth: true
                     text: "Wi-Fi"
-                    font.family: Theme.fontFamily
+                    font.family: Theme.fontBar
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textMuted
                 }

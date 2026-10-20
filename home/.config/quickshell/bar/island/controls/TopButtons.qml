@@ -81,7 +81,7 @@ RowLayout {
                     id: label
                     visible: button.isArmed
                     text: Tr.t(button.modelData.label)
-                    font.family: Theme.fontFamily
+                    font.family: Theme.fontBar
                     font.pixelSize: Theme.fontSizeSmall
                     font.weight: Font.DemiBold
                     color: Theme.accentText

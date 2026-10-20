@@ -82,7 +82,7 @@ ColumnLayout {
                 Layout.fillWidth: true
                 text: "Bluetooth"
                 elide: Text.ElideRight
-                font.family: Theme.fontFamily
+                font.family: Theme.fontBar
                 font.pixelSize: Theme.fontSizeMedium
                 font.weight: Font.DemiBold
                 color: Theme.text
@@ -94,7 +94,7 @@ ColumnLayout {
                     ? (BluetoothService.discovering ? "Looking for devices…" : BluetoothService.summary)
                     : "Adapter off"
                 elide: Text.ElideRight
-                font.family: Theme.fontFamily
+                font.family: Theme.fontBar
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.textMuted
             }
@@ -116,7 +116,7 @@ ColumnLayout {
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         text: BluetoothService.enabled ? "Nothing found yet" : "Turn Bluetooth on to see devices"
-        font.family: Theme.fontFamily
+        font.family: Theme.fontBar
         font.pixelSize: Theme.fontSizeSmall
         color: Theme.textMuted
     }
@@ -172,7 +172,7 @@ ColumnLayout {
                         text: BluetoothService.isNamed(entry.modelData)
                             ? entry.modelData.name : entry.modelData.address
                         elide: Text.ElideRight
-                        font.family: Theme.fontFamily
+                        font.family: Theme.fontBar
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: entry.modelData.connected ? Font.DemiBold : Font.Normal
                         color: entry.modelData.connected ? Theme.accent : Theme.text
@@ -190,7 +190,7 @@ ColumnLayout {
                             return bits.join(" · ")
                         }
                         elide: Text.ElideRight
-                        font.family: Theme.fontFamily
+                        font.family: Theme.fontBar
                         font.pixelSize: 9
                         color: Theme.textMuted
                     }
@@ -238,7 +238,7 @@ ColumnLayout {
                 text: BluetoothService.unnamedCount === 1
                     ? "1 unnamed device nearby"
                     : `${BluetoothService.unnamedCount} unnamed devices nearby`
-                font.family: Theme.fontFamily
+                font.family: Theme.fontBar
                 font.pixelSize: Theme.fontSizeLabel
                 color: unnamedMouse.containsMouse ? Theme.text : Theme.textMuted
             }

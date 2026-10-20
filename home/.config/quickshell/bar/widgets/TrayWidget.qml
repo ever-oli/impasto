@@ -132,7 +132,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 text: root.unfolded ? "󰅁" : `+${root.items.length - root.fold + 1}`
-                font.family: root.unfolded ? Theme.fontMono : Theme.fontFamily
+                font.family: root.unfolded ? Theme.fontMono : Theme.fontBar
                 font.pixelSize: Theme.fontSizeLabel
                 font.weight: Font.DemiBold
                 color: Theme.textMuted

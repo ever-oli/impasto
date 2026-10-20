@@ -28,7 +28,9 @@ Item {
         anchors.fill: parent
         title: "T3 Code Nightly"
         subtitle: T3Service.running ? "web service running"
-            : T3Service.service === "unknown" ? "checking…" : `web service ${T3Service.service}`
+            : T3Service.service === "unknown" ? "checking…"
+            : T3Service.service === "paused" ? "paused (desktop app open)"
+            : `web service ${T3Service.service}`
         figure: T3Service.updateAvailable ? "update" : (T3Service.installed ? "latest" : "")
         figureColor: T3Service.updateAvailable ? Theme.indicatorWarn : Theme.textMuted
 

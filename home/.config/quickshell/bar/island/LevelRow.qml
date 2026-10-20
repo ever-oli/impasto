@@ -81,7 +81,7 @@ Item {
         width: Theme.detailLabel - mark.width - 10
         elide: Text.ElideRight
         text: root.name
-        font.family: Theme.fontFamily
+        font.family: Theme.fontBar
         font.pixelSize: Theme.fontSizeRegular - 1
         color: root.dimmed ? Theme.textMuted : Theme.text
     }

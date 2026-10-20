@@ -44,7 +44,32 @@ def installed_version():
 def service_state():
     out = subprocess.run(["systemctl", "--user", "is-active", SERVICE],
                          capture_output=True, text=True).stdout.strip()
-    return out or "unknown"
+    out = out or "unknown"
+    # The desktop app runs its own server on the same port, so the web
+    # service stepping aside for it is a pause, not a failure.
+    if out != "active" and (desktop_running() or already_running()):
+        return "paused"
+    return out
+
+
+def desktop_running():
+    # The desktop app's main process is the bare binary; its helpers carry
+    # --type=..., and the CLI server runs through /usr/local/bin/t3.
+    found = subprocess.run(["pgrep", "-u", str(os.getuid()), "-fx", r".*/t3code(-nightly)?/t3code"],
+                           capture_output=True, text=True)
+    return found.returncode == 0
+
+
+def already_running():
+    for cmd in (["journalctl", "--user", "-u", SERVICE, "-n", "40", "--no-pager", "-o", "cat"],
+                ["systemctl", "--user", "status", SERVICE, "-n", "40", "--no-pager"]):
+        try:
+            text = subprocess.run(cmd, capture_output=True, text=True, timeout=5).stdout
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+        if "ServerAlreadyRunning" in text:
+            return True
+    return False
 
 
 def latest(refresh=False):

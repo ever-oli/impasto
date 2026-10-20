@@ -114,7 +114,7 @@ FocusScope {
                 text: root.nested
                     ? TrayService.stack[TrayService.stack.length - 1]
                     : (root.item ? (root.item.tooltipTitle || root.item.title || root.item.id) : "")
-                font.family: Theme.fontFamily
+                font.family: Theme.fontBar
                 font.pixelSize: Theme.fontSizeRegular
                 font.weight: Font.DemiBold
                 color: Theme.text
@@ -196,7 +196,7 @@ FocusScope {
                 // As sent: a mnemonic underscore and one in a network's name
                 // arrive alike, and a name is worse to lose.
                 text: row.modelData.text
-                font.family: Theme.fontFamily
+                font.family: Theme.fontBar
                 font.pixelSize: Theme.fontSizeRegular
                 color: row.modelData.enabled ? Theme.text : Theme.textMuted
             }

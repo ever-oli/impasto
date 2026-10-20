@@ -131,7 +131,7 @@ FocusScope {
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: tile.isArmed ? "Confirm" : tile.modelData.label
-                            font.family: Theme.fontFamily
+                            font.family: Theme.fontBar
                             font.pixelSize: Theme.fontSizeSmall
                             font.weight: tile.isSelected ? Font.DemiBold : Font.Normal
                             color: tile.isArmed ? Theme.accentText : Theme.textMuted

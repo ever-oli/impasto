@@ -38,7 +38,7 @@ RowLayout {
 
         Text {
             text: root.title
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: Theme.fontSizeMedium
             font.weight: Font.DemiBold
             color: Theme.text
@@ -47,7 +47,7 @@ RowLayout {
         Text {
             visible: text !== ""
             text: root.detail
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: Theme.fontSizeLabel
             color: Theme.textMuted
         }

@@ -243,7 +243,7 @@ Rectangle {
                     anchors.centerIn: parent
                     text: root.written ? root.glyphOf(root.preview ? slot.workspaceId
                         : NiriService.numberOn(slot.workspaceId, root.screenName)) : ""
-                    font.family: Theme.fontFamily
+                    font.family: Theme.fontBar
                     font.pixelSize: Theme.fontSizeSmall
                     font.weight: Font.DemiBold
                     font.features: { "tnum": 1 }

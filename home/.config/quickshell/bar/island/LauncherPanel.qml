@@ -165,7 +165,7 @@ ColumnLayout {
 
             Layout.fillWidth: true
             text: LauncherService.query
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: 16
             color: Theme.text
             clip: true
@@ -238,7 +238,7 @@ ColumnLayout {
         Text {
             visible: root.mode.id === "emoji"
             text: EmojiService.toneMarks[EmojiService.tone]
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: 18
 
             MouseArea {
@@ -280,7 +280,7 @@ ColumnLayout {
                 Text {
                     anchors.centerIn: parent
                     text: chip.modelData.mark
-                    font.family: Theme.fontFamily
+                    font.family: Theme.fontBar
                     font.pixelSize: 16
                     opacity: chip.chosen ? 1 : 0.6
                 }
@@ -313,7 +313,7 @@ ColumnLayout {
         Layout.fillWidth: true
         visible: root.results.length === 0 && LauncherService.query !== ""
         text: root.mode.empty
-        font.family: Theme.fontFamily
+        font.family: Theme.fontBar
         font.pixelSize: Theme.fontSizeSmall
         color: Theme.textMuted
     }
@@ -359,7 +359,7 @@ ColumnLayout {
             Text {
                 anchors.centerIn: parent
                 text: cell.modelData.glyph ?? ""
-                font.family: Theme.fontFamily
+                font.family: Theme.fontBar
                 font.pixelSize: 28
             }
 
@@ -475,7 +475,7 @@ ColumnLayout {
                         anchors.centerIn: parent
                         visible: badge.glyph !== ""
                         text: badge.glyph
-                        font.family: Theme.fontFamily
+                        font.family: Theme.fontBar
                         font.pixelSize: 22
                     }
 
@@ -504,7 +504,7 @@ ColumnLayout {
                         text: row.modelData.name
                         elide: Text.ElideRight
                         font.family: row.modelData.kind === "calculation"
-                            ? Theme.fontMono : Theme.fontFamily
+                            ? Theme.fontMono : Theme.fontBar
                         font.pixelSize: Theme.fontSizeRegular
                         font.weight: row.modelData.kind === "calculation"
                             ? Font.DemiBold : Font.Normal
@@ -516,7 +516,7 @@ ColumnLayout {
                         text: row.modelData.subtitle
                         visible: row.modelData.subtitle !== ""
                         elide: Text.ElideRight
-                        font.family: Theme.fontFamily
+                        font.family: Theme.fontBar
                         font.pixelSize: Theme.fontSizeLabel
                         color: Theme.textMuted
                     }

@@ -166,7 +166,7 @@ Item {
                     width: parent.width - (meta.visible ? meta.implicitWidth + 10 : 0)
                     text: root.notification ? root.notification.summary : ""
                     elide: Text.ElideRight
-                    font.family: Theme.fontFamily
+                    font.family: Theme.fontBar
                     font.pixelSize: Theme.fontSizeMedium
                     font.weight: Font.DemiBold
                     color: Theme.text
@@ -182,7 +182,7 @@ Item {
                     visible: !actions.visible
                     text: [root.notification ? root.notification.appName : "", Tr.t("now")]
                         .filter(part => part !== "").join("  ·  ")
-                    font.family: Theme.fontFamily
+                    font.family: Theme.fontBar
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textMuted
                 }
@@ -198,7 +198,7 @@ Item {
                 wrapMode: Text.Wrap
                 elide: Text.ElideRight
                 maximumLineCount: 2
-                font.family: Theme.fontFamily
+                font.family: Theme.fontBar
                 font.pixelSize: Theme.fontSizeRegular
                 color: Theme.textMuted
             }
@@ -237,7 +237,7 @@ Item {
 
                         anchors.centerIn: parent
                         text: button.modelData.text
-                        font.family: Theme.fontFamily
+                        font.family: Theme.fontBar
                         font.pixelSize: Theme.fontSizeSmall + 1
                         font.weight: Font.Medium
                         color: button.first ? Theme.accentText : Theme.text
@@ -304,7 +304,7 @@ Item {
                         horizontalAlignment: Text.AlignHCenter
                         elide: Text.ElideRight
                         text: cell.modelData.text
-                        font.family: Theme.fontFamily
+                        font.family: Theme.fontBar
                         font.pixelSize: Theme.fontSizeSmall + 1
                         font.weight: Font.Medium
                         color: cell.index === 0 ? Theme.accent

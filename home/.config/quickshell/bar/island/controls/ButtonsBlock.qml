@@ -123,7 +123,7 @@ Item {
                         id: tip
                         anchors.centerIn: parent
                         text: round.isArmed ? `${round.modelData.label}?` : round.modelData.label
-                        font.family: Theme.fontFamily
+                        font.family: Theme.fontBar
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: Font.DemiBold
                         color: round.isArmed ? Theme.accentText : Theme.text

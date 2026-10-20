@@ -51,7 +51,7 @@ Item {
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     text: Qt.formatDateTime(clock.date, root.format)
-                    font.family: Theme.fontFamily
+                    font.family: Theme.fontBar
                     font.pixelSize: Theme.fontSizeRegular
                     font.weight: Font.DemiBold
                     color: Theme.text
@@ -61,7 +61,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     visible: SettingsService.clockShowsDate
                     text: Qt.formatDateTime(clock.date, "ddd d MMM")
-                    font.family: Theme.fontFamily
+                    font.family: Theme.fontBar
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textMuted
                 }

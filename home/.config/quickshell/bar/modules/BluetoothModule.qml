@@ -68,7 +68,7 @@ Item {
                 Text {
                     Layout.fillWidth: true
                     text: "Bluetooth"
-                    font.family: Theme.fontFamily
+                    font.family: Theme.fontBar
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.textMuted
                 }

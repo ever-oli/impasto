@@ -69,7 +69,7 @@ Item {
             width: Math.max(34, implicitWidth)
             horizontalAlignment: Text.AlignRight
             text: root.label
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: Theme.fontSizeSmall
             font.weight: Font.DemiBold
             color: Theme.text

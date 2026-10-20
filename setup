@@ -6,6 +6,7 @@
 #
 #   ./setup                 packages, then files, then the theme
 #   ./setup packages        pacman -S --needed everything in packages/pacman.txt
+#   ./setup fonts           AnnotationMono and Tinos Nerd Fonts into ~/.local/share/fonts
 #   ./setup files           copy home/ into ~, backing up what it replaces
 #   ./setup theme [name]    impasto-theme set (default e-ink)
 #   ./setup uninstall       remove what `files` installed (backups are kept)
@@ -28,6 +29,23 @@ packages() {
     if ((${#missing[@]} == 0)); then say "packages: all present"; return; fi
     say "packages: installing ${missing[*]}"
     sudo pacman -S --needed --noconfirm "${missing[@]}"
+}
+
+# Nerd Fonts from the latest ryanoasis/nerd-fonts release: AnnotationMono is
+# the font everywhere, Tinos is the bar's.
+NERD_FONTS=(AnnotationMono Tinos)
+fonts() {
+    local dir="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/nerd" tmp
+    tmp=$(mktemp -d)
+    for f in "${NERD_FONTS[@]}"; do
+        if [ -d "$dir/$f" ]; then say "fonts: $f present"; continue; fi
+        curl -fsSL -o "$tmp/$f.zip" "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$f.zip"
+        mkdir -p "$dir/$f"
+        python3 -m zipfile -e "$tmp/$f.zip" "$dir/$f"
+        say "fonts: $f installed"
+    done
+    rm -rf "$tmp"
+    fc-cache -f "$dir" >/dev/null
 }
 
 files() {
@@ -68,11 +86,12 @@ uninstall() {
 }
 
 case ${1:-all} in
-    all)       packages; files; theme "${2:-}"
+    all)       packages; fonts; files; theme "${2:-}"
                say "start the shell: niri msg action spawn -- qs -n  (the niri config spawns it at login)" ;;
     packages)  packages ;;
+    fonts)     fonts ;;
     files)     files ;;
     theme)     theme "${2:-}" ;;
     uninstall) uninstall ;;
-    *)         sed -n '7,13p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    *)         sed -n '7,14p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac

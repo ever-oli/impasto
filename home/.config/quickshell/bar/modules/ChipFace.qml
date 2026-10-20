@@ -127,7 +127,7 @@ Item {
             horizontalAlignment: Text.AlignLeft
             elide: Text.ElideRight
             text: root.value
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: Theme.fontSizeSmall
             font.weight: Font.DemiBold
             font.features: { "tnum": 1 }

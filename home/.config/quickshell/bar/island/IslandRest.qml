@@ -81,7 +81,7 @@ Item {
         Text {
             anchors.centerIn: parent
             text: `+${ModuleService.overflow}`
-            font.family: Theme.fontFamily
+            font.family: Theme.fontBar
             font.pixelSize: Theme.fontSizeLabel
             font.weight: Font.DemiBold
             color: Theme.textMuted
@@ -275,7 +275,7 @@ Item {
                     width: shown.width
                     text: shown.leaving
                     elide: Text.ElideRight
-                    font.family: Theme.fontFamily
+                    font.family: Theme.fontBar
                     font.pixelSize: Theme.fontSizeRegular
                     font.weight: Font.DemiBold
                     color: Theme.textMuted
@@ -288,7 +288,7 @@ Item {
                     width: shown.width
                     text: shown.label
                     elide: Text.ElideRight
-                    font.family: Theme.fontFamily
+                    font.family: Theme.fontBar
                     font.pixelSize: Theme.fontSizeRegular
                     font.weight: Font.DemiBold
                     color: Theme.textMuted
