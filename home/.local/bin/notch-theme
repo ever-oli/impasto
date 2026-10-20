@@ -124,6 +124,13 @@ def pairs(c):
         out += [("bar", f"{fg} on {g}", bar[fg], colour, 4.5) for g, colour in isl]
     out += [("bar", "workspace dim dot on island", bar["indicatorDim"], bar["island"], 3),
             ("bar", "accentText on accent", bar["accentText"], bar["accent"], 4.5)]
+    # The orb: labels on the wheel and its hub, the chosen slot's accent icon
+    # and ring on the selected row, idle icons and hint on the island.
+    out += [("orb", "label on wheel", bar["text"], bar["island"], 4.5),
+            ("orb", "label on hub", bar["text"], bar["islandSurface"], 4.5),
+            ("orb", "hint on wheel", bar["textMuted"], bar["island"], 4.5),
+            ("orb", "chosen icon on selected slot", bar["accent"], bar["islandSurfaceHover"], 3),
+            ("orb", "chosen label on selected slot", bar["text"], bar["islandSurfaceHover"], 4.5)]
     for i in list(range(1, 16)):
         out.append(("ghostty", f"color{i} on background", c[f"color{i}"], bg, 4.5))
     out += [("ghostty", "foreground on background", c["foreground"], bg, 4.5),

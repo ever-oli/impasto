@@ -17,6 +17,7 @@ import Quickshell
 
 import "./bar"
 import "./capture"
+import "./orb"
 import "./services"
 
 // The bar (with its island: launcher, control centre, notifications, OSD,
@@ -128,4 +129,7 @@ ShellRoot {
     Commands {
         island: root.island
     }
+
+    // The radial menu (Super+Alt+O, `qs ipc call orb toggle`).
+    Orb {}
 }

@@ -18,6 +18,10 @@ else no "no $kdl"; fi
 echo "Shell"
 pgrep -u "$(id -u)" -x qs >/dev/null || pgrep -u "$(id -u)" -x quickshell >/dev/null && ok "quickshell running" || no "quickshell not running"
 qs ipc call palette rows >/dev/null 2>&1 && ok "palette IPC answers" || warn "palette IPC did not answer (no session env?)"
+echo "Orb"
+[ -f "$cfg/quickshell/orb/Orb.qml" ] && ok "orb installed" || no "orb missing from $cfg/quickshell/orb"
+grep -q '"orb" "toggle"' "$kdl" 2>/dev/null && ok "orb bound ($(grep '"orb" "toggle"' "$kdl" | awk '{print $1}' | head -1))" || no "orb not bound in $kdl"
+qs ipc call orb status 2>/dev/null | grep -q '"opened"' && ok "orb IPC answers" || warn "orb IPC did not answer (no session env?)"
 echo "Text size"
 fsz=$(cat "$cfg/notch/font-size" 2>/dev/null || echo 11)
 case $fsz in ''|*[!0-9]*) no "font-size is not a number: $fsz";; *) [ "$fsz" -ge 6 ] && [ "$fsz" -le 32 ] && ok "text size $fsz" || no "text size $fsz out of 6-32";; esac
