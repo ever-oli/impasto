@@ -208,7 +208,7 @@ FocusScope {
                 visible: row.modelData.hasChildren || (row.checkable && row.checked)
                 text: row.modelData.hasChildren ? "󰅂" : "󰄬"
                 font.family: Theme.fontMono
-                font.pixelSize: 14
+                font.pixelSize: Theme.fs(14)
                 color: row.modelData.hasChildren ? Theme.textMuted : Theme.accent
             }
 

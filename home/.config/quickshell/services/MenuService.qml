@@ -85,6 +85,9 @@ Singleton {
             { icon: "󰛖", name: "Font", subtitle: "Terminal", itemIcon: "󰛖",
               source: "fc-list : family | grep 'Nerd Font Mono' | cut -d, -f1 | sort -u",
               each: "notch-font {}" },
+            { icon: "󰛂", name: "Font size", subtitle: "All text: bar, terminal, apps", itemIcon: "󰛂",
+              source: "c=$(notch-font size); for n in 8 9 10 11 12 13 14 15 16 18 20; do [ $n = $c ] && printf '%s ✓\\t%s\\n' $n $n || printf '%s\\t%s\\n' $n $n; done",
+              each: "notch-font size {}" },
             { icon: "󰸉", name: "Wallpaper", subtitle: "Carousel of this theme's backgrounds", sh: "notch picker wallpaper" },
             { icon: "󰢡", name: "Corners", items: [
                 { icon: "󰝤", name: "Sharp windows", sh: "sed -i 's/geometry-corner-radius [0-9]*/geometry-corner-radius 0/' ~/.config/niri/config.kdl" },

@@ -531,16 +531,22 @@ QtObject {
     readonly property string fontHand: SettingsService.notesHandwriting
         ? root.fontSignature : root.fontFamily
 
-    readonly property int fontSizeLabel: 10
-    readonly property int fontSizeSmall: 11
-    readonly property int fontSizeRegular: 13
-    readonly property int fontSizeMedium: 14
-    readonly property int fontSizeLarge: 16
+    // One text size for the whole desktop (`notch-font size <n>`, written
+    // to theme.json by notch-theme). 11 is the size everything was drawn at.
+    property int fontBase: 11
+    readonly property real fontScale: Math.max(0.6, Math.min(2.5, fontBase / 11))
+    function fs(n) { return Math.round(n * fontScale) }
+
+    readonly property int fontSizeLabel: fs(10)
+    readonly property int fontSizeSmall: fs(11)
+    readonly property int fontSizeRegular: fs(13)
+    readonly property int fontSizeMedium: fs(14)
+    readonly property int fontSizeLarge: fs(16)
 
     // Desktop widgets are read from further away. `fontSizeDisplay` is for
     // faces that are a single number (the large clocks).
-    readonly property int fontSizeWidget: 30
-    readonly property int fontSizeDisplay: 68
+    readonly property int fontSizeWidget: fs(30)
+    readonly property int fontSizeDisplay: fs(68)
 
     // ── MOTION ──────────────────────────────────────────────────────────────
 

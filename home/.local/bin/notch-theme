@@ -234,7 +234,25 @@ def hooks(c, name):
             if subprocess.run(["pgrep", "-x", "helium"], stdout=subprocess.DEVNULL).returncode == 0:
                 subprocess.Popen(["helium-browser", "--refresh-platform-policy", "--no-startup-window"],
                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    return {"ghostty": ghostty, "helix": helix, "niri": niri, "btop": btop, "fzf": fzf,
+    def fonts():
+        n = c["font_size"]
+        run("gsettings", "set", "org.gnome.desktop.interface", "font-name", f"Adwaita Sans {n}")
+        run("gsettings", "set", "org.gnome.desktop.interface", "monospace-font-name", f"Adwaita Mono {n}")
+        run("gsettings", "set", "org.gnome.desktop.interface", "document-font-name", f"Adwaita Sans {n}")
+        q = f"{CFG}/qt6ct/qt6ct.conf"
+        if shutil.which("qt6ct") or os.path.exists(q):
+            text = open(q).read() if os.path.exists(q) else ""
+            if "[Fonts]" not in text:
+                text = text.rstrip("\n") + "\n[Fonts]\n"
+            text = re.sub(r"^(general|fixed)=.*\n", "", text, flags=re.M)
+            text = text.replace("[Fonts]\n", f'[Fonts]\ngeneral="Adwaita Sans,{n},-1,5,400,0,0,0,0,0,0,0,0,0,0,1"\n'
+                                f'fixed="Adwaita Mono,{n},-1,5,400,0,0,0,0,0,0,0,0,0,0,1"\n', 1)
+            write(q, text)
+        m = f"{CFG}/mako/config"
+        if os.path.exists(m):
+            ensure_line(m, f"font=AnnotationM Nerd Font {n}", r"^font=.*$")
+            run("makoctl", "reload")
+    return {"fonts": fonts, "ghostty": ghostty, "helix": helix, "niri": niri, "btop": btop, "fzf": fzf,
             "gtk": gtk, "icons": icons, "qt": qt, "browser": browser}
 
 
@@ -257,6 +275,14 @@ def set_wallpaper(path, colour):
                     "--unit", "notch-wallpaper", "-p", "Restart=on-failure", *args])
 
 
+def font_size():
+    """One text size for every app (`notch-font size <n>`); 11 is stock."""
+    try:
+        return max(6, min(32, int(open(f"{CFG}/notch/font-size").read().strip())))
+    except Exception:
+        return 11
+
+
 def current():
     try:
         return json.load(open(f"{STATE}/theme.json"))
@@ -269,6 +295,8 @@ def apply(name, wallpaper=None):
         sys.exit(f"no theme {name!r} (have: {', '.join(names())})")
     with open(f"{THEMES}/{name}/colors.toml", "rb") as f:
         c = tomllib.load(f)
+    n = font_size()
+    c.update(font_size=n, font_size_term=n + 2, font_size_menu=n + 1)
     walls = wallpapers(name)
     if wallpaper is None:
         before = current()
@@ -277,7 +305,7 @@ def apply(name, wallpaper=None):
             or next((w for w in walls if w.endswith("wrinkled-paper.jpg")), walls[0] if walls else "")
     title = name.replace("-", " ").title()
     write(f"{STATE}/theme.json", json.dumps({"id": name, "name": title, "mode": c.get("mode", "light"),
-                                              "wallpaper": wallpaper, "shell": shell(c, name)}, indent=1))
+                                              "wallpaper": wallpaper, "fontSize": n, "shell": shell(c, name)}, indent=1))
 
     for tpl, dest in TARGETS.items():
         try:

@@ -72,7 +72,7 @@ Item {
                 anchors.centerIn: parent
                 text: "󰦝"
                 font.family: Theme.fontMono
-                font.pixelSize: 20
+                font.pixelSize: Theme.fs(20)
                 color: Theme.accent
             }
         }
@@ -218,7 +218,7 @@ Item {
                 anchors.centerIn: parent
                 text: "󰁔"
                 font.family: Theme.fontMono
-                font.pixelSize: 18
+                font.pixelSize: Theme.fs(18)
                 color: field.text !== "" && !root.waiting ? Theme.accentText : Theme.textMuted
             }
 

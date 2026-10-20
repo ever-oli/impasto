@@ -69,7 +69,7 @@ RowLayout {
                 Text {
                     text: button.modelData.icon
                     font.family: Theme.fontMono
-                    font.pixelSize: 14
+                    font.pixelSize: Theme.fs(14)
                     color: {
                         if (button.isArmed)
                             return Theme.accentText

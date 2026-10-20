@@ -1,5 +1,6 @@
 # written by notch-theme from themed/ghostty.conf.tpl
 font-family = AnnotationM Nerd Font Mono
+font-size = {{ font_size_term }}
 background = {{ background }}
 foreground = {{ foreground }}
 cursor-color = {{ accent }}

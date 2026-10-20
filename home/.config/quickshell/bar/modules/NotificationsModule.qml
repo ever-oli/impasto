@@ -59,7 +59,7 @@ Item {
                     anchors.centerIn: parent
                     text: NotificationService.doNotDisturb ? "󰂛" : "󰂚"
                     font.family: Theme.fontMono
-                    font.pixelSize: 20
+                    font.pixelSize: Theme.fs(20)
                     color: NotificationService.doNotDisturb ? Theme.textMuted : Theme.indicator
                 }
             }

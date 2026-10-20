@@ -82,7 +82,7 @@ Item {
                     anchors.centerIn: parent
                     text: AudioService.icon
                     font.family: Theme.fontMono
-                    font.pixelSize: 18
+                    font.pixelSize: Theme.fs(18)
                     color: AudioService.muted ? Theme.textMuted : Theme.indicator
                 }
 

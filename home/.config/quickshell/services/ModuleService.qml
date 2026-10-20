@@ -216,7 +216,7 @@ Singleton {
         : 0
     readonly property FontMetrics timeMetrics: FontMetrics {
         font.family: Theme.fontFamily
-        font.pixelSize: 62
+        font.pixelSize: Theme.fs(62)
         font.weight: Font.Black
     }
     readonly property int summaryHeight: root.glanceFaceHeight

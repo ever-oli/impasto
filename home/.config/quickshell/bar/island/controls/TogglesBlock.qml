@@ -60,7 +60,7 @@ Item {
             anchors.centerIn: parent
             text: step.glyph
             font.family: Theme.fontMono
-            font.pixelSize: 11
+            font.pixelSize: Theme.fs(11)
             color: press.containsMouse ? Theme.text : Theme.textMuted
             opacity: step.usable ? 1 : 0
 

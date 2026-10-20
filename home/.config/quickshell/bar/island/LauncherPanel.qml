@@ -239,7 +239,7 @@ ColumnLayout {
         Text {
             text: MenuService.top ? MenuService.top.icon : root.mode.icon
             font.family: Theme.fontMono
-            font.pixelSize: 17
+            font.pixelSize: Theme.fs(17)
             color: Theme.accent
 
             Behavior on text { enabled: false }
@@ -250,7 +250,7 @@ ColumnLayout {
             visible: MenuService.top !== null
             text: MenuService.trail
             font.family: Theme.fontBar
-            font.pixelSize: 16
+            font.pixelSize: Theme.fs(16)
             font.weight: Font.DemiBold
             color: Theme.accent
         }
@@ -261,7 +261,7 @@ ColumnLayout {
             Layout.fillWidth: true
             text: LauncherService.query
             font.family: Theme.fontBar
-            font.pixelSize: 16
+            font.pixelSize: Theme.fs(16)
             color: Theme.text
             clip: true
             selectByMouse: true
@@ -383,7 +383,7 @@ ColumnLayout {
             visible: root.mode.id === "emoji"
             text: EmojiService.toneMarks[EmojiService.tone]
             font.family: Theme.fontBar
-            font.pixelSize: 18
+            font.pixelSize: Theme.fs(18)
 
             MouseArea {
                 anchors.fill: parent
@@ -425,7 +425,7 @@ ColumnLayout {
                     anchors.centerIn: parent
                     text: chip.modelData.mark
                     font.family: Theme.fontBar
-                    font.pixelSize: 16
+                    font.pixelSize: Theme.fs(16)
                     opacity: chip.chosen ? 1 : 0.6
                 }
 
@@ -504,7 +504,7 @@ ColumnLayout {
                 anchors.centerIn: parent
                 text: cell.modelData.glyph ?? ""
                 font.family: Theme.fontBar
-                font.pixelSize: 28
+                font.pixelSize: Theme.fs(28)
             }
 
             MouseArea {
@@ -621,7 +621,7 @@ ColumnLayout {
                         visible: badge.glyph !== ""
                         text: badge.glyph
                         font.family: Theme.fontBar
-                        font.pixelSize: 22
+                        font.pixelSize: Theme.fs(22)
                     }
 
                     Rectangle {
@@ -634,7 +634,7 @@ ColumnLayout {
                             anchors.centerIn: parent
                             text: badge.isApp ? "󰀻" : row.modelData.icon
                             font.family: Theme.fontMono
-                            font.pixelSize: 14
+                            font.pixelSize: Theme.fs(14)
                             color: root.kindColour(row.modelData.kind)
                         }
                     }
@@ -675,7 +675,7 @@ ColumnLayout {
                         && LauncherService.favourites.indexOf(row.modelData.id) >= 0
                     text: "󱂩"
                     font.family: Theme.fontMono
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fs(12)
                     color: Theme.textMuted
                 }
 

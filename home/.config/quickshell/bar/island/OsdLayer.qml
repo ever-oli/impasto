@@ -35,7 +35,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: root.icon
             font.family: Theme.fontMono
-            font.pixelSize: 15
+            font.pixelSize: Theme.fs(15)
             // The glyph identifies the control; the level carries the palette.
             color: Theme.indicator
         }

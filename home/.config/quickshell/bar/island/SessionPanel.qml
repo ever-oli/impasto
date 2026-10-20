@@ -118,7 +118,7 @@ FocusScope {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: tile.modelData.icon
                             font.family: Theme.fontMono
-                            font.pixelSize: 30
+                            font.pixelSize: Theme.fs(30)
                             color: {
                                 if (tile.isArmed)
                                     return Theme.accentText

@@ -55,7 +55,7 @@ Item {
                     anchors.centerIn: parent
                     text: BluetoothService.icon
                     font.family: Theme.fontMono
-                    font.pixelSize: 18
+                    font.pixelSize: Theme.fs(18)
                     color: BluetoothService.enabled ? Theme.indicator : Theme.textMuted
                 }
             }

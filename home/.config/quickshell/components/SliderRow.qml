@@ -74,7 +74,7 @@ Item {
             Text {
                 text: root.icon
                 font.family: Theme.fontMono
-                font.pixelSize: 15
+                font.pixelSize: Theme.fs(15)
                 color: root.dimmed ? Theme.textMuted : Theme.accentText
 
                 MouseArea {
@@ -101,7 +101,7 @@ Item {
                 visible: root.expandable
                 text: "󰅂"
                 font.family: Theme.fontMono
-                font.pixelSize: 13
+                font.pixelSize: Theme.fs(13)
                 color: more.containsMouse ? Theme.text : Theme.textMuted
 
                 Behavior on color { ColorAnimation { duration: Theme.durationFast } }

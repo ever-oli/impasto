@@ -61,7 +61,7 @@ Rectangle {
                 anchors.centerIn: parent
                 text: root.icon
                 font.family: Theme.fontMono
-                font.pixelSize: 16
+                font.pixelSize: Theme.fs(16)
                 color: root.active ? Theme.accentText : Theme.textMuted
 
                 Behavior on color { ColorAnimation { duration: Theme.durationFast } }
@@ -120,7 +120,7 @@ Rectangle {
             anchors.centerIn: parent
             text: "󰅂"
             font.family: Theme.fontMono
-            font.pixelSize: 13
+            font.pixelSize: Theme.fs(13)
             color: chevron.containsMouse ? Theme.accent : Theme.textMuted
 
             Behavior on color { ColorAnimation { duration: Theme.durationFast } }

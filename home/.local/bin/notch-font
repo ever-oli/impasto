@@ -1,9 +1,23 @@
 #!/bin/sh
-# notch-font <family> — the terminal's typeface, as a ghostty include.
-[ -n "$1" ] || { echo "usage: notch-font <family>"; exit 1; }
-cfg="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
-mkdir -p "$cfg"
-printf 'font-family = "%s"\n' "$1" > "$cfg/notch-font"
-grep -qx 'config-file = ?notch-font' "$cfg/config" 2>/dev/null || echo 'config-file = ?notch-font' >> "$cfg/config"
-pkill -USR2 -x ghostty
-notify-send "Terminal font" "$1"
+# notch-font size <n>   one text size for the whole desktop (bar, palette,
+#                       Ghostty/Helix, GTK, Qt, fuzzel, notifications)
+# notch-font size       print it
+# notch-font <family>   the terminal's typeface (a ghostty include)
+cfg="${XDG_CONFIG_HOME:-$HOME/.config}"
+reload_ghostty() { for p in $(pgrep -u "$(id -u)" -x ghostty); do kill -USR2 "$p"; done; }
+case "$1" in
+size)
+    [ -n "$2" ] || { cat "$cfg/notch/font-size" 2>/dev/null || echo 11; exit; }
+    case "$2" in +|-) cur=$(cat "$cfg/notch/font-size" 2>/dev/null || echo 11); n=$((cur $2 1));;
+                 *[!0-9]*) echo "size must be a number"; exit 1;; *) n=$2;; esac
+    [ "$n" -ge 6 ] && [ "$n" -le 32 ] || { echo "size must be 6-32"; exit 1; }
+    mkdir -p "$cfg/notch" && echo "$n" > "$cfg/notch/font-size"
+    notch-theme restore >/dev/null   # re-renders every app with the new size
+    notify-send "Text size" "$n" 2>/dev/null; echo "text size $n" ;;
+""|-h|--help) sed -n 2,5p "$0" | sed 's/^# //' ;;
+*)
+    mkdir -p "$cfg/ghostty"
+    printf 'font-family = "%s"\n' "$1" > "$cfg/ghostty/notch-font"
+    grep -qx 'config-file = ?notch-font' "$cfg/ghostty/config" 2>/dev/null || echo 'config-file = ?notch-font' >> "$cfg/ghostty/config"
+    reload_ghostty; notify-send "Terminal font" "$1" ;;
+esac
