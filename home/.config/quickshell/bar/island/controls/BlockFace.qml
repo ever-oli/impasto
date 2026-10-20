@@ -8,6 +8,7 @@
 // ╰──────────────────────────────────────────────────────────────────────────╯
 
 import QtQuick
+import Quickshell
 
 import "../../../theme"
 import "../../../services"
@@ -37,6 +38,7 @@ Item {
     readonly property var components: ({
         toggles: togglesBlock,
         volume: volumeBlock,
+        textsize: textSizeBlock,
         notifications: notificationsBlock,
         clock: clockBlock,
         session: sessionBlock,
@@ -76,6 +78,24 @@ Item {
                 onMoved: value => AudioService.setVolume(value)
                 onIconClicked: AudioService.toggleMute()
                 onExpandClicked: root.panelRequested("sound")
+            }
+        }
+    }
+
+    Component {
+        id: textSizeBlock
+        Item {
+            SliderRow {
+                anchors.centerIn: parent
+                width: parent.width
+                height: Math.min(parent.height, 48)
+                icon: "󰛂"
+                unit: " pt"
+                from: FontSizeService.from
+                to: FontSizeService.to
+                value: FontSizeService.value
+                onMoved: value => FontSizeService.preview(value)
+                onIconClicked: Quickshell.execDetached(["qs", "ipc", "call", "fontsize", "open"])
             }
         }
     }

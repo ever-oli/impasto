@@ -18,6 +18,7 @@ import Quickshell
 import "./bar"
 import "./capture"
 import "./orb"
+import "./fontsize"
 import "./services"
 
 // The bar (with its island: launcher, control centre, notifications, OSD,
@@ -132,4 +133,7 @@ ShellRoot {
 
     // The radial menu (Super+Alt+O, `qs ipc call orb toggle`).
     Orb {}
+
+    // Text size slider (Style › Text size, `qs ipc call fontsize open`).
+    FontSlider {}
 }

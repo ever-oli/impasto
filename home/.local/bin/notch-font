@@ -13,7 +13,7 @@ size)
     [ "$n" -ge 6 ] && [ "$n" -le 32 ] || { echo "size must be 6-32"; exit 1; }
     mkdir -p "$cfg/notch" && echo "$n" > "$cfg/notch/font-size"
     notch-theme restore >/dev/null   # re-renders every app with the new size
-    notify-send "Text size" "$n" 2>/dev/null; echo "text size $n" ;;
+    [ -n "$NOTCH_FONT_QUIET" ] || notify-send "Text size" "$n" 2>/dev/null; echo "text size $n" ;;
 ""|-h|--help) sed -n 2,5p "$0" | sed 's/^# //' ;;
 *)
     mkdir -p "$cfg/ghostty"
