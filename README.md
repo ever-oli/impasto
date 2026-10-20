@@ -68,3 +68,5 @@ helix, niri's focus ring and border, mako and fuzzel, and runs swaybg as the `no
 
 GPL-3.0, like upstream.
 - [INSTALL.md](INSTALL.md): fresh Arch setup. Build mode: `notch evolve`.
+
+<!-- Notch Build mode was here -->
