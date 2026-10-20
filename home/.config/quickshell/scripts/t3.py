@@ -114,12 +114,20 @@ def status(refresh=False):
     }))
 
 
+def wake_pill():
+    """Best effort: a notch shell running means its Update pill is live; make it
+    re-sync now so an update finished in a terminal clears instantly."""
+    if shutil.which("qs"):
+        subprocess.run(["qs", "ipc", "call", "t3", "refresh"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+
+
 def update():
     new = latest(refresh=True)
     if not new.get("url"):
         sys.exit("no AppImage in the latest release")
     if new.get("version") == installed_version():
-        print("already up to date"); return
+        print("already up to date"); wake_pill(); return
     work = tempfile.mkdtemp(prefix="t3-", dir=APPS)
     image = os.path.join(work, "T3.AppImage")
     print(f"downloading {new['version']}", flush=True)
@@ -146,6 +154,7 @@ def update():
     if was:
         subprocess.run(["systemctl", "--user", "start", SERVICE])
     print(f"updated to {installed_version()}")
+    wake_pill()
 
 
 if __name__ == "__main__":

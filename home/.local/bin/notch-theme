@@ -17,7 +17,7 @@ switches from interleaving.
 Reads ~/.local/share/notch/themes/<name>/colors.toml; the shell (bar and
 notifications) watches ~/.local/state/notch/theme.json. Templates go to
 ghostty (USR2), helix theme "notch" (USR1), niri include, fuzzel, btop (USR2), fastfetch,
-fzf (sourced by .bashrc), starship, lazygit (bat uses the ansi theme, so it follows Ghostty), gtk 3/4 css, qt6ct (if installed) and T3 Code;
+fzf (sourced by .bashrc), starship, lazygit (bat uses the ansi theme, so it follows Ghostty), gtk 3/4 css, qt6ct (if installed), T3 Code and the opencode TUI (picked up at its next launch; notch-theme also claims "theme": "notch" in opencode.json, preserving any other keys);
 gsettings handles libadwaita light/dark and icons; Helium gets a Chromium
 color policy through the notch-browser-color helper.
 The wallpaper runs under swaybg as a user service so it survives this script.
@@ -196,6 +196,7 @@ TARGETS = {
     "gtk.css.tpl": [f"{CFG}/gtk-3.0/gtk.css", f"{CFG}/gtk-4.0/gtk.css"],
     "qt6ct.conf.tpl": f"{CFG}/qt6ct/colors/notch.conf",
     "t3code.json.tpl": f"{HOME}/.t3/userdata/themes/notch.json",
+    "opencode.json.tpl": f"{CFG}/opencode/themes/notch.json",
     "starship.toml.tpl": f"{CFG}/starship.toml",
     "lazygit.yml.tpl": f"{CFG}/lazygit/config.yml",
 }
@@ -261,8 +262,20 @@ def hooks(c, name):
         if os.path.exists(m):
             ensure_line(m, f"font=AnnotationM Nerd Font {n}", r"^font=.*$")
             run("makoctl", "reload")
+    def opencode():
+        # Claim "theme": "notch" in opencode.json, preserving every other key.
+        # The TUI reads themes/*.json + opencode.json at launch; there is no
+        # external signal channel, so no reload is wired here.
+        path = f"{CFG}/opencode/opencode.json"
+        try:
+            config = json.load(open(path)) if os.path.exists(path) else {}
+        except Exception:
+            config = {}
+        if config.get("theme") != "notch":
+            config["theme"] = "notch"
+            write(path, json.dumps(config, indent=2) + "\n")
     return {"fonts": fonts, "ghostty": ghostty, "helix": helix, "niri": niri, "btop": btop, "fzf": fzf,
-            "gtk": gtk, "icons": icons, "qt": qt, "browser": browser}
+            "gtk": gtk, "icons": icons, "qt": qt, "browser": browser, "opencode": opencode}
 
 
 def wallpapers(name):
