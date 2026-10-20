@@ -19,6 +19,7 @@
 #   notch t3 [get|refresh|update|open]
 #   notch theme set <name> | get           (notch-theme does the work)
 #   notch say <text> [icon]                a line on the island
+#   notch learn "<lesson>"                 a correction that sticks forever (lessons.md)
 #   notch reload
 #   notch doctor                         check binds, shell, dependencies
 set -euo pipefail
@@ -63,6 +64,29 @@ case $verb in
             *)   exec "$HOME/.local/bin/notch-theme" "$@" ;;
         esac ;;
     say)          call osd say "${1:?say what}" "${2:-}" ;;
+    learn)
+        lesson="${*:-$([[ -t 0 ]] && printf '' || cat)}"
+        python3 - "$lesson" <<'PY'
+import re, sys, time, os
+lesson = sys.argv[1].strip().replace("\x00", "") if len(sys.argv) > 1 else ""
+if not lesson:
+    sys.exit("notch learn: teach with text: notch learn \"<what to remember>\"")
+path = f"{os.path.expanduser('~')}/.config/notch/lessons.md"
+os.makedirs(os.path.dirname(path), exist_ok=True)
+body = open(path).read() if os.path.exists(path) else ""
+flat = re.sub(r"\s+", " ", lesson)
+if flat[:80] and flat[:80] in re.sub(r"\s+", " ", body):
+    print("already learned"); sys.exit()
+stamp = time.strftime("%Y-%m-%d")
+entry = f"\n# {stamp} — {flat[:80]}\n{lesson}\n"
+body = body + entry
+# The prompt tail keeps the newest 6k; the file holds the newest 24k.
+if len(body) > 24000:
+    body = "\n".join(body.splitlines()[-120:])
+open(path, "w").write(body)
+print("learned — it rides every act-mode prompt from now on")
+PY
+        ;;
     reload)       call shell reload ;;
     doctor)       exec "$HOME/.local/bin/notch-doctor" ;;
     *)            sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
