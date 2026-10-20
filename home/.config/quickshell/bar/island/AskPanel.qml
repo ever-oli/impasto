@@ -46,6 +46,8 @@ ColumnLayout {
         }
         PillButton { icon: AskService.modeInfo.icon; text: AskService.modeInfo.name; active: AskService.mode !== "general"
             onClicked: AskService.stepMode() }
+        PillButton { icon: "π"; text: AskService.backend === "pi" ? "Pi" : ""; active: AskService.backend === "pi"
+            onClicked: AskService.setBackend(AskService.backend === "pi" ? "opencode" : "pi") }
         PillButton { icon: "󰖟"; text: AskService.captured !== "" ? `Captured: ${AskService.captured.slice(0, 24)}` : "Page"
             active: AskService.captured !== ""
             onClicked: AskService.captured !== "" ? AskService.captured = "" : AskService.capture() }

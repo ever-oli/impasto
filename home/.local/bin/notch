@@ -7,6 +7,8 @@
 #   notch close
 #   notch ask "<question>" [screen|region]  the notch assistant
 #   notch ask capture | mode <id>         grab the Helium tab · pick a mode
+#   notch ask backend pi|opencode         which agent answers (Pi = OptChat memory)
+#   notch ask --backend pi "<question>"   one question to Pi, printed here
 #   notch picker [theme|wallpaper]       the carousel in the notch
 #   notch palette [Folder/Sub]           the palette, opened at a folder
 #   notch capture [region|window|screen] | text | record
@@ -30,6 +32,16 @@ case $verb in
     ask)          case "${1:-}" in
                       capture) call ask capture ;;
                       mode)    call ask mode "${2:?mode id}" ;;
+                      backend) call ask backend "${2:?pi or opencode}" ;;
+                      --backend) b="${2:?pi or opencode}"; q="${3:?question}"
+                               printf '{"op":"ask","text":%s}\n' "$(printf %s "$q" | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read()))')" |
+                                   python3 "$HOME/.config/quickshell/scripts/ask.py" --backend "$b" --once |
+                                   python3 -c 'import json,sys
+for l in sys.stdin:
+    e=json.loads(l)
+    if e["type"]=="chunk": print(e["text"],end="",flush=True)
+    elif e["type"]=="error": print("error:",e["text"],file=sys.stderr)
+print()' ;;
                       *)       call ask ask "${1:?question}" "${2:-none}" ;;
                   esac ;;
     panels)       call panel list ;;

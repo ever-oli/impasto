@@ -31,6 +31,17 @@ Singleton {
     readonly property var modeInfo: root.modes.find(m => m.id === root.mode) ?? { name: "General", icon: "󰚩" }
     // The Helium tab captured for the next question (Alt+Y).
     property string captured: ""
+    // "opencode" (ACP) or "pi" (Pi + OptChat, one never-ending chat). Saved in
+    // ~/.config/notch/ask-backend; switching restarts the bridge.
+    property string backend: ""
+    function setBackend(name: string): void {
+        root.cancel()
+        root.backend = name === "pi" ? "pi" : "opencode"
+        Quickshell.execDetached(["python3", Quickshell.shellPath("scripts/ask.py"), "backend", root.backend])
+        root.bridge.running = false
+        root.messages = root.messages.concat([{ role: "tool", text: `󰒓 Backend: ${root.backend === "pi" ? "Pi · OptChat memory" : "opencode"}` }])
+        root.bridge.running = true
+    }
 
     function loadModes(): void { modesProcess.running = true }
     function stepMode(): void {
@@ -108,13 +119,14 @@ Singleton {
     }
 
     readonly property Process bridge: Process {
-        command: ["python3", Quickshell.shellPath("scripts/ask.py")]
+        command: ["python3", Quickshell.shellPath("scripts/ask.py")].concat(root.backend ? ["--backend", root.backend] : [])
         stdinEnabled: true
         stdout: SplitParser {
             onRead: line => {
                 let event
                 try { event = JSON.parse(line) } catch (error) { return }
                 switch (event.type) {
+                case "ready": if (event.backend) root.backend = event.backend; break
                 case "chunk": root.thought = ""; root.appendAi(event.text); break
                 case "thought": root.thought = (root.thought + event.text).slice(-160); break
                 case "tool":

@@ -225,6 +225,12 @@ Scope {
             AskService.mode = id
             return root.ok({ mode: id })
         }
+
+        // `notch ask backend pi|opencode`: which agent answers.
+        function backend(name: string): string {
+            AskService.setBackend(name)
+            return root.ok({ backend: AskService.backend })
+        }
     }
 
     // `notch picker theme|wallpaper`: the carousel in the notch.

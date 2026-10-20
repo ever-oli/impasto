@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""ask.py — the notch assistant's bridge to an ACP agent (`opencode acp`).
+"""ask.py — the notch assistant's bridge to its agent: `opencode acp` (ACP, the
+default) or Pi with OptChat durable memory (`--backend pi`, or "pi" in
+~/.config/notch/ask-backend). Pi keeps one never-ending chat under
+~/.local/state/notch/pi; its tool calls go through notch-gate.ts.
 
 Reads one JSON command per line on stdin:
   {"op":"ask","text":..,"screen":"none|screen|region","context":bool,"act":bool}
@@ -22,6 +25,17 @@ import ask_extras as extras
 HOME = os.path.expanduser("~")
 STATE = os.environ.get("XDG_STATE_HOME", f"{HOME}/.local/state") + "/notch"
 HISTORY = f"{STATE}/ask-history.jsonl"
+CONF = f"{HOME}/.config/notch"
+def _backend():
+    if "--backend" in sys.argv:
+        return sys.argv[sys.argv.index("--backend") + 1]
+    try:
+        return open(f"{CONF}/ask-backend").read().strip() or "opencode"
+    except OSError:
+        return os.environ.get("ASK_BACKEND", "opencode")
+BACKEND = _backend()
+PI = os.environ.get("ASK_PI", f"{HOME}/.local/share/mise/installs/node/latest/bin/pi")
+PI_STATE = f"{STATE}/pi"
 AGENT = os.environ.get("ASK_AGENT", f"{HOME}/.local/share/mise/installs/opencode/latest/node_modules/.bin/opencode")
 SAFE = {"read", "search", "fetch", "think"}
 ACT = f"""You can operate Ever's Linux desktop (niri, Wayland) with shell commands:
@@ -32,6 +46,10 @@ pixels are logical (scale 1). Every command is shown to Ever for approval, so ex
 
 # `ask.py history` lists past questions (newest first, "question<TAB>n");
 # `ask.py answer n` prints that answer. The palette's Ask history uses both.
+if sys.argv[1:2] == ["backend"]:
+    if sys.argv[2:3]:
+        os.makedirs(CONF, exist_ok=True); open(f"{CONF}/ask-backend", "w").write(sys.argv[2] + "\n")
+    print(_backend()); sys.exit()
 if sys.argv[1:2] == ["modes"]:
     print(json.dumps([{k: m[k] for k in ("id", "name", "icon", "sources")} for m in extras.modes()]))
     sys.exit()
@@ -51,7 +69,18 @@ def emit(**event):
 
 env = dict(os.environ, OPENCODE_CONFIG_CONTENT=json.dumps(
     {"permission": {"edit": "ask", "bash": "ask", "webfetch": "allow"}}))
-agent = subprocess.Popen([AGENT, "acp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+if BACKEND == "pi":
+    os.makedirs(PI_STATE, exist_ok=True)
+    env = dict(os.environ, NOTCH_PI_ACT=f"{PI_STATE}/act",
+               PATH=os.path.dirname(PI) + ":" + os.environ.get("PATH", ""))
+    agent = subprocess.Popen([PI, "--mode", "rpc", "--session-dir", PI_STATE, "--session-id", "notch",
+                              "--optchat-channel", "notch", "--no-context-files",
+                              "-e", os.path.join(os.path.dirname(os.path.abspath(__file__)), "notch-gate.ts")]
+                             + (["--model", os.environ["ASK_PI_MODEL"]] if os.environ.get("ASK_PI_MODEL") else []),
+                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                             env=env, cwd=HOME)
+else:
+  agent = subprocess.Popen([AGENT, "acp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                          stderr=subprocess.DEVNULL, text=True, bufsize=1, env=env, cwd=HOME)
 next_id, waiting, pending = [0], {}, {}
 session, act_mode, turn = [None], [False], {"q": "", "a": ""}
@@ -63,7 +92,8 @@ quiet = [False]
 conversation = [str(int(time.time() * 1000))]
 
 def send(msg):
-    agent.stdin.write(json.dumps(msg) + "\n"); agent.stdin.flush()
+    line = json.dumps(msg) + "\n"
+    agent.stdin.write(line.encode() if BACKEND == "pi" else line); agent.stdin.flush()
 
 def request(method, params):
     next_id[0] += 1
@@ -125,6 +155,66 @@ def reader():
             box = waiting.pop(msg["id"])
             box.update({k: msg[k] for k in ("result", "error") if k in msg}); box["event"].set()
     emit(type="error", text="The agent stopped.")
+
+# ── Pi (RPC JSONL) ─────────────────────────────────────────────────────────
+pi_done, pi_box = threading.Event(), {}
+
+def pi_request(cmd):
+    next_id[0] += 1
+    box = {"event": threading.Event()}
+    waiting[str(next_id[0])] = box
+    send(dict(cmd, id=str(next_id[0])))
+    box["event"].wait()
+    if not box.get("success"):
+        raise RuntimeError(box.get("error") or "Pi refused the command")
+    return box.get("data") or {}
+
+def pi_reader():
+    for raw in agent.stdout:  # bytes, split on LF only
+        try:
+            msg = json.loads(raw)
+        except ValueError:
+            continue
+        kind = msg.get("type")
+        if kind == "response" and msg.get("id") in waiting:
+            box = waiting.pop(msg["id"]); box.update(msg); box["event"].set()
+        elif kind == "message_update":
+            ev = msg.get("assistantMessageEvent") or {}
+            if ev.get("type") == "text_delta":
+                turn["a"] += ev["delta"]; emit(type="chunk", text=ev["delta"])
+            elif ev.get("type") == "thinking_delta":
+                emit(type="thought", text=ev["delta"])
+            elif ev.get("type") == "error":
+                pi_box["error"] = str(ev.get("error") or ev.get("reason"))
+        elif kind == "message_end":
+            m = msg.get("message") or {}
+            if m.get("role") == "assistant" and m.get("errorMessage"):
+                pi_box["error"] = m["errorMessage"]
+        elif kind == "tool_execution_start":
+            emit(type="tool", title=msg.get("toolName", "tool"), status="pending")
+        elif kind == "tool_execution_end":
+            emit(type="tool", title=msg.get("toolName", "tool"), status="failed" if msg.get("isError") else "completed")
+        elif kind == "agent_settled":
+            pi_box["stop"] = "cancelled" if msg.get("aborted") else "end_turn"; pi_done.set()
+        elif kind == "extension_ui_request" and msg.get("method") == "confirm":
+            rid = msg["id"]
+            def pick(allow, rid=rid):
+                send({"type": "extension_ui_response", "id": rid, "confirmed": bool(allow)})
+            pending[rid] = pick
+            emit(type="permission", id=rid, title=msg.get("title") or "Action", detail=msg.get("message") or "")
+        elif kind == "extension_ui_request" and msg.get("method") in ("select", "input", "editor"):
+            send({"type": "extension_ui_response", "id": msg["id"], "cancelled": True})
+    emit(type="error", text="The agent stopped.")
+
+def pi_prompt(text, images):
+    open(f"{PI_STATE}/act", "w").write("1" if act_mode[0] else "0")
+    pi_done.clear(); pi_box.clear()
+    data = pi_request({"type": "prompt", "message": text, "images": images})
+    if data.get("disposition") != "handled":
+        pi_done.wait()
+    if pi_box.get("error"):
+        raise RuntimeError(pi_box["error"])
+    return {"stopReason": pi_box.get("stop", "end_turn")}
 
 def sh(cmd):
     try:
@@ -213,7 +303,10 @@ def answer_one(cmd):
                 text += f"\n\n<screen_text source=\"OCR of the attached screenshot\">\n{seen[:6000]}\n</screen_text>"
     turn.update(q=cmd.get("text", ""), a="")
     try:
-        result = prompt([{"type": "text", "text": text}] + blocks)
+        if BACKEND == "pi":
+            result = pi_prompt(text, [dict(b) for b in blocks])
+        else:
+            result = prompt([{"type": "text", "text": text}] + blocks)
         for kind, png, source in extras.visuals(turn["a"]):
             emit(type="visual", kind=kind, path=png or "", source=source)
         emit(type="done", stop=result.get("stopReason", "end_turn"))
@@ -223,7 +316,8 @@ def answer_one(cmd):
     with open(HISTORY, "a") as f:
         f.write(json.dumps({"t": time.time(), "s": conversation[0], "mode": cmd.get("mode", "general"), "q": turn["q"], "a": turn["a"]}) + "\n")
     turns.append({"q": turn["q"], "a": turn["a"]})
-    if len(turns) >= int(os.environ.get("ASK_ROLL", ROLL)):
+    # Pi's OptChat memory never forgets, so only the ACP backend rolls.
+    if BACKEND != "pi" and len(turns) >= int(os.environ.get("ASK_ROLL", ROLL)):
         roll()
 
 def capture():
@@ -233,12 +327,20 @@ def capture():
     except Exception as error:
         emit(type="error", text=f"No browser page: start Helium (it listens on 127.0.0.1:9222). {error}")
 
-threading.Thread(target=reader, daemon=True).start()
-try:
+if BACKEND == "pi":
+    threading.Thread(target=pi_reader, daemon=True).start()
+    try:
+        pi_request({"type": "get_state"})
+        emit(type="ready", backend="pi")
+    except RuntimeError as error:
+        emit(type="error", text=str(error))
+else:
+  threading.Thread(target=reader, daemon=True).start()
+  try:
     request("initialize", {"protocolVersion": 1, "clientCapabilities":
             {"fs": {"readTextFile": False, "writeTextFile": False}, "terminal": False}})
-    emit(type="ready")
-except RuntimeError as error:
+    emit(type="ready", backend="opencode")
+  except RuntimeError as error:
     emit(type="error", text=str(error))
 
 for line in sys.stdin:
@@ -247,10 +349,17 @@ for line in sys.stdin:
     except ValueError:
         continue
     op = cmd.get("op")
-    if op == "ask":
+    if op == "ask" and "--once" in sys.argv:
+        ask(cmd)
+    elif op == "ask":
         threading.Thread(target=ask, args=(cmd,), daemon=True).start()
     elif op == "capture":
         threading.Thread(target=capture, daemon=True).start()
+    elif op == "cancel" and BACKEND == "pi":
+        send({"type": "abort"})
+        for pick in pending.values():
+            pick(False)
+        pending.clear()
     elif op == "cancel" and session[0]:
         send({"jsonrpc": "2.0", "method": "session/cancel", "params": {"sessionId": session[0]}})
         for pick in pending.values():
