@@ -1,0 +1,11 @@
+#!/bin/bash
+# notch-updates — pending pacman (checkupdates) + AUR (yay -Qua) updates.
+#   notch-updates count   print N (0 when offline or up to date)
+#   notch-updates list    print the packages
+#   notch-updates run     yay -Syu, then refresh the count
+case "${1:-count}" in
+  list)  { checkupdates 2>/dev/null; yay -Qua 2>/dev/null; } ;;
+  count) { checkupdates 2>/dev/null; yay -Qua 2>/dev/null; } | grep -c . ;;
+  run)   yay -Syu; "$0" count > "${XDG_STATE_HOME:-$HOME/.local/state}/notch/updates" ;;
+  *)     sed -n '2,5p' "$0"; exit 2 ;;
+esac

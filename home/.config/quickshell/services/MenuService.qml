@@ -28,9 +28,22 @@ Singleton {
     readonly property string done: '; echo; read -rsn1 -p "Done. Press a key to close."'
 
     // ── TREE ────────────────────────────────────────────────────────────────
+    // Pending pacman + AUR updates (notch-updates), checked at start and hourly.
+    property int updates: 0
+    Process {
+        id: updateCheck
+        command: ["sh", "-c", `PATH="$HOME/.local/bin:$PATH"; notch-updates count`]
+        running: true
+        stdout: StdioCollector { onStreamFinished: root.updates = parseInt(text) || 0 }
+    }
+    Timer { interval: 3600000; repeat: true; running: true; onTriggered: updateCheck.running = true }
+
     readonly property var tree: [
         // Listed by LauncherService (`apps`), which owns the application index.
         { icon: "󰀻", name: "Apps", subtitle: "Every installed application", apps: true, items: [] },
+    ].concat(root.updates > 0 ? [
+        { icon: "󰚰", name: `Updates available (${root.updates})`, subtitle: "pacman + AUR · Enter runs yay -Syu", term: "notch-updates run" }
+    ] : []).concat([
         { icon: "󰚩", name: "Assistant", subtitle: "History, profile, modes, reference files", items: [
             { icon: "󰋚", name: "Ask history", subtitle: "Past questions; Enter copies the answer", itemIcon: "󰚩",
               source: `python3 ${Quickshell.shellPath("scripts/ask.py")} history`,
@@ -130,7 +143,10 @@ Singleton {
             { icon: "󰜉", name: "Restart", confirm: true, sh: "systemctl reboot" },
             { icon: "󰐥", name: "Shut down", confirm: true, sh: "systemctl poweroff" }
         ] }
-    ]
+    ])
+
+    // Recount a few minutes after an update was started from the palette.
+    Timer { id: refreshAfterUpdate; interval: 300000; onTriggered: updateCheck.running = true }
 
     // ── NAVIGATION ──────────────────────────────────────────────────────────
     property var stack: []
@@ -261,6 +277,8 @@ Singleton {
             Quickshell.execDetached(["xdg-open", node.url])
         else if (node.term)
             Quickshell.execDetached(["ghostty", "-e", "bash", "-c", `PATH="$HOME/.local/bin:$PATH"; ${node.term}${root.done}`])
+        if (node.term && node.term.indexOf("notch-updates run") >= 0)
+            refreshAfterUpdate.restart()
         else if (node.sh)
             Quickshell.execDetached(["sh", "-c", `PATH="$HOME/.local/bin:$PATH"; ${node.sh}`])
         else
