@@ -1,4 +1,4 @@
-/* written by impasto-theme from themed/gtk.css.tpl — GTK 3/4 and libadwaita */
+/* written by notch-theme from themed/gtk.css.tpl — GTK 3/4 and libadwaita */
 @define-color accent_color {{ accent }};
 @define-color accent_bg_color {{ accent }};
 @define-color accent_fg_color {{ background }};

@@ -1,5 +1,5 @@
 {
-  "name": "Impasto",
+  "name": "Notch",
   "appearance": "{{ mode }}",
   "canvas": "{{ background }}",
   "accent": "{{ accent }}",

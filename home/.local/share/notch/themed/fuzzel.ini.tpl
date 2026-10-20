@@ -1,4 +1,4 @@
-# written by impasto-theme
+# written by notch-theme
 [main]
 font=AnnotationM Nerd Font:size=12
 terminal=ghostty -e

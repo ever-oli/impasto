@@ -1,8 +1,0 @@
-#!/bin/sh
-# One-time: install the browser color helper and let the desktop user run it.
-set -eu
-dir=$(dirname "$0")
-sudo install -o root -g root -m 755 "$dir/impasto-browser-color" /usr/local/bin/impasto-browser-color
-echo "$(id -un) ALL=(root) NOPASSWD: /usr/local/bin/impasto-browser-color" | sudo tee /etc/sudoers.d/impasto-browser-color >/dev/null
-sudo chmod 440 /etc/sudoers.d/impasto-browser-color
-sudo visudo -cf /etc/sudoers.d/impasto-browser-color

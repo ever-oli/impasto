@@ -1,4 +1,4 @@
-# written by impasto-theme from themed/ghostty.conf.tpl
+# written by notch-theme from themed/ghostty.conf.tpl
 font-family = AnnotationM Nerd Font Mono
 background = {{ background }}
 foreground = {{ foreground }}

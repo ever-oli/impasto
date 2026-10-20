@@ -1,9 +1,9 @@
 // ╭──────────────────────────────────────────────────────────────────────────╮
 // │   C O M M A N D S                                                        │
-// │   everything `impasto` and `qs ipc call` can reach                       │
+// │   everything `notch` and `qs ipc call` can reach                       │
 // ╰──────────────────────────────────────────────────────────────────────────╯
 //
-// niri binds keys to `impasto open launcher` and friends, so these handlers
+// niri binds keys to `notch open launcher` and friends, so these handlers
 // are the shell's only shortcuts. Each answers JSON.
 
 pragma ComponentBehavior: Bound
@@ -203,7 +203,7 @@ Scope {
         }
     }
 
-    // `impasto ask "question" [screen|region]` asks from a script or a bind.
+    // `notch ask "question" [screen|region]` asks from a script or a bind.
     IpcHandler {
         target: "ask"
 
@@ -227,7 +227,7 @@ Scope {
         }
     }
 
-    // `impasto picker theme|wallpaper`: the carousel in the notch.
+    // `notch picker theme|wallpaper`: the carousel in the notch.
     IpcHandler {
         target: "picker"
 
@@ -250,7 +250,7 @@ Scope {
         }
     }
 
-    // `impasto palette Style/Theme` opens the palette at that folder.
+    // `notch palette Style/Theme` opens the palette at that folder.
     IpcHandler {
         target: "palette"
 

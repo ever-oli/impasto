@@ -89,11 +89,11 @@ window-rule {
 screenshot-path "~/Pictures/Screenshots/%Y-%m-%d_%H-%M-%S.png"
 
 // ==== autostart.kdl ====
-// The impasto shell (bar, launcher, notifications, OSD, polkit agent) and the
+// The notch shell (bar, launcher, notifications, OSD, polkit agent) and the
 // theme's wallpaper. Spawned here rather than as a user service so the shell
 // is in the logind session, which the polkit agent needs. No mako: the shell
 // is the notification server.
-spawn-at-startup "impasto-theme" "restore"
+spawn-at-startup "notch-theme" "restore"
 spawn-at-startup "qs" "-n"
 
 // ==== bindings.kdl ====
@@ -104,43 +104,43 @@ spawn-at-startup "qs" "-n"
 // One bind per line: ~/.local/bin/niri-virtual-binds re-fires binds for the
 // RustDesk virtual keyboard by parsing this file line by line.
 binds {
-    // ── shell (impasto) ──
-    Alt+Space { spawn "impasto" "toggle" "launcher"; }
-    Mod+Space { spawn "impasto" "toggle" "launcher"; }
-    Ctrl+Alt+Space { spawn "impasto" "toggle" "launcher"; }
-    Alt+A { spawn "impasto" "toggle" "ask"; }
-    Mod+A { spawn "impasto" "toggle" "ask"; }
-    Alt+Y { spawn "impasto" "ask" "capture"; }
-    Mod+Y { spawn "impasto" "ask" "capture"; }
-    Mod+Ctrl+Space { spawn "impasto" "toggle" "launcher"; }
-    Ctrl+Alt+T { spawn "impasto" "picker" "theme"; }
-    Ctrl+Alt+B { spawn "impasto" "picker" "wallpaper"; }
-    Ctrl+Alt+V { spawn "impasto" "toggle" "clipboard"; }
-    Alt+W hotkey-overlay-title="Switch window" { spawn "impasto" "toggle" "windows"; }
-    Alt+Slash hotkey-overlay-title="Find a file" { spawn "impasto" "toggle" "files"; }
-    Ctrl+Alt+E { spawn "impasto" "toggle" "emoji"; }
-    Ctrl+Alt+S { spawn "impasto" "capture" "region"; }
-    Ctrl+Alt+A { spawn "impasto" "capture"; }
-    Ctrl+Alt+R { spawn "impasto" "record"; }
-    Ctrl+Alt+K { spawn "impasto" "toggle" "keys"; }
-    Ctrl+Alt+C { spawn "impasto" "toggle" "controls"; }
-    Ctrl+Alt+3 { spawn "impasto" "toggle" "t3"; }
-    Ctrl+Alt+N { spawn "impasto" "focus" "toggle"; }
-    Ctrl+Alt+Escape { spawn "impasto" "toggle" "session"; }
-    Ctrl+Alt+Q { spawn "impasto" "toggle" "session"; }
-    Mod+Ctrl+T { spawn "impasto" "picker" "theme"; }
-    Mod+Ctrl+B { spawn "impasto" "picker" "wallpaper"; }
-    Mod+Ctrl+V { spawn "impasto" "toggle" "clipboard"; }
-    Mod+Ctrl+E { spawn "impasto" "toggle" "emoji"; }
-    Mod+Ctrl+S { spawn "impasto" "capture" "region"; }
-    Mod+Ctrl+A { spawn "impasto" "capture"; }
-    Mod+Ctrl+R { spawn "impasto" "record"; }
-    Mod+Ctrl+K { spawn "impasto" "toggle" "keys"; }
-    Mod+Ctrl+C { spawn "impasto" "toggle" "controls"; }
-    Mod+Ctrl+3 { spawn "impasto" "toggle" "t3"; }
-    Mod+Ctrl+N { spawn "impasto" "focus" "toggle"; }
-    Mod+Ctrl+Escape { spawn "impasto" "toggle" "session"; }
-    Mod+Ctrl+Q { spawn "impasto" "toggle" "session"; }
+    // ── shell (notch) ──
+    Alt+Space { spawn "notch" "toggle" "launcher"; }
+    Mod+Space { spawn "notch" "toggle" "launcher"; }
+    Ctrl+Alt+Space { spawn "notch" "toggle" "launcher"; }
+    Alt+A { spawn "notch" "toggle" "ask"; }
+    Mod+A { spawn "notch" "toggle" "ask"; }
+    Alt+Y { spawn "notch" "ask" "capture"; }
+    Mod+Y { spawn "notch" "ask" "capture"; }
+    Mod+Ctrl+Space { spawn "notch" "toggle" "launcher"; }
+    Ctrl+Alt+T { spawn "notch" "picker" "theme"; }
+    Ctrl+Alt+B { spawn "notch" "picker" "wallpaper"; }
+    Ctrl+Alt+V { spawn "notch" "toggle" "clipboard"; }
+    Alt+W hotkey-overlay-title="Switch window" { spawn "notch" "toggle" "windows"; }
+    Alt+Slash hotkey-overlay-title="Find a file" { spawn "notch" "toggle" "files"; }
+    Ctrl+Alt+E { spawn "notch" "toggle" "emoji"; }
+    Ctrl+Alt+S { spawn "notch" "capture" "region"; }
+    Ctrl+Alt+A { spawn "notch" "capture"; }
+    Ctrl+Alt+R { spawn "notch" "record"; }
+    Ctrl+Alt+K { spawn "notch" "toggle" "keys"; }
+    Ctrl+Alt+C { spawn "notch" "toggle" "controls"; }
+    Ctrl+Alt+3 { spawn "notch" "toggle" "t3"; }
+    Ctrl+Alt+N { spawn "notch" "focus" "toggle"; }
+    Ctrl+Alt+Escape { spawn "notch" "toggle" "session"; }
+    Ctrl+Alt+Q { spawn "notch" "toggle" "session"; }
+    Mod+Ctrl+T { spawn "notch" "picker" "theme"; }
+    Mod+Ctrl+B { spawn "notch" "picker" "wallpaper"; }
+    Mod+Ctrl+V { spawn "notch" "toggle" "clipboard"; }
+    Mod+Ctrl+E { spawn "notch" "toggle" "emoji"; }
+    Mod+Ctrl+S { spawn "notch" "capture" "region"; }
+    Mod+Ctrl+A { spawn "notch" "capture"; }
+    Mod+Ctrl+R { spawn "notch" "record"; }
+    Mod+Ctrl+K { spawn "notch" "toggle" "keys"; }
+    Mod+Ctrl+C { spawn "notch" "toggle" "controls"; }
+    Mod+Ctrl+3 { spawn "notch" "toggle" "t3"; }
+    Mod+Ctrl+N { spawn "notch" "focus" "toggle"; }
+    Mod+Ctrl+Escape { spawn "notch" "toggle" "session"; }
+    Mod+Ctrl+Q { spawn "notch" "toggle" "session"; }
 
     // ── apps ──
     Alt+Return { spawn "ghostty"; }
@@ -244,6 +244,6 @@ environment {
 }
 
 // ==== theme ====
-// Focus ring and border colours, written by `impasto-theme set <name>`.
+// Focus ring and border colours, written by `notch-theme set <name>`.
 // Last, so it overrides the layout block above.
-include "impasto-theme.kdl"
+include "notch-theme.kdl"

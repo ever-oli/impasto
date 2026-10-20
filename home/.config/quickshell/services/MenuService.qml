@@ -35,9 +35,9 @@ Singleton {
             { icon: "󰋚", name: "Ask history", subtitle: "Past questions; Enter copies the answer", itemIcon: "󰚩",
               source: `python3 ${Quickshell.shellPath("scripts/ask.py")} history`,
               each: `python3 ${Quickshell.shellPath("scripts/ask.py")} answer {} | wl-copy && notify-send "Answer copied"` },
-            { icon: "󰀄", name: "Edit profile", subtitle: "Sent to interview modes, 8000 characters", sh: "ghostty -e helix ~/.config/impasto/profile.md" },
-            { icon: "󰘦", name: "Modes folder", subtitle: "Drop a .md file to add a mode", sh: "ghostty --working-directory=$HOME/.config/impasto/modes" },
-            { icon: "󰈙", name: "Reference files", subtitle: "files/<mode>/ — PDF, DOCX, text", sh: "mkdir -p ~/.config/impasto/files && xdg-open ~/.config/impasto/files" }
+            { icon: "󰀄", name: "Edit profile", subtitle: "Sent to interview modes, 8000 characters", sh: "ghostty -e helix ~/.config/notch/profile.md" },
+            { icon: "󰘦", name: "Modes folder", subtitle: "Drop a .md file to add a mode", sh: "ghostty --working-directory=$HOME/.config/notch/modes" },
+            { icon: "󰈙", name: "Reference files", subtitle: "files/<mode>/ — PDF, DOCX, text", sh: "mkdir -p ~/.config/notch/files && xdg-open ~/.config/notch/files" }
         ] },
         { icon: "󰋖", name: "Learn", subtitle: "Keys, wikis, cheat sheets", items: [
             { icon: "󰌌", name: "Keys sheet", subtitle: "Every bind", panel: "keys" },
@@ -47,16 +47,16 @@ Singleton {
             { icon: "", name: "bash cheat sheet", url: "https://devhints.io/bash" }
         ] },
         { icon: "󰄀", name: "Capture", subtitle: "Screenshot, record, OCR, colour", items: [
-            { icon: "󰩭", name: "Screenshot region", sh: "impasto capture region" },
-            { icon: "󰹑", name: "Screenshot screen", sh: "impasto capture" },
-            { icon: "󰕧", name: "Record screen", sh: "impasto record" },
+            { icon: "󰩭", name: "Screenshot region", sh: "notch capture region" },
+            { icon: "󰹑", name: "Screenshot screen", sh: "notch capture" },
+            { icon: "󰕧", name: "Record screen", sh: "notch record" },
             { icon: "󱄽", name: "Copy text from screen", subtitle: "OCR a region",
               sh: 'g=$(slurp) && grim -g "$g" - | tesseract stdin - 2>/dev/null | wl-copy && notify-send "Text copied" "$(wl-paste | head -c 120)"' },
             { icon: "󰈊", name: "Colour picker", subtitle: "Copies the hex",
               sh: 'c=$(hyprpicker -a -n) && notify-send "Colour copied" "$c"' }
         ] },
         { icon: "󰔡", name: "Toggle", subtitle: "Do not disturb, bar, night light", items: [
-            { icon: "󰂛", name: "Do not disturb", on: "dnd", sh: "impasto focus toggle" },
+            { icon: "󰂛", name: "Do not disturb", on: "dnd", sh: "notch focus toggle" },
             { icon: "󰍜", name: "Show or hide the bar", on: "bar", fn: "bar" },
             { icon: "󰖔", name: "Night light", subtitle: "Warm screen, 4000 K", on: "night",
               sh: "pkill -x wlsunset || setsid -f wlsunset -t 4000 -T 4001 -S 00:00 -s 00:01 -d 1" },
@@ -81,11 +81,11 @@ Singleton {
               sh: "f=/tmp/clipboard-$(date +%s).txt; wl-paste > $f && localsend $f" }
         ] },
         { icon: "󰏘", name: "Style", subtitle: "Theme, font, wallpaper, corners", items: [
-            { icon: "󰏘", name: "Theme", subtitle: "Carousel: arrows preview, Enter keeps", sh: "impasto picker theme" },
+            { icon: "󰏘", name: "Theme", subtitle: "Carousel: arrows preview, Enter keeps", sh: "notch picker theme" },
             { icon: "󰛖", name: "Font", subtitle: "Terminal", itemIcon: "󰛖",
               source: "fc-list : family | grep 'Nerd Font Mono' | cut -d, -f1 | sort -u",
-              each: "impasto-font {}" },
-            { icon: "󰸉", name: "Wallpaper", subtitle: "Carousel of this theme's backgrounds", sh: "impasto picker wallpaper" },
+              each: "notch-font {}" },
+            { icon: "󰸉", name: "Wallpaper", subtitle: "Carousel of this theme's backgrounds", sh: "notch picker wallpaper" },
             { icon: "󰢡", name: "Corners", items: [
                 { icon: "󰝤", name: "Sharp windows", sh: "sed -i 's/geometry-corner-radius [0-9]*/geometry-corner-radius 0/' ~/.config/niri/config.kdl" },
                 { icon: "󰢡", name: "Round windows", sh: "sed -i 's/geometry-corner-radius [0-9]*/geometry-corner-radius 14/' ~/.config/niri/config.kdl" }

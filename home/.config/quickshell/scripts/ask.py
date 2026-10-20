@@ -20,14 +20,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ask_extras as extras
 
 HOME = os.path.expanduser("~")
-STATE = os.environ.get("XDG_STATE_HOME", f"{HOME}/.local/state") + "/impasto"
+STATE = os.environ.get("XDG_STATE_HOME", f"{HOME}/.local/state") + "/notch"
 HISTORY = f"{STATE}/ask-history.jsonl"
 AGENT = os.environ.get("ASK_AGENT", f"{HOME}/.local/share/mise/installs/opencode/latest/node_modules/.bin/opencode")
 SAFE = {"read", "search", "fetch", "think"}
 ACT = f"""You can operate Ever's Linux desktop (niri, Wayland) with shell commands:
-`impasto-act` (run with no arguments for usage) types, presses keys, clicks and moves the
+`notch-act` (run with no arguments for usage) types, presses keys, clicks and moves the
 mouse, focuses windows and takes a screenshot to observe. Work in small steps: observe,
-act, observe again. To see a screenshot, read the PNG file `impasto-act look` prints. Screen
+act, observe again. To see a screenshot, read the PNG file `notch-act look` prints. Screen
 pixels are logical (scale 1). Every command is shown to Ever for approval, so explain each one briefly."""
 
 # `ask.py history` lists past questions (newest first, "question<TAB>n");

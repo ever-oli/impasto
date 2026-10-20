@@ -1,5 +1,5 @@
 #!/bin/bash
-# impasto doctor — is everything the palette leans on in place?
+# notch doctor — is everything the palette leans on in place?
 bad=0
 ok()   { printf '  \e[32m✓\e[0m %s\n' "$1"; }
 no()   { printf '  \e[31m✗\e[0m %s\n' "$1"; bad=$((bad+1)); }
@@ -11,7 +11,7 @@ kdl=$cfg/niri/config.kdl
 if [ -f "$kdl" ]; then
     for want in "launcher:palette" "ask:assistant" "picker.{0,4}theme:theme picker" "windows:window switcher" "files:file search"; do
         pat=${want%%:*}; label=${want#*:}
-        grep -Eq "impasto.*($pat)" "$kdl" && ok "$label bound" || no "$label not bound in $kdl"
+        grep -Eq "notch.*($pat)" "$kdl" && ok "$label bound" || no "$label not bound in $kdl"
     done
     command -v niri >/dev/null && { niri validate -c "$kdl" >/dev/null 2>&1 && ok "niri config valid" || no "niri validate fails"; }
 else no "no $kdl"; fi

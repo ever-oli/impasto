@@ -298,7 +298,7 @@ def wipe():
 
 def watcher_pidfile():
     runtime = os.environ.get("XDG_RUNTIME_DIR") or "/tmp"
-    return Path(runtime) / "impasto-clipboard.pid"
+    return Path(runtime) / "notch-clipboard.pid"
 
 
 def displace():

@@ -44,7 +44,7 @@ QtObject {
         return style === "glass" || style === "liquid"
     }
 
-    // Lean fork: the island is ink, set by the theme (`impasto-theme`).
+    // Lean fork: the island is ink, set by the theme (`notch-theme`).
     property color island: "#000000"
     readonly property color islandGround: root.groundOf(root.surfaceStyle)
 
@@ -171,9 +171,9 @@ QtObject {
     // else's, so those ask for the picture meant for them.
     readonly property var appIconAliases: ({
         "vesktop": "Vesktop",
-        "org.gnome.Nautilus": "impasto-files",
-        "thunar": "impasto-files",
-        "org.xfce.thunar": "impasto-files"
+        "org.gnome.Nautilus": "notch-files",
+        "thunar": "notch-files",
+        "org.xfce.thunar": "notch-files"
     })
 
     function appIcon(name: string): string {

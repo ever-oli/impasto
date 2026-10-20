@@ -1,8 +1,8 @@
 // ╭──────────────────────────────────────────────────────────────────────────╮
-// │   S H E L L   (impasto, lean niri fork)                                  │
+// │   S H E L L   (notch, lean niri fork)                                  │
 // │   quickshell entry point · windows and top-level wiring                  │
 // │                                                                          │
-// │   github.com/ever-oli/impasto  (branch lean-niri)                        │
+// │   github.com/ever-oli/notch  (branch lean-niri)                        │
 // │   upstream: github.com/andreumassanet/impasto                            │
 // ╰──────────────────────────────────────────────────────────────────────────╯
 
@@ -21,7 +21,7 @@ import "./services"
 
 // The bar (with its island: launcher, control centre, notifications, OSD,
 // the T3 card, keys, session, polkit), the capture surface and the IPC.
-// niri binds keys to `impasto …`, which calls the IPC below; there are no
+// niri binds keys to `notch …`, which calls the IPC below; there are no
 // compositor-side global shortcuts.
 ShellRoot {
     id: root

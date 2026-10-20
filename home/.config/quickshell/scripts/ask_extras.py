@@ -3,8 +3,8 @@ reference files, the browser page, and pictures rendered from the answer."""
 import glob, hashlib, json, os, re, sqlite3, subprocess, urllib.request
 
 HOME = os.path.expanduser("~")
-CONF = os.environ.get("XDG_CONFIG_HOME", f"{HOME}/.config") + "/impasto"
-CACHE = os.environ.get("XDG_CACHE_HOME", f"{HOME}/.cache") + "/impasto/ask"
+CONF = os.environ.get("XDG_CONFIG_HOME", f"{HOME}/.config") + "/notch"
+CACHE = os.environ.get("XDG_CACHE_HOME", f"{HOME}/.cache") + "/notch/ask"
 PROFILE_CAP, FILES_BUDGET = 8000, 20000
 
 VISUAL_RULES = """<visual_rules>
@@ -123,7 +123,7 @@ INK = {"e-ink": ("#f4f1ea", "#1c1b19"), "e-ink-dark": ("#1c1b19", "#e8e4da"),
 
 def theme():
     try:
-        return json.load(open(f"{HOME}/.local/state/impasto/theme.json")).get("id", "e-ink")
+        return json.load(open(f"{HOME}/.local/state/notch/theme.json")).get("id", "e-ink")
     except (OSError, ValueError):
         return "e-ink"
 
@@ -164,7 +164,7 @@ def mermaid(source, out):
     open(src, "w").write(source)
     puppet = f"{CACHE}/puppeteer.json"
     # chrome-headless-shell, fetched once by @puppeteer/browsers (see setup).
-    shell = sorted(glob.glob(f"{HOME}/.cache/impasto/chrome/chrome-headless-shell/*/*/chrome-headless-shell"))
+    shell = sorted(glob.glob(f"{HOME}/.cache/notch/chrome/chrome-headless-shell/*/*/chrome-headless-shell"))
     json.dump({"executablePath": shell[-1] if shell else "/opt/helium-browser-bin/helium",
                "headless": "shell", "args": ["--no-sandbox"]}, open(puppet, "w"))
     conf = f"{CACHE}/mermaid.json"

@@ -23,7 +23,7 @@ Singleton {
     property string startTheme: ""
     property string startWallpaper: ""
 
-    readonly property string themes: `${Quickshell.env("HOME")}/.local/share/impasto/themes`
+    readonly property string themes: `${Quickshell.env("HOME")}/.local/share/notch/themes`
     readonly property var matching: root.items.map((it, i) => i)
         .filter(i => root.filter === "" || root.items[i].label.toLowerCase().includes(root.filter.toLowerCase()))
 
@@ -54,7 +54,7 @@ Singleton {
     }
 
     function set(theme: string, wallpaper: string): void {
-        Quickshell.execDetached(["sh", "-c", 'PATH="$HOME/.local/bin:$PATH" impasto-theme set "$1" ${2:+"$2"}', "-",
+        Quickshell.execDetached(["sh", "-c", 'PATH="$HOME/.local/bin:$PATH" notch-theme set "$1" ${2:+"$2"}', "-",
                                  theme, wallpaper])
     }
 
@@ -88,8 +88,8 @@ Singleton {
         command: ["python3", "-c", `
 import json, os, sys
 home = os.path.expanduser("~")
-base = f"{home}/.local/share/impasto/themes"
-cur = json.load(open(f"{home}/.local/state/impasto/theme.json"))
+base = f"{home}/.local/share/notch/themes"
+cur = json.load(open(f"{home}/.local/state/notch/theme.json"))
 if sys.argv[1] == "theme":
     for t in sorted(os.listdir(base)):
         if os.path.isfile(f"{base}/{t}/colors.toml"):

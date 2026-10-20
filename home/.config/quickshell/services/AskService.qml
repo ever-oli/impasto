@@ -25,7 +25,7 @@ Singleton {
     property bool act: false            // may operate the desktop, with approval
     property bool auto: false           // approve every action this session
 
-    // ~/.config/impasto/modes/*.md, read by the bridge. A dropped file is a mode.
+    // ~/.config/notch/modes/*.md, read by the bridge. A dropped file is a mode.
     property var modes: []
     property string mode: "general"
     readonly property var modeInfo: root.modes.find(m => m.id === root.mode) ?? { name: "General", icon: "󰚩" }

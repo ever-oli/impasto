@@ -1,6 +1,6 @@
 // ╭──────────────────────────────────────────────────────────────────────────╮
 // │   T H E M E   S E R V I C E   (lean)                                     │
-// │   follows ~/.local/state/impasto/theme.json, written by `impasto-theme`  │
+// │   follows ~/.local/state/notch/theme.json, written by `notch-theme`  │
 // ╰──────────────────────────────────────────────────────────────────────────╯
 
 pragma Singleton
@@ -18,7 +18,7 @@ Singleton {
     property string activeId: "e-ink"
 
     readonly property string statePath:
-        `${Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state"}/impasto/theme.json`
+        `${Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state"}/notch/theme.json`
 
     // The script writes the file and the shell repaints: one owner of the
     // palette, nothing to keep in sync.
@@ -27,7 +27,7 @@ Singleton {
             console.warn("Unknown theme:", themeId)
             return
         }
-        setter.command = [Quickshell.env("HOME") + "/.local/bin/impasto-theme", "set", themeId]
+        setter.command = [Quickshell.env("HOME") + "/.local/bin/notch-theme", "set", themeId]
         setter.running = true
     }
 

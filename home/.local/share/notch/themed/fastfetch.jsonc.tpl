@@ -1,4 +1,4 @@
-// written by impasto-theme from themed/fastfetch.jsonc.tpl
+// written by notch-theme from themed/fastfetch.jsonc.tpl
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
   "logo": { "type": "small", "color": { "1": "{{ accent_ansi }}", "2": "{{ foreground_ansi }}" } },

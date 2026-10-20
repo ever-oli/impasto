@@ -1,14 +1,14 @@
 #!/bin/bash
 # ╭──────────────────────────────────────────────────────────────────────────╮
-# │   impasto · lean niri fork · setup                                       │
-# │   github.com/ever-oli/impasto  (branch lean-niri)                        │
+# │   notch · lean niri fork · setup                                       │
+# │   github.com/ever-oli/notch  (branch lean-niri)                        │
 # ╰──────────────────────────────────────────────────────────────────────────╯
 #
 #   ./setup                 packages, then files, then the theme
 #   ./setup packages        pacman -S --needed everything in packages/pacman.txt
 #   ./setup fonts           AnnotationMono and Tinos Nerd Fonts into ~/.local/share/fonts
 #   ./setup files           copy home/ into ~, backing up what it replaces
-#   ./setup theme [name]    impasto-theme set (default e-ink)
+#   ./setup theme [name]    notch-theme set (default e-ink)
 #   ./setup uninstall       remove what `files` installed (backups are kept)
 #
 # Home directory only, plus packages. It never touches the boot loader, the
@@ -17,8 +17,8 @@ set -euo pipefail
 
 REPO=$(cd "$(dirname "$0")" && pwd)
 STAMP=$(date +%Y%m%d-%H%M%S)
-BACKUP="$HOME/.config-backups/impasto-$STAMP"
-STATE="${XDG_STATE_HOME:-$HOME/.local/state}/impasto"
+BACKUP="$HOME/.config-backups/notch-$STAMP"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/notch"
 MANIFEST="$STATE/files"
 
 say() { printf '\033[1m::\033[0m %s\n' "$*"; }
@@ -68,13 +68,13 @@ files() {
         cp -a "$REPO/home/$rel" "$dest"
         echo "$rel" >> "$MANIFEST"
     done
-    chmod +x "$HOME/.local/bin/impasto" "$HOME/.local/bin/impasto-theme" "$HOME"/.config/quickshell/scripts/*.py
+    chmod +x "$HOME/.local/bin/notch" "$HOME/.local/bin/notch-theme" "$HOME"/.config/quickshell/scripts/*.py
     [ -d "$BACKUP" ] && say "files: replaced files backed up to $BACKUP"
     say "files: $(wc -l < "$MANIFEST") installed"
 }
 
 theme() {
-    "$HOME/.local/bin/impasto-theme" set "${1:-$("$HOME/.local/bin/impasto-theme" current)}"
+    "$HOME/.local/bin/notch-theme" set "${1:-$("$HOME/.local/bin/notch-theme" current)}"
 }
 
 uninstall() {

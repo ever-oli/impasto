@@ -46,7 +46,7 @@ PanelWindow {
 
     // Named for the blur behind it (`windowrules.lua`), which shows only
     // through a ground that is not solid.
-    WlrLayershell.namespace: "impasto-bar"
+    WlrLayershell.namespace: "notch-bar"
     // A request for root rises over a full-screen window, which covers the
     // top layer; the bar goes back down once it is answered.
     // Open, the bar rises above the click catcher (on Top) below it.
@@ -77,7 +77,7 @@ PanelWindow {
     // outer gap so the bar lines up with tiled windows.
     readonly property int edgeMargin: SettingsService.barSideMargin
 
-    // The lean fork has one layout, impasto's "Spread": workspaces and the
+    // The lean fork has one layout, notch's "Spread": workspaces and the
     // launcher at the left edge, status and tray at the right edge, and the
     // island hanging from the top edge between them like a notch. The other
     // styles' flags stay as constants so their branches fold away.
@@ -281,7 +281,7 @@ PanelWindow {
         anchors { top: true; bottom: true; left: true; right: true }
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: WlrLayer.Top
-        WlrLayershell.namespace: "impasto-catcher"
+        WlrLayershell.namespace: "notch-catcher"
         color: "transparent"
 
         MouseArea {

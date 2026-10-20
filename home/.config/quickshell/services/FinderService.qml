@@ -3,7 +3,7 @@ pragma Singleton
 // ┌──────────────────────────────────────────────────────────────────────────┐
 // │ FinderService — the palette's lookups that need a program behind them   │
 // │   qalc for the calculator, fd for `/` file search, and the snippets and │
-// │   quicklinks in ~/.config/impasto/snippets.toml. Inspired by vicinae's  │
+// │   quicklinks in ~/.config/notch/snippets.toml. Inspired by vicinae's  │
 // │   root search; our own code.                                            │
 // └──────────────────────────────────────────────────────────────────────────┘
 
@@ -114,7 +114,7 @@ Singleton {
     property var quicklinks: []
 
     FileView {
-        path: `${root.home}/.config/impasto/snippets.toml`
+        path: `${root.home}/.config/notch/snippets.toml`
         watchChanges: true
         onFileChanged: reader.running = true
         onLoaded: reader.running = true
@@ -123,7 +123,7 @@ Singleton {
     Process {
         id: reader
         command: ["python3", "-c",
-            "import json,os,tomllib;d=tomllib.load(open(os.path.expanduser('~/.config/impasto/snippets.toml'),'rb'));"
+            "import json,os,tomllib;d=tomllib.load(open(os.path.expanduser('~/.config/notch/snippets.toml'),'rb'));"
             + "print(json.dumps({'s':d.get('snippet',[]),'q':d.get('quicklink',[])}))"]
         stdout: StdioCollector {
             onStreamFinished: {

@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-"""impasto-theme — the four ink themes, applied everywhere at once.
+"""notch-theme — the four ink themes, applied everywhere at once.
 
-  impasto-theme list
-  impasto-theme set <name> [wallpaper]   e-ink · e-ink-dark · red-ink · red-ink-dark
-  impasto-theme current
-  impasto-theme next                     cycle the four themes
-  impasto-theme next-wallpaper
-  impasto-theme audit [name...]          WCAG contrast check; exits 1 on any failure
+  notch-theme list
+  notch-theme set <name> [wallpaper]   e-ink · e-ink-dark · red-ink · red-ink-dark
+  notch-theme current
+  notch-theme next                     cycle the four themes
+  notch-theme next-wallpaper
+  notch-theme audit [name...]          WCAG contrast check; exits 1 on any failure
 
 colors.toml is the single source of truth. Templates in
-~/.local/share/impasto/themed/*.tpl (Omarchy's {{ key }} syntax, see
+~/.local/share/notch/themed/*.tpl (Omarchy's {{ key }} syntax, see
 basecamp/omarchy, MIT) are rendered to each app, then every app is told to
 reload in parallel; one app failing never stops the rest. A lock keeps two
 switches from interleaving.
 
-Reads ~/.local/share/impasto/themes/<name>/colors.toml; the shell (bar and
-notifications) watches ~/.local/state/impasto/theme.json. Templates go to
-ghostty (USR2), helix theme "impasto" (USR1), niri include, fuzzel, btop (USR2), fastfetch,
+Reads ~/.local/share/notch/themes/<name>/colors.toml; the shell (bar and
+notifications) watches ~/.local/state/notch/theme.json. Templates go to
+ghostty (USR2), helix theme "notch" (USR1), niri include, fuzzel, btop (USR2), fastfetch,
 fzf (sourced by .bashrc), gtk 3/4 css, qt6ct (if installed) and T3 Code;
 gsettings handles libadwaita light/dark and icons; Helium gets a Chromium
-color policy through the impasto-browser-color helper.
+color policy through the notch-browser-color helper.
 The wallpaper runs under swaybg as a user service so it survives this script.
 """
 import fcntl, json, os, re, shutil, subprocess, sys, tomllib
@@ -27,8 +27,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 HOME = os.path.expanduser("~")
 CFG = os.environ.get("XDG_CONFIG_HOME", f"{HOME}/.config")
-STATE = os.environ.get("XDG_STATE_HOME", f"{HOME}/.local/state") + "/impasto"
-THEMES = f"{HOME}/.local/share/impasto/themes"
+STATE = os.environ.get("XDG_STATE_HOME", f"{HOME}/.local/state") + "/notch"
+THEMES = f"{HOME}/.local/share/notch/themes"
 DEFAULT = "e-ink"
 
 
@@ -156,7 +156,7 @@ def audit(which):
     return 1 if bad else 0
 
 
-TEMPLATES = f"{HOME}/.local/share/impasto/themed"
+TEMPLATES = f"{HOME}/.local/share/notch/themed"
 TOKEN = re.compile(r"\{\{\s*(mix(?:_strip)?\s+(\w+)\s+(\w+)\s+([\d.]+)%?|(\w+?)(_strip|_rgb|_ansi)?)\s*\}\}")
 
 
@@ -179,16 +179,16 @@ def render(text, c):
 
 # template -> where it lands. A missing app just gets a file it never reads.
 TARGETS = {
-    "ghostty.conf.tpl": f"{CFG}/ghostty/impasto-theme",
-    "helix.toml.tpl": f"{CFG}/helix/themes/impasto.toml",
-    "niri.kdl.tpl": f"{CFG}/niri/impasto-theme.kdl",
+    "ghostty.conf.tpl": f"{CFG}/ghostty/notch-theme",
+    "helix.toml.tpl": f"{CFG}/helix/themes/notch.toml",
+    "niri.kdl.tpl": f"{CFG}/niri/notch-theme.kdl",
     "fuzzel.ini.tpl": f"{CFG}/fuzzel/fuzzel.ini",
-    "btop.theme.tpl": f"{CFG}/btop/themes/impasto.theme",
+    "btop.theme.tpl": f"{CFG}/btop/themes/notch.theme",
     "fastfetch.jsonc.tpl": f"{CFG}/fastfetch/config.jsonc",
     "fzf.sh.tpl": f"{STATE}/fzf.sh",
     "gtk.css.tpl": [f"{CFG}/gtk-3.0/gtk.css", f"{CFG}/gtk-4.0/gtk.css"],
-    "qt6ct.conf.tpl": f"{CFG}/qt6ct/colors/impasto.conf",
-    "t3code.json.tpl": f"{HOME}/.t3/userdata/themes/impasto.json",
+    "qt6ct.conf.tpl": f"{CFG}/qt6ct/colors/notch.conf",
+    "t3code.json.tpl": f"{HOME}/.t3/userdata/themes/notch.json",
 }
 
 
@@ -200,22 +200,22 @@ def hooks(c, name):
     """Each tells one app; run in parallel, failures reported, never fatal."""
     dark = c.get("mode") == "dark"
     def ghostty():
-        ensure_line(f"{CFG}/ghostty/config", "config-file = ?impasto-theme", top=False)
+        ensure_line(f"{CFG}/ghostty/config", "config-file = ?notch-theme", top=False)
         run("pkill", "-USR2", "-x", "ghostty")
     def helix():
-        ensure_line(f"{CFG}/helix/config.toml", 'theme = "impasto"', r'^theme\s*=.*$', top=True)
+        ensure_line(f"{CFG}/helix/config.toml", 'theme = "notch"', r'^theme\s*=.*$', top=True)
         run("pkill", "-USR1", "-x", "helix"); run("pkill", "-USR1", "-x", "hx")
     def niri():
         run("niri", "msg", "action", "load-config-file")
     def btop():
         conf = f"{CFG}/btop/btop.conf"
         if os.path.exists(conf):
-            ensure_line(conf, 'color_theme = "impasto"', r'^color_theme\s*=.*$')
+            ensure_line(conf, 'color_theme = "notch"', r'^color_theme\s*=.*$')
         else:
-            write(conf, 'color_theme = "impasto"\ntheme_background = True\n')
+            write(conf, 'color_theme = "notch"\ntheme_background = True\n')
         run("pkill", "-USR2", "-x", "btop")
     def fzf():
-        ensure_line(f"{HOME}/.bashrc", '[ -f ~/.local/state/impasto/fzf.sh ] && . ~/.local/state/impasto/fzf.sh')
+        ensure_line(f"{HOME}/.bashrc", '[ -f ~/.local/state/notch/fzf.sh ] && . ~/.local/state/notch/fzf.sh')
     def gtk():
         scheme = "prefer-dark" if dark else "prefer-light"
         run("gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme)
@@ -224,11 +224,11 @@ def hooks(c, name):
         run("gsettings", "set", "org.gnome.desktop.interface", "icon-theme", "Papirus-Dark" if dark else "Papirus-Light")
     def qt():
         if shutil.which("qt6ct"):
-            ensure_line(f"{CFG}/qt6ct/qt6ct.conf", f"color_scheme_path={CFG}/qt6ct/colors/impasto.conf", r"^color_scheme_path=.*$")
+            ensure_line(f"{CFG}/qt6ct/qt6ct.conf", f"color_scheme_path={CFG}/qt6ct/colors/notch.conf", r"^color_scheme_path=.*$")
     def browser():
         # A root-owned Chromium policy (Helium reads /etc/chromium); the one
         # privileged step is a fixed helper allowed in sudoers, hex only.
-        helper = "/usr/local/bin/impasto-browser-color"
+        helper = "/usr/local/bin/notch-browser-color"
         if os.access(helper, os.X_OK):
             run("sudo", "-n", helper, c["background"], "dark" if dark else "light")
             if subprocess.run(["pgrep", "-x", "helium"], stdout=subprocess.DEVNULL).returncode == 0:
@@ -248,13 +248,13 @@ def wallpapers(name):
 
 def set_wallpaper(path, colour):
     """swaybg as a transient user unit: owned by systemd, not this shell."""
-    subprocess.run(["systemctl", "--user", "stop", "impasto-wallpaper"],
+    subprocess.run(["systemctl", "--user", "stop", "notch-wallpaper"],
                    stderr=subprocess.DEVNULL)
-    subprocess.run(["systemctl", "--user", "reset-failed", "impasto-wallpaper"],
+    subprocess.run(["systemctl", "--user", "reset-failed", "notch-wallpaper"],
                    stderr=subprocess.DEVNULL)
     args = ["swaybg", "-m", "fill", "-c", colour] + (["-i", path] if path else [])
     subprocess.run(["systemd-run", "--user", "--quiet", "--collect",
-                    "--unit", "impasto-wallpaper", "-p", "Restart=on-failure", *args])
+                    "--unit", "notch-wallpaper", "-p", "Restart=on-failure", *args])
 
 
 def current():

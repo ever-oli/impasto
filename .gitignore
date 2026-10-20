@@ -26,4 +26,4 @@ _mock*.qml
 *.gpg
 id_rsa
 id_ed25519
-home/.local/state/impasto/theme.lock
+home/.local/state/notch/theme.lock

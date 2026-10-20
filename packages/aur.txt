@@ -1,1 +1,1 @@
-# impasto lean-niri · nothing from the AUR is needed.
+# notch lean-niri · nothing from the AUR is needed.

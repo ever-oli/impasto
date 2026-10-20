@@ -1,10 +1,10 @@
-# impasto lean-niri · packages from the official repositories
+# notch lean-niri · packages from the official repositories
 # `./setup packages` installs whatever is missing with `pacman -S --needed`.
 # niri is not listed: install it however you like (the VM runs its own build).
 
 # ── SHELL ───────────────────────────────────────────────────────────────────
 quickshell                   # the shell
-python                       # scripts/*.py and impasto-theme
+python                       # scripts/*.py and notch-theme
 gtk3                         # gtk-launch, which the launcher opens applications with
 libnotify                    # notify-send
 fontconfig
@@ -36,7 +36,7 @@ wf-recorder                  # recording
 
 # ── THEMES ──────────────────────────────────────────────────────────────────
 swaybg                       # the wallpaper
-ghostty                      # the terminal, themed by impasto-theme
+ghostty                      # the terminal, themed by notch-theme
 fuzzel
 mako                         # themed; not run, the shell is the notification server
 helix

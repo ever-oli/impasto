@@ -504,7 +504,7 @@ QtObject {
             })
         }
 
-        // The four ink themes, applied by `impasto-theme`.
+        // The four ink themes, applied by `notch-theme`.
         for (const theme of ThemeService.themes) {
             const title = theme.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
             offer({

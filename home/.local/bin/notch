@@ -1,0 +1,60 @@
+#!/bin/bash
+# notch — the lean niri fork's command line. Every verb is an IPC call into
+# the running shell (`qs ipc call <target> <function> <args>`).
+#
+#   notch open|toggle <panel>   launcher controls session keys t3 wifi
+#                                 bluetooth sound microphone clipboard emoji
+#   notch close
+#   notch ask "<question>" [screen|region]  the notch assistant
+#   notch ask capture | mode <id>         grab the Helium tab · pick a mode
+#   notch picker [theme|wallpaper]       the carousel in the notch
+#   notch palette [Folder/Sub]           the palette, opened at a folder
+#   notch capture [region|window|screen] | text | record
+#   notch volume <0-100> | mute [on|off|toggle]
+#   notch focus [on|off|toggle]            do not disturb
+#   notch t3 [get|refresh|update|open]
+#   notch theme set <name> | get           (notch-theme does the work)
+#   notch say <text> [icon]                a line on the island
+#   notch reload
+#   notch doctor                         check binds, shell, dependencies
+set -euo pipefail
+
+call() { qs ipc call "$@"; }
+
+verb=${1:-help}; shift || true
+case $verb in
+    open|toggle)  call panel "$verb" "${1:?which panel}" ;;
+    close)        call panel close ;;
+    palette)      call palette open "${1:-}" ;;
+    picker)       call picker open "${1:-theme}" ;;
+    ask)          case "${1:-}" in
+                      capture) call ask capture ;;
+                      mode)    call ask mode "${2:?mode id}" ;;
+                      *)       call ask ask "${1:?question}" "${2:-none}" ;;
+                  esac ;;
+    panels)       call panel list ;;
+    capture)
+        case ${1:-} in
+            text)   call capture text ;;
+            record) call capture record ;;
+            *)      call capture open "${1:-}" ;;
+        esac ;;
+    record)       call capture record ;;
+    volume)
+        case ${1:-get} in
+            mute) call volume mute "${2:-toggle}" ;;
+            get)  call volume get ;;
+            *)    call volume set "$1" ;;
+        esac ;;
+    focus)        call focus set "${1:-toggle}" ;;
+    t3)           call t3 "${1:-get}" ;;
+    theme)
+        case ${1:-get} in
+            set) exec "$HOME/.local/bin/notch-theme" set "${2:?which theme}" ;;
+            *)   exec "$HOME/.local/bin/notch-theme" "$@" ;;
+        esac ;;
+    say)          call osd say "${1:?say what}" "${2:-}" ;;
+    reload)       call shell reload ;;
+    doctor)       exec "$HOME/.local/bin/notch-doctor" ;;
+    *)            sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+esac

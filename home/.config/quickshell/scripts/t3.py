@@ -4,7 +4,7 @@
   t3.py status [--refresh]   service state, installed and latest versions
   t3.py update               fetch the newest x86_64 AppImage and swap it in
 
-The latest release is cached in ~/.cache/impasto/t3.json for 30 minutes,
+The latest release is cached in ~/.cache/notch/t3.json for 30 minutes,
 so the bar never hits the GitHub API more than twice an hour.
 """
 import json, os, shutil, struct, subprocess, sys, tempfile, time, urllib.request
@@ -14,7 +14,7 @@ APPS = os.path.join(HOME, "Applications")
 APPIMAGE = os.path.join(APPS, "T3-Code-Nightly.AppImage")
 DIR = os.path.join(APPS, "t3code-nightly")
 ASAR = os.path.join(DIR, "resources", "app.asar")
-CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.join(HOME, ".cache")), "impasto", "t3.json")
+CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.join(HOME, ".cache")), "notch", "t3.json")
 REPO = "pingdotgg/t3code"
 SERVICE = "t3code-web"
 TTL = 30 * 60
@@ -83,7 +83,7 @@ def latest(refresh=False):
     try:
         req = urllib.request.Request(f"https://api.github.com/repos/{REPO}/releases?per_page=5",
                                      headers={"Accept": "application/vnd.github+json",
-                                              "User-Agent": "impasto-lean"})
+                                              "User-Agent": "notch-lean"})
         with urllib.request.urlopen(req, timeout=10) as r:
             releases = json.load(r)
         release = next(r for r in releases if "nightly" in r.get("tag_name", ""))

@@ -3,4 +3,4 @@
 # Runs against the repo's themes, not the installed ones.
 set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
-HOME="$root/home" python3 "$root/home/.local/bin/impasto-theme" audit
+HOME="$root/home" python3 "$root/home/.local/bin/notch-theme" audit

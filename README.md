@@ -1,4 +1,4 @@
-# impasto · lean niri fork
+# notch · lean niri fork
 
 A cut-down, **niri-native** fork of [andreumassanet/impasto](https://github.com/andreumassanet/impasto)
 (branch `lean-niri`). It started as a Quickshell shell for Hyprland and is now a small one for niri,
@@ -16,7 +16,7 @@ built for a cloud VM that you reach over RustDesk from an iPad.
 | Clipboard history | `ClipboardService`, `scripts/clipboard.py` |
 | Session menu (log out, restart, shut down) and polkit prompt | `SessionPanel`, `AuthPanel` |
 | **T3 Code card**: t3code-web state, the installed nightly against the latest release, Open / Start / Update | `T3Module`, `T3Service`, `scripts/t3.py` |
-| **Ink themes**: e-ink, e-ink-dark, red-ink, red-ink-dark | `home/.local/share/impasto/themes`, `impasto-theme` |
+| **Ink themes**: e-ink, e-ink-dark, red-ink, red-ink-dark | `home/.local/share/notch/themes`, `notch-theme` |
 | niri config with Alt as the main key | `home/.config/niri/config.kdl` |
 
 Everything else was cut: Hyprland, the desktop widgets, dock, deck, settings window, lock, games, pets,
@@ -41,15 +41,15 @@ niri msg action spawn -- qs -n     # or log in again; the niri config spawns it
 ## Commands
 
 ```
-impasto open|toggle launcher|controls|t3|keys|session|clipboard|emoji
-impasto capture [region|window|screen] | capture text | record
-impasto t3 [get|refresh|update|open]
-impasto volume <n> | volume mute     impasto focus toggle
-impasto-theme set e-ink|e-ink-dark|red-ink|red-ink-dark · next · next-wallpaper
+notch open|toggle launcher|controls|t3|keys|session|clipboard|emoji
+notch capture [region|window|screen] | capture text | record
+notch t3 [get|refresh|update|open]
+notch volume <n> | volume mute     notch focus toggle
+notch-theme set e-ink|e-ink-dark|red-ink|red-ink-dark · next · next-wallpaper
 ```
 
-`impasto-theme` writes the colours for the shell (`~/.local/state/impasto/theme.json`), ghostty,
-helix, niri's focus ring and border, mako and fuzzel, and runs swaybg as the `impasto-wallpaper` user unit.
+`notch-theme` writes the colours for the shell (`~/.local/state/notch/theme.json`), ghostty,
+helix, niri's focus ring and border, mako and fuzzel, and runs swaybg as the `notch-wallpaper` user unit.
 
 ## Keys (Alt is the main key; Super still works)
 

@@ -1,0 +1,8 @@
+#!/bin/sh
+# One-time: install the browser color helper and let the desktop user run it.
+set -eu
+dir=$(dirname "$0")
+sudo install -o root -g root -m 755 "$dir/notch-browser-color" /usr/local/bin/notch-browser-color
+echo "$(id -un) ALL=(root) NOPASSWD: /usr/local/bin/notch-browser-color" | sudo tee /etc/sudoers.d/notch-browser-color >/dev/null
+sudo chmod 440 /etc/sudoers.d/notch-browser-color
+sudo visudo -cf /etc/sudoers.d/notch-browser-color

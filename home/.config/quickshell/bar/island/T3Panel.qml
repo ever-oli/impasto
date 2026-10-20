@@ -1,4 +1,4 @@
-// `impasto open t3`: the T3 card on its own in the island.
+// `notch open t3`: the T3 card on its own in the island.
 
 import QtQuick
 

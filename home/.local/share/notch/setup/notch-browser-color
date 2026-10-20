@@ -1,10 +1,10 @@
 #!/bin/sh
-# impasto-browser-color <#rrggbb> <light|dark> — write the Chromium color
+# notch-browser-color <#rrggbb> <light|dark> — write the Chromium color
 # policy Helium reads (as Omarchy's omarchy-theme-set-browser does). Install
 # root-owned in /usr/local/bin; setup/install-browser-color allows it in sudoers.
 set -eu
 case "$1" in \#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]) ;; *) exit 2 ;; esac
 case "$2" in light|dark) ;; *) exit 2 ;; esac
 mkdir -p /etc/chromium/policies/managed
-printf '{"BrowserThemeColor": "%s", "BrowserColorScheme": "%s"}\n' "$1" "$2" > /etc/chromium/policies/managed/impasto-color.json.tmp
-mv /etc/chromium/policies/managed/impasto-color.json.tmp /etc/chromium/policies/managed/impasto-color.json
+printf '{"BrowserThemeColor": "%s", "BrowserColorScheme": "%s"}\n' "$1" "$2" > /etc/chromium/policies/managed/notch-color.json.tmp
+mv /etc/chromium/policies/managed/notch-color.json.tmp /etc/chromium/policies/managed/notch-color.json

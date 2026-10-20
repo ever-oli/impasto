@@ -1,17 +1,17 @@
 #!/bin/sh
-# impasto-act — the notch assistant's hands on the desktop.
-#   impasto-act look [file]          screenshot of the screen (default /tmp/impasto-look.png)
-#   impasto-act type <text>          type text into the focused window
-#   impasto-act key <keys…>          press keys, e.g. key ctrl+l   key Return
-#   impasto-act click <x> <y> [left|right|middle]   click at screen pixels
-#   impasto-act move <x> <y>         move the pointer to screen pixels
-#   impasto-act scroll <dy>          scroll (positive is down)
-#   impasto-act window [list|focus <id>]   niri windows
-#   impasto-act open <app|url>       launch an app or open a URL
+# notch-act — the notch assistant's hands on the desktop.
+#   notch-act look [file]          screenshot of the screen (default /tmp/notch-look.png)
+#   notch-act type <text>          type text into the focused window
+#   notch-act key <keys…>          press keys, e.g. key ctrl+l   key Return
+#   notch-act click <x> <y> [left|right|middle]   click at screen pixels
+#   notch-act move <x> <y>         move the pointer to screen pixels
+#   notch-act scroll <dy>          scroll (positive is down)
+#   notch-act window [list|focus <id>]   niri windows
+#   notch-act open <app|url>       launch an app or open a URL
 set -e
 to() { wlrctl pointer move -100000 -100000; wlrctl pointer move "$1" "$2"; }
 case "$1" in
-    look)   f=${2:-/tmp/impasto-look.png}; grim -o Virtual-1 "$f"; echo "$f" ;;
+    look)   f=${2:-/tmp/notch-look.png}; grim -o Virtual-1 "$f"; echo "$f" ;;
     type)   shift; wtype -- "$*" ;;
     key)    shift; for k in "$@"; do
                 set -- $(echo "$k" | tr '+' ' '); args=""

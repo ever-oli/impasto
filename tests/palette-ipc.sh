@@ -5,5 +5,5 @@ check() { q search "$1" >/dev/null; sleep 0.6; q rows | grep -q "$2" && echo "ok
 check "theme" "Style › Theme"
 check "zzqqxy" "web: Search DuckDuckGo"
 q search theme >/dev/null; sleep 0.6; q actions 0 >/dev/null; sleep 0.3
-q rows | grep -q "act: Pin" && echo "ok   ctrl+k" || { echo "FAIL ctrl+k"; fail=1; }
+q rows | grep -q "act: Copy name" && echo "ok   ctrl+k" || { echo "FAIL ctrl+k"; fail=1; }
 qs ipc call panel close >/dev/null 2>&1; exit $fail

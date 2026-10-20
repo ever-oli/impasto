@@ -54,9 +54,9 @@ def describe(action):
     action = action.strip().rstrip(";").strip()
     args = re.findall(r'"([^"]*)"', action)
     if action.startswith("spawn") and args:
-        if args[0] == "impasto":
+        if args[0] == "notch":
             return NAMES.get(" ".join(args[1:]), ("Shell", " ".join(args[1:]).capitalize()))
-        if args[0] == "impasto-theme":
+        if args[0] == "notch-theme":
             return ("Shell", "Next theme" if args[1:] == ["next"] else "Next wallpaper")
         return ("Applications", args[0].replace("-", " ").title())
     word = action.split()[0]

@@ -1,4 +1,4 @@
-// written by impasto-theme
+// written by notch-theme
 layout {
     focus-ring {
         active-color "{{ accent }}"
