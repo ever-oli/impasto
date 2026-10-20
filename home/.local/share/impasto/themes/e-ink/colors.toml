@@ -4,7 +4,7 @@
 
 mode = "light"
 
-accent = "#A9832E"        # aged gold ink — the only hue allowed to lead
+accent = "#896A25"        # aged gold ink — the only hue allowed to lead
 selection = "#CFC7AE"
 selection_foreground = "#3A362B"
 selection_background = "#CFC7AE"
@@ -21,7 +21,7 @@ light_foreground = "#504A3C"
 bright_foreground = "#242012"
 
 red = "#C75A54"           # ember hints, muted to sit in the paper ramp
-yellow = "#C79A4E"        # gold mid — dry ink smear
+yellow = "#8D692D"        # gold mid — dry ink smear
 orange = "#C9743F"
 green = "#B3932F"         # everforest green retired to the gold family
 cyan = "#998F5C"          # khaki in place of teal
@@ -39,7 +39,7 @@ bright_magenta = "#D48BAD"
 color0 = "#F9F6EC"
 color1 = "#C75A54"
 color2 = "#B3932F"
-color3 = "#C79A4E"
+color3 = "#8D692D"
 color4 = "#9C8A66"
 color5 = "#C36E93"
 color6 = "#998F5C"

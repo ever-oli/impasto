@@ -7,16 +7,22 @@
   impasto-theme next                     cycle the four themes
   impasto-theme next-wallpaper
 
-Reads ~/.local/share/impasto/themes/<name>/colors.toml and writes:
-  shell     ~/.local/state/impasto/theme.json   (the shell watches it)
-  ghostty   ~/.config/ghostty/impasto-theme (config-file include, reloaded by SIGUSR2)
-  helix     ~/.config/helix/themes/impasto.toml  (theme = "impasto")
-  niri      ~/.config/niri/impasto-theme.kdl     (included; focus ring, border)
-  mako      ~/.config/mako/config
-  fuzzel    ~/.config/fuzzel/fuzzel.ini
-  wallpaper swaybg, run as a user service so it survives this script
+colors.toml is the single source of truth. Templates in
+~/.local/share/impasto/themed/*.tpl (Omarchy's {{ key }} syntax, see
+basecamp/omarchy, MIT) are rendered to each app, then every app is told to
+reload in parallel; one app failing never stops the rest. A lock keeps two
+switches from interleaving.
+
+Reads ~/.local/share/impasto/themes/<name>/colors.toml; the shell (bar and
+notifications) watches ~/.local/state/impasto/theme.json. Templates go to
+ghostty (USR2), helix theme "impasto" (USR1), niri include, fuzzel, btop (USR2), fastfetch,
+fzf (sourced by .bashrc), gtk 3/4 css, qt6ct (if installed) and T3 Code;
+gsettings handles libadwaita light/dark and icons; Helium gets a Chromium
+color policy through the impasto-browser-color helper.
+The wallpaper runs under swaybg as a user service so it survives this script.
 """
-import json, os, re, subprocess, sys, tomllib
+import fcntl, json, os, re, shutil, subprocess, sys, tomllib
+from concurrent.futures import ThreadPoolExecutor
 
 HOME = os.path.expanduser("~")
 CFG = os.environ.get("XDG_CONFIG_HOME", f"{HOME}/.config")
@@ -78,135 +84,86 @@ def shell(c, name):
     }
 
 
-def ghostty(c):
-    lines = ["# written by impasto-theme",
-             "font-family = AnnotationM Nerd Font Mono",
-             f"background = {c['background']}",
-             f"foreground = {c['foreground']}",
-             f"cursor-color = {c['accent']}",
-             f"cursor-text = {c['background']}",
-             f"selection-background = {c['selection_background']}",
-             f"selection-foreground = {c['selection_foreground']}"]
-    lines += [f"palette = {i}={c[f'color{i}']}" for i in range(16)]
-    return "\n".join(lines) + "\n"
+TEMPLATES = f"{HOME}/.local/share/impasto/themed"
+TOKEN = re.compile(r"\{\{\s*(mix(?:_strip)?\s+(\w+)\s+(\w+)\s+([\d.]+)%?|(\w+?)(_strip|_rgb|_ansi)?)\s*\}\}")
 
 
-def helix(c):
-    return f"""# written by impasto-theme
-"ui.background" = {{ bg = "bg" }}
-"ui.text" = "fg"
-"ui.text.focus" = {{ fg = "bright" }}
-"ui.cursor" = {{ fg = "bg", bg = "accent" }}
-"ui.cursor.primary" = {{ fg = "bg", bg = "accent" }}
-"ui.cursor.match" = {{ bg = "sel", modifiers = ["bold"] }}
-"ui.selection" = {{ bg = "sel" }}
-"ui.linenr" = "muted"
-"ui.linenr.selected" = {{ fg = "accent", modifiers = ["bold"] }}
-"ui.statusline" = {{ fg = "fg", bg = "bg2" }}
-"ui.statusline.inactive" = {{ fg = "muted", bg = "bg2" }}
-"ui.statusline.normal" = {{ fg = "bg", bg = "accent" }}
-"ui.statusline.insert" = {{ fg = "bg", bg = "green" }}
-"ui.statusline.select" = {{ fg = "bg", bg = "magenta" }}
-"ui.popup" = {{ bg = "bg2" }}
-"ui.window" = "muted"
-"ui.help" = {{ fg = "fg", bg = "bg2" }}
-"ui.menu" = {{ fg = "fg", bg = "bg2" }}
-"ui.menu.selected" = {{ fg = "bg", bg = "accent" }}
-"ui.virtual.whitespace" = "bg3"
-"ui.virtual.ruler" = {{ bg = "bg2" }}
-"ui.virtual.inlay-hint" = "muted"
-"ui.cursorline.primary" = {{ bg = "bg2" }}
-"comment" = {{ fg = "muted", modifiers = ["italic"] }}
-"keyword" = {{ fg = "fg", modifiers = ["bold"] }}
-"function" = "fg2"
-"type" = "brown"
-"constant" = "accent"
-"string" = "green"
-"variable" = "fg"
-"operator" = "fg2"
-"punctuation" = "muted"
-"tag" = "accent"
-"attribute" = "brown"
-"markup.heading" = {{ fg = "accent", modifiers = ["bold"] }}
-"markup.link.url" = {{ fg = "blue", modifiers = ["underlined"] }}
-"diff.plus" = "green"
-"diff.minus" = "red"
-"diff.delta" = "yellow"
-"error" = "red"
-"warning" = "orange"
-"info" = "blue"
-"hint" = "muted"
-"diagnostic.error" = {{ underline = {{ color = "red", style = "curl" }} }}
-"diagnostic.warning" = {{ underline = {{ color = "orange", style = "curl" }} }}
-
-[palette]
-bg = "{c['background']}"
-bg2 = "{c['dark_background']}"
-bg3 = "{c['darker_background']}"
-fg = "{c['foreground']}"
-fg2 = "{c['light_foreground']}"
-bright = "{c['bright_foreground']}"
-muted = "{c['muted']}"
-accent = "{c['accent']}"
-sel = "{c['selection_background']}"
-red = "{c['red']}"
-green = "{c['green']}"
-yellow = "{c['yellow']}"
-orange = "{c['orange']}"
-blue = "{c['blue']}"
-magenta = "{c['magenta']}"
-brown = "{c['brown']}"
-"""
+def render(text, c):
+    """Omarchy's template tokens: {{ key }}, {{ key_strip }}, {{ key_rgb }},
+    {{ key_ansi }} (38;2;r;g;b) and {{ mix a b N% }}."""
+    def one(m):
+        if m.group(2):
+            value = mix(c[m.group(2)], c[m.group(3)], float(m.group(4)) / 100)
+            return h(value) if "_strip" in m.group(1) else value
+        key, kind = m.group(5), m.group(6)
+        value = str(c.get(key, m.group(0)))
+        if not value.startswith("#"):
+            return value
+        rgb = [int(value[i:i + 2], 16) for i in (1, 3, 5)]
+        return {"_strip": h(value), "_rgb": ",".join(map(str, rgb)),
+                "_ansi": "38;2;" + ";".join(map(str, rgb))}.get(kind, value)
+    return TOKEN.sub(one, text)
 
 
-def niri(c):
-    return f"""// written by impasto-theme
-layout {{
-    focus-ring {{
-        active-color "{c['accent']}"
-        inactive-color "{c['muted']}"
-    }}
-    border {{
-        active-color "{c['accent']}"
-        inactive-color "{c['dark_background']}"
-    }}
-}}
-"""
+# template -> where it lands. A missing app just gets a file it never reads.
+TARGETS = {
+    "ghostty.conf.tpl": f"{CFG}/ghostty/impasto-theme",
+    "helix.toml.tpl": f"{CFG}/helix/themes/impasto.toml",
+    "niri.kdl.tpl": f"{CFG}/niri/impasto-theme.kdl",
+    "fuzzel.ini.tpl": f"{CFG}/fuzzel/fuzzel.ini",
+    "btop.theme.tpl": f"{CFG}/btop/themes/impasto.theme",
+    "fastfetch.jsonc.tpl": f"{CFG}/fastfetch/config.jsonc",
+    "fzf.sh.tpl": f"{STATE}/fzf.sh",
+    "gtk.css.tpl": [f"{CFG}/gtk-3.0/gtk.css", f"{CFG}/gtk-4.0/gtk.css"],
+    "qt6ct.conf.tpl": f"{CFG}/qt6ct/colors/impasto.conf",
+    "t3code.json.tpl": f"{HOME}/.t3/userdata/themes/impasto.json",
+}
 
 
-def mako(c):
-    return f"""# written by impasto-theme
-background-color={c['background']}
-text-color={c['foreground']}
-border-color={c['accent']}
-progress-color=over {c['selection_background']}
-border-size=2
-border-radius=10
-default-timeout=5000
-font=AnnotationM Nerd Font 11
-"""
+def run(*cmd):
+    return subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15).returncode
 
 
-def fuzzel(c):
-    return f"""# written by impasto-theme
-[main]
-font=AnnotationM Nerd Font:size=12
-terminal=ghostty -e
-[colors]
-background={h(c['background'])}f2
-text={h(c['foreground'])}ff
-prompt={h(c['accent'])}ff
-placeholder={h(c['muted'])}ff
-input={h(c['bright_foreground'])}ff
-match={h(c['accent'])}ff
-selection={h(c['selection_background'])}ff
-selection-text={h(c['selection_foreground'])}ff
-selection-match={h(c['accent'])}ff
-border={h(c['accent'])}ff
-[border]
-width=2
-radius=12
-"""
+def hooks(c, name):
+    """Each tells one app; run in parallel, failures reported, never fatal."""
+    dark = c.get("mode") == "dark"
+    def ghostty():
+        ensure_line(f"{CFG}/ghostty/config", "config-file = ?impasto-theme", top=False)
+        run("pkill", "-USR2", "-x", "ghostty")
+    def helix():
+        ensure_line(f"{CFG}/helix/config.toml", 'theme = "impasto"', r'^theme\s*=.*$', top=True)
+        run("pkill", "-USR1", "-x", "helix"); run("pkill", "-USR1", "-x", "hx")
+    def niri():
+        run("niri", "msg", "action", "load-config-file")
+    def btop():
+        conf = f"{CFG}/btop/btop.conf"
+        if os.path.exists(conf):
+            ensure_line(conf, 'color_theme = "impasto"', r'^color_theme\s*=.*$')
+        else:
+            write(conf, 'color_theme = "impasto"\ntheme_background = True\n')
+        run("pkill", "-USR2", "-x", "btop")
+    def fzf():
+        ensure_line(f"{HOME}/.bashrc", '[ -f ~/.local/state/impasto/fzf.sh ] && . ~/.local/state/impasto/fzf.sh')
+    def gtk():
+        scheme = "prefer-dark" if dark else "prefer-light"
+        run("gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme)
+        run("gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", "Adwaita-dark" if dark else "Adwaita")
+    def icons():
+        run("gsettings", "set", "org.gnome.desktop.interface", "icon-theme", "Papirus-Dark" if dark else "Papirus-Light")
+    def qt():
+        if shutil.which("qt6ct"):
+            ensure_line(f"{CFG}/qt6ct/qt6ct.conf", f"color_scheme_path={CFG}/qt6ct/colors/impasto.conf", r"^color_scheme_path=.*$")
+    def browser():
+        # A root-owned Chromium policy (Helium reads /etc/chromium); the one
+        # privileged step is a fixed helper allowed in sudoers, hex only.
+        helper = "/usr/local/bin/impasto-browser-color"
+        if os.access(helper, os.X_OK):
+            run("sudo", "-n", helper, c["background"], "dark" if dark else "light")
+            if subprocess.run(["pgrep", "-x", "helium"], stdout=subprocess.DEVNULL).returncode == 0:
+                subprocess.Popen(["helium-browser", "--refresh-platform-policy", "--no-startup-window"],
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return {"ghostty": ghostty, "helix": helix, "niri": niri, "btop": btop, "fzf": fzf,
+            "gtk": gtk, "icons": icons, "qt": qt, "browser": browser}
 
 
 def wallpapers(name):
@@ -250,29 +207,34 @@ def apply(name, wallpaper=None):
     write(f"{STATE}/theme.json", json.dumps({"id": name, "name": title, "mode": c.get("mode", "light"),
                                               "wallpaper": wallpaper, "shell": shell(c, name)}, indent=1))
 
-    write(f"{CFG}/ghostty/impasto-theme", ghostty(c))
-    gh = f"{CFG}/ghostty/config"
-    include = "config-file = ?impasto-theme"
-    existing = open(gh).read() if os.path.exists(gh) else ""
-    if include not in existing:
-        write(gh, existing + ("" if existing.endswith("\n") or not existing else "\n") + include + "\n")
+    for tpl, dest in TARGETS.items():
+        try:
+            text = render(open(f"{TEMPLATES}/{tpl}").read(), c)
+            for path in dest if isinstance(dest, list) else [dest]:
+                if tpl == "t3code.json.tpl" and not os.path.isdir(f"{HOME}/.t3/userdata"):
+                    continue
+                write(path, text)
+        except Exception as error:
+            print(f"  {tpl}: {error}", file=sys.stderr)
 
-    write(f"{CFG}/helix/themes/impasto.toml", helix(c))
-    ensure_line(f"{CFG}/helix/config.toml", 'theme = "impasto"', r'^theme\s*=.*$', top=True)
-
-    write(f"{CFG}/niri/impasto-theme.kdl", niri(c))
-    write(f"{CFG}/mako/config", mako(c))
-    write(f"{CFG}/fuzzel/fuzzel.ini", fuzzel(c))
-
-    # Live reloads; each is harmless when that program is not running.
-    for cmd in (["makoctl", "reload"], ["pkill", "-USR1", "-x", "hx"], ["pkill", "-USR2", "-x", "ghostty"],
-                ["niri", "msg", "action", "load-config-file"]):
-        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    failed = []
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        for app, job in [(app, pool.submit(fn)) for app, fn in hooks(c, name).items()]:
+            try:
+                job.result(timeout=20)
+            except Exception as error:
+                failed.append(f"{app}: {error}")
+    for line in failed:
+        print(f"  {line}", file=sys.stderr)
     set_wallpaper(wallpaper, c["background"])
     print(f"{name} · {os.path.basename(wallpaper) if wallpaper else 'no wallpaper'}")
 
 
 def main():
+    # One switch at a time; a second waits for the first to finish.
+    os.makedirs(STATE, exist_ok=True)
+    lock = open(f"{STATE}/theme.lock", "w")
+    fcntl.flock(lock, fcntl.LOCK_EX)
     verb = sys.argv[1] if len(sys.argv) > 1 else "current"
     if verb == "list":
         print("\n".join(names()))

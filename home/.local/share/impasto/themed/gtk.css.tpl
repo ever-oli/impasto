@@ -1,0 +1,24 @@
+/* written by impasto-theme from themed/gtk.css.tpl — GTK 3/4 and libadwaita */
+@define-color accent_color {{ accent }};
+@define-color accent_bg_color {{ accent }};
+@define-color accent_fg_color {{ background }};
+@define-color window_bg_color {{ background }};
+@define-color window_fg_color {{ foreground }};
+@define-color view_bg_color {{ lighter_background }};
+@define-color view_fg_color {{ foreground }};
+@define-color headerbar_bg_color {{ dark_background }};
+@define-color headerbar_fg_color {{ foreground }};
+@define-color sidebar_bg_color {{ dark_background }};
+@define-color sidebar_fg_color {{ foreground }};
+@define-color card_bg_color {{ lighter_background }};
+@define-color card_fg_color {{ foreground }};
+@define-color popover_bg_color {{ lighter_background }};
+@define-color popover_fg_color {{ foreground }};
+@define-color dialog_bg_color {{ background }};
+@define-color dialog_fg_color {{ foreground }};
+@define-color theme_bg_color {{ background }};
+@define-color theme_fg_color {{ foreground }};
+@define-color theme_base_color {{ lighter_background }};
+@define-color theme_text_color {{ foreground }};
+@define-color theme_selected_bg_color {{ accent }};
+@define-color theme_selected_fg_color {{ background }};
