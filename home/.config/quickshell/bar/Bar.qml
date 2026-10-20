@@ -77,19 +77,15 @@ PanelWindow {
     // outer gap so the bar lines up with tiled windows.
     readonly property int edgeMargin: SettingsService.barSideMargin
 
-    readonly property string style: SettingsService.barStyle
-    readonly property bool spread: root.style === "spread"
-    // The bezel is one capsule too, spanning the top edge.
-    readonly property bool unified: root.style === "island" || root.style === "bezel"
-    // The sides on the wallpaper, without capsules; not in one capsule, whose
-    // band is the sides' ground.
-    readonly property bool bare: !root.unified && SettingsService.barSides === "bare"
-    readonly property bool grouped: !root.spread && !root.unified
-
-    // The bezel: the band is the top of the screen's frame, out to both
-    // edges, with the screen's corners curving under its ends. It never
-    // moves: what the island shows drops out of its middle.
-    readonly property bool edgeToEdge: root.style === "bezel"
+    // The lean fork has one layout, impasto's "Spread": workspaces and the
+    // launcher at the left edge, status and tray at the right edge, and the
+    // island hanging from the top edge between them like a notch. The other
+    // styles' flags stay as constants so their branches fold away.
+    readonly property bool spread: true
+    readonly property bool unified: false
+    readonly property bool bare: SettingsService.barSides === "bare"
+    readonly property bool grouped: false
+    readonly property bool edgeToEdge: false
 
     readonly property bool holding: island.expanded
 

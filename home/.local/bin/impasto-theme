@@ -252,9 +252,9 @@ def apply(name, wallpaper=None):
     write(f"{CFG}/ghostty/impasto-theme", ghostty(c))
     gh = f"{CFG}/ghostty/config"
     include = "config-file = ?impasto-theme"
-    current = open(gh).read() if os.path.exists(gh) else ""
-    if include not in current:
-        write(gh, current + ("" if current.endswith("\n") or not current else "\n") + include + "\n")
+    existing = open(gh).read() if os.path.exists(gh) else ""
+    if include not in existing:
+        write(gh, existing + ("" if existing.endswith("\n") or not existing else "\n") + include + "\n")
 
     write(f"{CFG}/helix/themes/impasto.toml", helix(c))
     ensure_line(f"{CFG}/helix/config.toml", 'theme = "impasto"', r'^theme\s*=.*$', top=True)
