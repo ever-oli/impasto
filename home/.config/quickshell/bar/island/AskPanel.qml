@@ -20,6 +20,7 @@ ColumnLayout {
 
     Component.onCompleted: {
         AskService.bridge.running = true
+        AskService.loadModes()
         field.forceActiveFocus()
     }
 
@@ -43,13 +44,18 @@ ColumnLayout {
             font.italic: AskService.busy
             color: AskService.busy ? Theme.textMuted : Theme.text
         }
-        PillButton { icon: "󰹑"; text: "Screen"; active: AskService.screen === "screen"
+        PillButton { icon: AskService.modeInfo.icon; text: AskService.modeInfo.name; active: AskService.mode !== "general"
+            onClicked: AskService.stepMode() }
+        PillButton { icon: "󰖟"; text: AskService.captured !== "" ? `Captured: ${AskService.captured.slice(0, 24)}` : "Page"
+            active: AskService.captured !== ""
+            onClicked: AskService.captured !== "" ? AskService.captured = "" : AskService.capture() }
+        PillButton { icon: "󰹑"; text: ""; active: AskService.screen === "screen"
             onClicked: AskService.screen = AskService.screen === "screen" ? "none" : "screen" }
-        PillButton { icon: "󰩭"; text: "Region"; active: AskService.screen === "region"
+        PillButton { icon: "󰩭"; text: ""; active: AskService.screen === "region"
             onClicked: AskService.screen = AskService.screen === "region" ? "none" : "region" }
-        PillButton { icon: "󰅍"; text: "Context"; active: AskService.context
+        PillButton { icon: "󰅍"; text: ""; active: AskService.context
             onClicked: AskService.context = !AskService.context }
-        PillButton { icon: "󰍽"; text: "Act"; active: AskService.act
+        PillButton { icon: "󰍽"; text: ""; active: AskService.act
             onClicked: AskService.act = !AskService.act }
         IconButton { icon: AskService.busy ? "󰓛" : "󰎔"
             onClicked: AskService.busy ? AskService.cancel() : AskService.reset() }
@@ -67,17 +73,31 @@ ColumnLayout {
         onCountChanged: Qt.callLater(() => transcript.positionViewAtEnd())
         onContentHeightChanged: if (AskService.busy) transcript.positionViewAtEnd()
 
-        delegate: Text {
+        delegate: Loader {
             required property var modelData
             width: ListView.view.width
+            sourceComponent: modelData.role === "visual" && modelData.path ? picture : line
+
+            Component {
+                id: picture
+                Image {
+                    source: `file://${modelData.path}`
+                    fillMode: Image.PreserveAspectFit
+                    height: Math.min(implicitHeight * width / Math.max(1, implicitWidth), 300)
+                    smooth: true
+                }
+            }
+            Component { id: line; Text {
+            width: parent ? parent.width : 0
             text: modelData.text
             wrapMode: Text.Wrap
             textFormat: modelData.role === "ai" ? Text.MarkdownText : Text.PlainText
-            font.family: modelData.role === "tool" ? Theme.fontMono : Theme.fontBar
+            font.family: modelData.role === "tool" || modelData.role === "visual" ? Theme.fontMono : Theme.fontBar
             font.pixelSize: modelData.role === "tool" ? Theme.fontSizeSmall : 14
             font.weight: modelData.role === "you" ? Font.DemiBold : Font.Normal
             color: modelData.role === "ai" ? Theme.text : modelData.role === "you" ? Theme.accent : Theme.textMuted
             onLinkActivated: link => Quickshell.execDetached(["xdg-open", link])
+        } }
         }
 
         // Quick actions while nothing has been asked.

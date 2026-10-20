@@ -210,6 +210,19 @@ Scope {
             AskService.ask(text, screen || "none")
             return root.ok()
         }
+
+        // Alt+Y: the active Helium tab, held for the next question.
+        function capture(): string {
+            root.island?.open("ask")
+            AskService.bridge.running = true
+            AskService.capture()
+            return root.ok()
+        }
+
+        function mode(id: string): string {
+            AskService.mode = id
+            return root.ok({ mode: id })
+        }
     }
 
     // `impasto palette Style/Theme` opens the palette at that folder.

@@ -29,9 +29,16 @@ Singleton {
 
     // ── TREE ────────────────────────────────────────────────────────────────
     readonly property var tree: [
-        { icon: "󰋚", name: "Ask history", subtitle: "Past questions; Enter copies the answer", itemIcon: "󰚩",
-          source: `python3 ${Quickshell.shellPath("scripts/ask.py")} history`,
-          each: `python3 ${Quickshell.shellPath("scripts/ask.py")} answer {} | wl-copy && notify-send "Answer copied"` },
+        // Listed by LauncherService (`apps`), which owns the application index.
+        { icon: "󰀻", name: "Apps", subtitle: "Every installed application", apps: true, items: [] },
+        { icon: "󰚩", name: "Assistant", subtitle: "History, profile, modes, reference files", items: [
+            { icon: "󰋚", name: "Ask history", subtitle: "Past questions; Enter copies the answer", itemIcon: "󰚩",
+              source: `python3 ${Quickshell.shellPath("scripts/ask.py")} history`,
+              each: `python3 ${Quickshell.shellPath("scripts/ask.py")} answer {} | wl-copy && notify-send "Answer copied"` },
+            { icon: "󰀄", name: "Edit profile", subtitle: "Sent to interview modes, 8000 characters", sh: "ghostty -e helix ~/.config/impasto/profile.md" },
+            { icon: "󰘦", name: "Modes folder", subtitle: "Drop a .md file to add a mode", sh: "ghostty --working-directory=$HOME/.config/impasto/modes" },
+            { icon: "󰈙", name: "Reference files", subtitle: "files/<mode>/ — PDF, DOCX, text", sh: "mkdir -p ~/.config/impasto/files && xdg-open ~/.config/impasto/files" }
+        ] },
         { icon: "󰋖", name: "Learn", subtitle: "Keys, wikis, cheat sheets", items: [
             { icon: "󰌌", name: "Keys sheet", subtitle: "Every bind", panel: "keys" },
             { icon: "󰣇", name: "Arch wiki", url: "https://wiki.archlinux.org" },
@@ -148,7 +155,7 @@ Singleton {
         root.loaded = []
         if (root.top?.source) {
             lines.running = false
-            lines.command = ["sh", "-c", root.top.source]
+            lines.command = ["sh", "-c", `PATH="$HOME/.local/bin:$PATH"; ${root.top.source}`]
             lines.running = true
         }
     }
@@ -252,7 +259,7 @@ Singleton {
         else if (node.url)
             Quickshell.execDetached(["xdg-open", node.url])
         else if (node.term)
-            Quickshell.execDetached(["ghostty", "-e", "bash", "-c", node.term + root.done])
+            Quickshell.execDetached(["ghostty", "-e", "bash", "-c", `PATH="$HOME/.local/bin:$PATH"; ${node.term}${root.done}`])
         else if (node.sh)
             Quickshell.execDetached(["sh", "-c", `PATH="$HOME/.local/bin:$PATH"; ${node.sh}`])
         else

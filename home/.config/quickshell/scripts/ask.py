@@ -3,16 +3,21 @@
 
 Reads one JSON command per line on stdin:
   {"op":"ask","text":..,"screen":"none|screen|region","context":bool,"act":bool}
+  {"op":"capture"} (the active Helium tab, for the next question)
   {"op":"cancel"}  {"op":"reset"}  {"op":"answer","id":..,"allow":bool}
 Prints one JSON event per line on stdout:
   {"type":"ready"} {"type":"chunk","text":..} {"type":"thought","text":..}
   {"type":"tool","title":..,"status":..} {"type":"permission","id":..,"title":..,"detail":..}
-  {"type":"done","stop":..} {"type":"error","text":..}
+  {"type":"captured","title":..} {"type":"visual","kind":..,"path":..,"source":..}
+  {"type":"rolled","summary":..} {"type":"done","stop":..} {"type":"error","text":..}
 One session is kept, so follow-ups share it; `reset` starts a new one.
 Reads (read/search/fetch/think) are allowed; anything else is denied unless
 the question was asked in act mode, where the shell asks Ever first.
 """
 import base64, json, os, subprocess, sys, threading, time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import ask_extras as extras
 
 HOME = os.path.expanduser("~")
 STATE = os.environ.get("XDG_STATE_HOME", f"{HOME}/.local/state") + "/impasto"
@@ -27,6 +32,9 @@ pixels are logical (scale 1). Every command is shown to Ever for approval, so ex
 
 # `ask.py history` lists past questions (newest first, "question<TAB>n");
 # `ask.py answer n` prints that answer. The palette's Ask history uses both.
+if sys.argv[1:2] == ["modes"]:
+    print(json.dumps([{k: m[k] for k in ("id", "name", "icon", "sources")} for m in extras.modes()]))
+    sys.exit()
 if sys.argv[1:2] in (["history"], ["answer"]):
     rows = [json.loads(l) for l in open(HISTORY)] if os.path.exists(HISTORY) else []
     if sys.argv[1] == "history":
@@ -47,6 +55,12 @@ agent = subprocess.Popen([AGENT, "acp"], stdin=subprocess.PIPE, stdout=subproces
                          stderr=subprocess.DEVNULL, text=True, bufsize=1, env=env, cwd=HOME)
 next_id, waiting, pending = [0], {}, {}
 session, act_mode, turn = [None], [False], {"q": "", "a": ""}
+# Rolling context: after ROLL turns the session is summarised and replaced by
+# a fresh one seeded with the summary and the last KEEP turns.
+ROLL, KEEP = 12, 4
+turns, seed, captured = [], [""], [None]
+quiet = [False]
+conversation = [str(int(time.time() * 1000))]
 
 def send(msg):
     agent.stdin.write(json.dumps(msg) + "\n"); agent.stdin.flush()
@@ -65,7 +79,11 @@ def on_update(u):
     kind = u.get("sessionUpdate")
     content = u.get("content") or {}
     if kind == "agent_message_chunk" and content.get("type") == "text":
-        turn["a"] += content["text"]; emit(type="chunk", text=content["text"])
+        turn["a"] += content["text"]
+        if not quiet[0]:
+            emit(type="chunk", text=content["text"])
+    elif quiet[0]:
+        pass
     elif kind == "agent_thought_chunk" and content.get("type") == "text":
         emit(type="thought", text=content["text"])
     elif kind in ("tool_call", "tool_call_update"):
@@ -127,18 +145,63 @@ def context():
             parts.append(f"{label}:\n{text[:2000]}")
     return "\n\n".join(parts)
 
-def ask(cmd):
-    if session[0] is None:
-        session[0] = request("session/new", {"cwd": HOME, "mcpServers": []})["sessionId"]
-    act_mode[0] = bool(cmd.get("act"))
-    text = cmd.get("text", "").strip()
-    blocks = []
+def compose(cmd):
+    """The question with everything the mode and toggles put around it."""
+    mode = extras.mode_of(cmd.get("mode", "general")) or {"id": "general", "body": "", "sources": [], "rules": "none"}
+    parts = [f"<mode name=\"{mode.get('name', 'General')}\">\n{mode['body']}\n</mode>", extras.VISUAL_RULES]
+    if mode["rules"] == "grounded":
+        parts.append(extras.rules())
+    if "profile" in mode["sources"] and extras.profile():
+        parts.append(f"<candidate_profile>\n{extras.profile()}\n</candidate_profile>")
+    if "files" in mode["sources"]:
+        parts.append(extras.files_block(mode["id"], cmd.get("text", "")))
+    if act_mode[0]:
+        parts.append(ACT)
+    if seed[0]:
+        parts.append(seed[0]); seed[0] = ""
+    if captured[0]:
+        parts.append(extras.page_block(captured[0])); captured[0] = None
     if cmd.get("context"):
         ctx = context()
         if ctx:
-            text = f"{text}\n\n<context>\n{ctx}\n</context>"
-    if act_mode[0]:
-        text = f"{ACT}\n\n{text}"
+            parts.append(f"<context>\n{ctx}\n</context>")
+    return "\n\n".join(p for p in parts if p) + f"\n\n<question>\n{cmd.get('text', '').strip()}\n</question>"
+
+def prompt(blocks):
+    if session[0] is None:
+        session[0] = request("session/new", {"cwd": HOME, "mcpServers": []})["sessionId"]
+    return request("session/prompt", {"sessionId": session[0], "prompt": blocks})
+
+def roll():
+    """Summarise the session quietly and seed the next one with it."""
+    emit(type="tool", title="Compacting the conversation", status="pending")
+    quiet[0] = True
+    turn["a"] = ""
+    try:
+        prompt([{"type": "text", "text": "Summarise our conversation so far in at most 12 bullet points: "
+                 "facts, decisions, open questions, anything about me. No preamble."}])
+        summary = turn["a"].strip()
+    except RuntimeError:
+        summary = ""
+    quiet[0] = False
+    recent = "\n".join(f"Ever: {t['q']}\nYou: {t['a'][:1500]}" for t in turns[-KEEP:])
+    seed[0] = f"<conversation_summary>\n{summary}\n</conversation_summary>\n<recent_turns>\n{recent}\n</recent_turns>"
+    session[0] = None
+    turns.clear()
+    emit(type="rolled", summary=summary)
+
+busy = threading.Lock()
+
+def ask(cmd):
+    # One question at a time: a follow-up sent mid-answer (or mid-compaction)
+    # waits rather than sharing the turn.
+    with busy:
+        answer_one(cmd)
+
+def answer_one(cmd):
+    act_mode[0] = bool(cmd.get("act"))
+    text = compose(cmd)
+    blocks = []
     shot = {"screen": "grim -o Virtual-1 -", "region": 'g=$(slurp) && grim -g "$g" -'}.get(cmd.get("screen"))
     if shot:
         png = sh(shot)
@@ -150,13 +213,25 @@ def ask(cmd):
                 text += f"\n\n<screen_text source=\"OCR of the attached screenshot\">\n{seen[:6000]}\n</screen_text>"
     turn.update(q=cmd.get("text", ""), a="")
     try:
-        result = request("session/prompt", {"sessionId": session[0], "prompt": [{"type": "text", "text": text}] + blocks})
+        result = prompt([{"type": "text", "text": text}] + blocks)
+        for kind, png, source in extras.visuals(turn["a"]):
+            emit(type="visual", kind=kind, path=png or "", source=source)
         emit(type="done", stop=result.get("stopReason", "end_turn"))
     except RuntimeError as error:
         emit(type="error", text=str(error))
     os.makedirs(STATE, exist_ok=True)
     with open(HISTORY, "a") as f:
-        f.write(json.dumps({"t": time.time(), "q": turn["q"], "a": turn["a"]}) + "\n")
+        f.write(json.dumps({"t": time.time(), "s": conversation[0], "mode": cmd.get("mode", "general"), "q": turn["q"], "a": turn["a"]}) + "\n")
+    turns.append({"q": turn["q"], "a": turn["a"]})
+    if len(turns) >= int(os.environ.get("ASK_ROLL", ROLL)):
+        roll()
+
+def capture():
+    try:
+        captured[0] = extras.browser_page()
+        emit(type="captured", title=captured[0].get("title") or captured[0].get("url", "page"))
+    except Exception as error:
+        emit(type="error", text=f"No browser page: start Helium (it listens on 127.0.0.1:9222). {error}")
 
 threading.Thread(target=reader, daemon=True).start()
 try:
@@ -174,6 +249,8 @@ for line in sys.stdin:
     op = cmd.get("op")
     if op == "ask":
         threading.Thread(target=ask, args=(cmd,), daemon=True).start()
+    elif op == "capture":
+        threading.Thread(target=capture, daemon=True).start()
     elif op == "cancel" and session[0]:
         send({"jsonrpc": "2.0", "method": "session/cancel", "params": {"sessionId": session[0]}})
         for pick in pending.values():
@@ -183,4 +260,6 @@ for line in sys.stdin:
         pending.pop(cmd["id"])(bool(cmd.get("allow")))
     elif op == "reset":
         session[0] = None
+        turns.clear(); seed[0] = ""; captured[0] = None
+        conversation[0] = str(int(time.time() * 1000))
 agent.terminate()

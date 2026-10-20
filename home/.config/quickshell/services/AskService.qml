@@ -25,6 +25,29 @@ Singleton {
     property bool act: false            // may operate the desktop, with approval
     property bool auto: false           // approve every action this session
 
+    // ~/.config/impasto/modes/*.md, read by the bridge. A dropped file is a mode.
+    property var modes: []
+    property string mode: "general"
+    readonly property var modeInfo: root.modes.find(m => m.id === root.mode) ?? { name: "General", icon: "󰚩" }
+    // The Helium tab captured for the next question (Alt+Y).
+    property string captured: ""
+
+    function loadModes(): void { modesProcess.running = true }
+    function stepMode(): void {
+        const at = root.modes.findIndex(m => m.id === root.mode)
+        if (root.modes.length)
+            root.mode = root.modes[(at + 1) % root.modes.length].id
+    }
+    function capture(): void { root.send({ op: "capture" }) }
+
+    readonly property Process modesProcess: Process {
+        command: ["python3", Quickshell.shellPath("scripts/ask.py"), "modes"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: { try { root.modes = JSON.parse(text) } catch (error) {} }
+        }
+    }
+
     readonly property var suggestions: [
         { icon: "󰹑", text: "Explain what's on my screen", screen: "screen" },
         { icon: "󰅍", text: "Summarise what I copied", screen: "none" },
@@ -58,8 +81,9 @@ Singleton {
         root.push("you", said)
         root.busy = true
         root.thought = ""
-        root.send({ op: "ask", text: said, screen: screen ?? root.screen, context: root.context, act: root.act })
+        root.send({ op: "ask", text: said, screen: screen ?? root.screen, context: root.context, act: root.act, mode: root.mode })
         root.screen = "none"
+        root.captured = ""
     }
 
     function cancel(): void {
@@ -104,6 +128,14 @@ Singleton {
                     } else
                         root.permission = event
                     break
+                case "captured": root.captured = event.title; break
+                case "visual":
+                    if (event.path)
+                        root.messages = root.messages.map(m => m.role === "ai"
+                            ? { role: "ai", text: m.text.replace("```" + event.kind + "\n" + event.source + "```", "") } : m)
+                    root.messages = root.messages.concat([{ role: "visual", text: event.source, path: event.path }])
+                    break
+                case "rolled": root.push("tool", "󰁨 Older turns summarised; the conversation goes on"); break
                 case "done": root.busy = false; root.thought = ""; break
                 case "error": root.busy = false; root.push("tool", `󰅚 ${event.text}`); break
                 }

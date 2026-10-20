@@ -6,6 +6,7 @@
 #                                 bluetooth sound microphone clipboard emoji
 #   impasto close
 #   impasto ask "<question>" [screen|region]  the notch assistant
+#   impasto ask capture | mode <id>         grab the Helium tab · pick a mode
 #   impasto palette [Folder/Sub]           the palette, opened at a folder
 #   impasto capture [region|window|screen] | text | record
 #   impasto volume <0-100> | mute [on|off|toggle]
@@ -23,7 +24,11 @@ case $verb in
     open|toggle)  call panel "$verb" "${1:?which panel}" ;;
     close)        call panel close ;;
     palette)      call palette open "${1:-}" ;;
-    ask)          call ask ask "${1:?question}" "${2:-none}" ;;
+    ask)          case "${1:-}" in
+                      capture) call ask capture ;;
+                      mode)    call ask mode "${2:?mode id}" ;;
+                      *)       call ask ask "${1:?question}" "${2:-none}" ;;
+                  esac ;;
     panels)       call panel list ;;
     capture)
         case ${1:-} in

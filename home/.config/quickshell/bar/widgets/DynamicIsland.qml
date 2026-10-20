@@ -96,7 +96,7 @@ Rectangle {
         // A tray item's menu, a row per entry.
         tray:       { width: TrayService.menuWidth, height: TrayService.menuHeight },
         t3:         { width: T3Service.panelWidth, height: T3Service.panelHeight },
-        ask:        { width: 640, height: AskService.messages.length ? 460 : 220 }
+        ask:        { width: 760, height: AskService.messages.length ? 460 : 220 }
     })
 
 
