@@ -39,30 +39,11 @@ Singleton {
     // The chip look is global (`SettingsService.chipShape`, `chipFigure`);
     // desktop faces are listed per theme in `DesktopService.faces`.
     readonly property var catalogue: [
-        { id: "media",         name: "Media",         bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(1, Theme.cardRowGap + 34) },
-        { id: "timer",         name: "Timer",         bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
-        { id: "claude",        name: "Claude",        bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
-        { id: "codex",         name: "Codex",         bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
-        { id: "battery",       name: "Battery",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
+        { id: "t3",            name: "T3 Code",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, Theme.cardRowGap + 40) },
         { id: "volume",        name: "Volume",        bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
-        { id: "brightness",    name: "Brightness",    bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(1, 0) },
         { id: "network",       name: "Network",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "bluetooth",     name: "Bluetooth",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "notifications", name: "Notifications", bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(7, 0) },
-        { id: "weather",       name: "Weather",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(0, 50) },
-        { id: "markets",       name: "Markets",       bar: true,  width: Theme.cardWidth, height: MarketsService.cardHeight },
-        { id: "screentime",    name: "Screen time",   bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(4, Theme.cardRowGap + 44) },
-        { id: "github",        name: "GitHub",        bar: false, width: Theme.cardWidth, height: Theme.cardHeight(0, GithubService.cardGrid) },
-        { id: "stats",         name: "System",        bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, Theme.cardRowGap + 36) },
-        { id: "updates",       name: "Updates",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(4, 0) },
-        { id: "pet",           name: "Pet",           bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, Theme.cardRowGap + 32) },
-        { id: "games",         name: "Games",         bar: false, width: Theme.cardWidth, height: Theme.cardHeight(4, 0) },
-        { id: "calendar",      name: "Calendar",      bar: true,  width: 340, height: 330 },
-        { id: "notes",         name: "Notes",         bar: false, width: Theme.cardWidth, height: Theme.cardHeight(4, 0) },
-        { id: "tasks",         name: "Tasks",         bar: false, width: Theme.cardWidth, height: Theme.cardHeight(4, 0) },
-        { id: "photo",         name: "Photo",         bar: false, width: 356, height: 150 },
-        { id: "spectrum",      name: "Spectrum",      bar: false, width: 0,   height: 0 },
-        { id: "lyrics",        name: "Lyrics",        bar: false, width: 0,   height: 0 },
         { id: "clock",         name: "Clock",         bar: false,
           width: SettingsService.clockShowsDate ? 240 : 150, height: Theme.capsuleHeight }
     ]
@@ -71,21 +52,7 @@ Singleton {
         return root.catalogue.find(item => item.id === id) ?? root.catalogue[0]
     }
 
-    // ── BUTTONS ─────────────────────────────────────────────────────────────
-    //
-    // Every door of the control centre can go on the bar, under its name and
-    // glyph, and so can the control centre itself and the capture surface.
-    // Not the statistics or the pet: on the bar those are modules, and a
-    // button beside them would be the same piece without its figure. Alone in
-    // a capsule, a button is drawn as a circle.
-    //
-    // On the bar an id is a button before it is a module; notes and games are
-    // modules only on the desktop.
-    //
-    // Capture is what the capture key does: the photo is taken at once, so
-    // whatever the island has open is in it.
-    readonly property var buttonIds: ["launcher", "overview", "controls", "capture",
-        "appearance", "notes", "board", "games", "keys", "packages", "settings", "session"]
+    readonly property var buttonIds: ["launcher", "controls", "capture", "keys", "session"]
 
     readonly property var buttons: {
         const out = {}
@@ -100,12 +67,9 @@ Singleton {
                 continue
             }
             const door = ControlsService.door(id)
-            if (door === null)
+            if (door === null || door.panel === "")
                 continue
-            // The one door with no panel is the settings window.
-            out[id] = door.panel !== ""
-                ? { name: door.label, glyph: door.icon, panel: door.panel }
-                : { name: door.label, glyph: door.icon, action: () => root.settingsRequested() }
+            out[id] = { name: door.label, glyph: door.icon, panel: door.panel }
         }
         return out
     }
@@ -114,52 +78,20 @@ Singleton {
         return root.buttons[id] !== undefined
     }
 
-    // Whether an id from a saved layout is still a piece: one taken out of
-    // the catalogue is dropped rather than drawn as something else.
     function placeable(id: string): bool {
         return id === "workspaces" || id === "tray" || id === "split" || root.isButton(id)
             || root.catalogue.some(item => item.id === id && item.bar)
     }
 
-    // A reading that polls keeps polling while a piece on the bar or a widget
-    // on the desk shows it.
     function watch(id: string, on: bool): void {
-        if (id === "claude") {
+        if (id === "t3") {
             if (on)
-                ClaudeService.subscribe()
+                T3Service.subscribe()
             else
-                ClaudeService.release()
-        } else if (id === "codex") {
-            if (on)
-                CodexService.subscribe()
-            else
-                CodexService.release()
-        } else if (id === "weather") {
-            if (on)
-                WeatherService.subscribe()
-            else
-                WeatherService.release()
-        } else if (id === "markets") {
-            if (on)
-                MarketsService.subscribe()
-            else
-                MarketsService.release()
-        } else if (id === "screentime") {
-            if (on)
-                ScreenTimeService.follow()
-            else
-                ScreenTimeService.unfollow()
-        } else if (id === "updates") {
-            if (on)
-                UpdatesService.subscribe()
-            else
-                UpdatesService.release()
+                T3Service.release()
         }
     }
 
-    // Buttons cannot see the island, so they ask here and the bar listens.
-    // The bar writes the open panel back to `shownPanel` so a button can stay
-    // lit.
     signal panelToggled(string panel)
 
     function togglePanel(panel: string): void {
@@ -168,18 +100,11 @@ Singleton {
 
     property string shownPanel: ""
 
-    // The settings window is not an island panel; shell.qml opens it.
+    // Kept so older callers still link; there is no settings window.
     signal settingsRequested()
 
-    // ── CHIP SHAPE ──────────────────────────────────────────────────────────
-    //
-    // Modules with a ring face: those whose reading fills from empty to full.
-    // A state or a count (the network, the bell, the date, the pending
-    // updates) has nothing to fill, so it keeps its symbol in either shape.
-    readonly property var ringed: ["media", "timer", "claude", "codex", "battery", "volume",
-        "brightness", "stats", "pet"]
+    readonly property var ringed: ["volume"]
 
-    // A piece's own shape when it has one, the bar's when it does not.
     function shapeOf(id: string, own: var): string {
         const chosen = own ? own : SettingsService.chipShape
         return chosen === "ring" && root.ringed.indexOf(id) >= 0 ? "ring" : "icon"
@@ -189,11 +114,6 @@ Singleton {
         return own ? own : SettingsService.chipFigure
     }
 
-    // ── GLYPH AND FIGURE ────────────────────────────────────────────────────
-    //
-    // One table for every place a module's symbol and figure appear (bar,
-    // glance, settings), in either chip shape. Claude and the pet draw their
-    // own mark instead of a glyph (`ChipFace`).
     function glyphOf(id: string): string {
         switch (id) {
         case "network":
@@ -202,93 +122,32 @@ Singleton {
             return BluetoothService.icon
         case "volume":
             return AudioService.icon
-        case "brightness":
-            return BrightnessService.icon
-        case "battery":
-            return BatteryService.icon
-        case "weather":
-            return WeatherService.glyph || "󰖐"
-        case "markets":
-            return MarketsService.glyph(MarketsService.lead)
-        case "screentime":
-            return "󰔛"
-        case "updates":
-            return "󰏖"
         case "notifications":
             return NotificationService.doNotDisturb ? "󰂛" : "󰂚"
-        case "media":
-            return "󰎇"
-        case "lyrics":
-            return "󰍰"
-        case "timer":
-            return "󰔛"
-        case "stats":
-            return "󰍛"
-        case "calendar":
-            return "󰃭"
-        case "codex":
-            return "\uf489"
+        case "t3":
+            return "󰚩"
         }
         return ""
     }
 
-    // Never empty, so "always show the figure" applies to every module: a
-    // connection shows its name, an empty bell "0", an idle countdown "0:00".
     function valueOf(id: string): string {
         switch (id) {
         case "volume":
             return AudioService.muted ? "Muted" : `${AudioService.volume}%`
-        case "brightness":
-            return `${BrightnessService.percent}%`
-        case "battery":
-            return `${BatteryService.percent}%`
-        case "weather":
-            return WeatherService.available ? `${WeatherService.temperature}°` : "--°"
-        case "markets":
-            return MarketsService.lead
-                ? `${MarketsService.short(MarketsService.lead)} ${MarketsService.change(MarketsService.lead)}` : "—"
-        case "screentime":
-            return ScreenTimeService.short(ScreenTimeService.todayTotal)
-        case "updates":
-            return `${UpdatesService.count}`
         case "notifications":
             return `${NotificationService.history.length}`
-        case "media":
-            return MediaService.available
-                ? (MediaService.title || MediaService.identity || "Playing") : "Nothing playing"
-        case "timer":
-            return TimerService.running ? TimerService.display : "0:00"
-        case "claude":
-            if (ClaudeService.measured)
-                return `${Math.round(ClaudeService.sessionFraction * 100)}%`
-            return ClaudeService.blockTokens > 0 ? ClaudeService.compact(ClaudeService.blockTokens) : "0%"
-        case "codex":
-            return CodexService.measured ? `${Math.round(CodexService.gauge * 100)}%` : "—"
-        case "stats":
-            return `${StatsService.cpu.toFixed(0)}%`
-        case "pet":
-            return PetService.hatched ? `Lv ${PetService.level}` : "Egg"
         case "network":
             return NetworkService.connectionName
         case "bluetooth":
             return BluetoothService.summary
-        case "calendar":
-            return Qt.formatDate(root.today.date, "ddd d")
+        case "t3":
+            return T3Service.updateAvailable ? "Update" : (T3Service.running ? "T3" : "Off")
         }
         return ""
     }
 
-    // For the calendar's figure, which only changes at midnight.
-    readonly property SystemClock today: SystemClock {
-        precision: SystemClock.Minutes
-    }
-
-    // Maximum width for text figures (track title, network or device name)
-    // before they are elided.
     function figureLimit(id: string): int {
         switch (id) {
-        case "media":
-            return 150
         case "network":
         case "bluetooth":
             return 110
@@ -296,146 +155,48 @@ Singleton {
         return 0
     }
 
-    // Warnings (low battery, hot CPU) use the fixed indicator
-    // hues; everything else is plain text colour.
     function tintOf(id: string): color {
-        switch (id) {
-        case "battery":
-            if (BatteryService.available && !BatteryService.charging && !BatteryService.full) {
-                if (BatteryService.percent <= 10)
-                    return Theme.indicatorBad
-                if (BatteryService.percent <= 20)
-                    return Theme.indicatorWarn
-            }
-            break
-        case "stats":
-            if (StatsService.cpu >= 90)
+        if (id === "t3") {
+            if (!T3Service.running)
                 return Theme.indicatorBad
-            if (StatsService.cpu >= 70)
+            if (T3Service.updateAvailable)
                 return Theme.indicatorWarn
-            break
-        case "timer":
-            return TimerService.running ? TimerService.tint : Theme.text
-        case "claude":
-            return ClaudeService.measured ? ClaudeService.tint : Theme.indicator
-        case "codex":
-            return CodexService.tint
-        case "markets":
-            return MarketsService.tint(MarketsService.lead)
         }
         return Theme.text
     }
 
-    // ── VISIBILITY ──────────────────────────────────────────────────────────
-    //
-    // A placed piece always shows; the player says "Nothing playing" rather
-    // than disappearing. The timer and the player can instead be set to show
-    // only while running (`when: "running"`).
-    readonly property var runners: ["timer", "media"]
+    readonly property var runners: []
 
     function runs(id: string): bool {
-        switch (id) {
-        case "timer":
-            return TimerService.running
-        case "media":
-            return MediaService.playing
-        }
         return false
     }
 
     function shows(id: string, when: var): bool {
-        if (when === "running" && root.runners.indexOf(id) >= 0)
-            return root.runs(id)
-        return id === "media" || root.has(id)
+        return root.has(id)
     }
 
-    // ── ACTIVITIES ──────────────────────────────────────────────────────────
-    //
-    // Up to two running activities shown beside the time, most urgent first:
-    // recording, the microphone, camera or screen in use, countdown, music,
-    // and the workspace, for a bar without the strip. A
-    // countdown or music can be kept off the island (`SettingsService.beside`)
-    // without affecting its module; so can the privacy mark, which has no
-    // module, and the service behind it is not built while it is off. A
-    // recording cannot, since nothing else on screen shows or stops it.
-    readonly property var running: {
-        const list = []
-        if (RecorderService.recording)
-            list.push("recorder")
-        if (SettingsService.beside("privacy") && PrivacyService.active)
-            list.push("privacy")
-        if (TimerService.running && SettingsService.beside("timer"))
-            list.push("timer")
-        if (MediaService.playing && SettingsService.beside("media"))
-            list.push("media")
-        // Last of those that come and go: a machine can run for hours.
-        if (VmService.running.length > 0 && SettingsService.beside("machine"))
-            list.push("machine")
-        return list
-    }
+    // Beside the time: only a recording, which nothing else shows or stops,
+    // and the workspace when kept.
+    readonly property var running: RecorderService.recording ? ["recorder"] : []
 
-    // The workspace is always there when kept, so it is last: the others
-    // come and go.
     readonly property var activities: (SettingsService.beside("workspace")
         ? root.running.concat(["workspace"]) : root.running).slice(0, 2)
 
-    // What is running but did not fit, counted at the island's trailing end.
-    // The workspace never counts: it is not something that started.
     readonly property int overflow: Math.max(0, root.running.length - 2)
     readonly property int overflowWidth: 30
 
-    // Resting width. Alone, the time keeps the catalogue width; with
-    // activities it shrinks to fit and each side gets a slot. One activity
-    // splits across both sides (mark left, figure right); two take one each.
     readonly property int clockCore: SettingsService.clockShowsDate
         ? 150 : (SettingsService.clockShowsSeconds ? 88 : 72)
-    readonly property int activitySide: {
-        if (root.activities.length > 1)
-            return 92
-        // A program's name is longer than a countdown's digits, so alone the
-        // privacy mark sizes both sides to the name and a margin, and the
-        // time stays centred.
-        if (root.activities[0] === "privacy")
-            return Math.max(64, Math.ceil(root.privacyName) + 2 * root.activityInset)
-        return 64
-    }
-
+    readonly property int activitySide: root.activities.length > 1 ? 92 : 64
     readonly property int activityInset: 14
-    readonly property int privacyNameLimit: 110
-    readonly property real privacyName: root.activities.indexOf("privacy") < 0 ? 0
-        : Math.min(root.privacyNameLimit, root.nameMetrics.advanceWidth(PrivacyService.who))
 
-    readonly property FontMetrics nameMetrics: FontMetrics {
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSizeRegular
-        font.weight: Font.DemiBold
-    }
     readonly property int restWidth: root.activities.length === 0
         ? root.entry("clock").width
         : root.clockCore + 2 * root.activitySide
             + (root.overflow > 0 ? root.overflowWidth : 0)
 
-    // The glance the island opens under a resting pointer: one face — a
-    // square, the text beside it, the time large at the far end — and a
-    // strip of chips under it for whatever else is running. With nothing
-    // running the weather is the face, and without it the time alone.
-    //
-    // The weather only where it is already being asked for, on the bar or
-    // on the desktop: touching the service builds it, and building it makes
-    // a network request.
-    readonly property bool summaryWeather: (SettingsService.onBar("weather")
-            || DesktopService.placed("weather"))
-        && WeatherService.available
-
-    // The widths fit a 24-hour time; a longer format (seconds, AM/PM) widens
-    // the glance by what it adds, measured at the glance's type. The music
-    // is wider, for a line of lyrics beside the time; the rest leave their
-    // reading 170 px, which a weather line or a machine's state needs.
-    // Nothing running and no weather is five days beside the time, 420.
-    readonly property int summaryWidth: (root.glanceFace === "media" ? 620
-            : root.glanceFace === "clock" ? 420 : 560)
+    readonly property int summaryWidth: (root.glanceFace === "clock" ? 420 : 560)
         + root.glanceTime - root.glanceTimeBase
-    // Measured again when the type changes: a call is not a dependency.
     readonly property int glanceTimeBase: root.timeMetrics.font.family !== ""
         ? Math.ceil(root.timeMetrics.advanceWidth("20:48")) : 0
     readonly property int glanceTime: root.timeMetrics.font.family !== ""
@@ -450,37 +211,13 @@ Singleton {
     readonly property int summaryHeight: root.glanceFaceHeight
         + (root.glanceStrip.length > 0 ? root.glanceStripHeight : 0)
 
-    // Everything running, in the island's order. Its own count, not the
-    // island's: a countdown kept off the island still shows here. The
-    // privacy mark does not, since its service is not built while it is off.
-    readonly property var glanceRows: {
-        const list = []
-        if (RecorderService.recording)
-            list.push("recorder")
-        if (SettingsService.beside("privacy") && PrivacyService.active)
-            list.push("privacy")
-        if (TimerService.running)
-            list.push("timer")
-        if (MediaService.available)
-            list.push("media")
-        if (VmService.running.length > 0)
-            list.push("machine")
-        return list
-    }
-    // The face is what has the most to press: the music, then the countdown,
-    // the machine, the take, and the privacy mark, which has nothing.
-    readonly property var glanceRank: ["media", "timer", "machine", "recorder", "privacy"]
-    readonly property string glanceFace: root.glanceRank.find(id => root.glanceRows.includes(id))
-        ?? (root.summaryWeather ? "weather" : "clock")
+    readonly property var glanceRows: RecorderService.recording ? ["recorder"] : []
+    readonly property string glanceFace: root.glanceRows.length > 0 ? root.glanceRows[0] : "clock"
     readonly property var glanceStrip: root.glanceRows.filter(id => id !== root.glanceFace)
     readonly property int glanceMargin: 19
     readonly property int glanceFaceHeight: 150
     readonly property int glanceStripHeight: 38
 
-    // ── OPEN DETAIL ─────────────────────────────────────────────────────────
-    //
-    // One detail at a time, always shown by the island (`Bar.qml` writes
-    // "island" to `openHost`).
     property string openId: ""
     property string openHost: ""
 
@@ -489,44 +226,18 @@ Singleton {
         root.openHost = ""
     }
 
-    // The catalogue size, except network and Bluetooth, which open the
-    // control centre's lists, an empty notification list, which is short,
-    // and the cards whose rows come and go, sized from their count.
     function openSize(id: string): var {
-        if (id === "network" || id === "bluetooth")
+        if (id === "bluetooth")
             return { width: 420, height: 500 }
         const item = root.entry(id)
         if (id === "notifications")
             return { width: item.width,
                      height: Theme.cardHeight(Math.min(6, NotificationService.history.length) + 1, 0) }
-        if (id === "updates")
-            return { width: item.width, height: Theme.cardHeight(Math.min(3, UpdatesService.updates.length) + 1, 0) }
-        if (id === "games")
-            return { width: item.width, height: Theme.cardHeight(Math.min(3, GamesService.ranked.length) + 1, 0) }
-        if (id === "notes")
-            return { width: item.width, height: Theme.cardHeight(Math.min(3, NotesService.live.length) + 1, 0) }
-        if (id === "tasks")
-            return { width: item.width, height: Theme.cardHeight(Math.min(3, TasksService.queue.length) + 1, 0) }
-        if (id === "claude")
-            return { width: item.width, height: Theme.cardHeight(ClaudeService.rows, 0) }
-        if (id === "battery")
-            return { width: item.width, height: Theme.cardHeight(BatteryService.healthKnown ? 3 : 2, 0) }
         if (id === "volume")
             return { width: item.width, height: Theme.cardHeight(AudioService.cardRows, 0) }
-        if (id === "codex")
-            return { width: item.width, height: Theme.cardHeight(Math.max(1, CodexService.limits.length), 0) }
-        if (id === "brightness")
-            return { width: item.width,
-                     height: Theme.cardHeight(Math.max(1, BrightnessService.dimmable.length), 0) }
-        if (id === "media" && LyricsService.available)
-            return { width: 880, height: 440 }
-        if (id === "media")
-            return { width: item.width, height: MediaService.seekable
-                ? Theme.cardHeight(1, Theme.cardRowGap + 34) : Theme.cardHeight(0, 34) }
         return { width: item.width, height: item.height }
     }
 
-    // A module that becomes unavailable closes its open detail.
     readonly property bool openGone: root.openId !== "" && !root.has(root.openId)
 
     onOpenGoneChanged: {
@@ -534,26 +245,18 @@ Singleton {
             root.close()
     }
 
-    // Chips cannot see their bar, so they ask here and every bar listens. The
-    // live one answers, since the detail opens in its island.
     signal activationRequested(string id)
 
     function activate(id: string): void {
         root.activationRequested(id)
     }
 
-    // A module asking for a panel, e.g. the games detail opening the arcade.
     signal panelRequested(string panel)
 
     function requestPanel(panel: string): void {
         root.panelRequested(panel)
     }
 
-    // ── AVAILABILITY ────────────────────────────────────────────────────────
-    //
-    // Whether this machine can show the module at all (a backlight, a player
-    // on the bus, pacman-contrib installed). Not a preference; placement is
-    // the layout's job.
     function has(id: string): bool {
         if (id === "capture")
             return CaptureService.can("grim")
@@ -561,69 +264,16 @@ Singleton {
             return true
         switch (id) {
         case "clock":
-        case "calendar":
-        case "timer":
         case "workspaces":
         case "tray":
         case "notifications":
+        case "network":
+        case "t3":
             return true
-        case "media":
-            return MediaService.available
-        case "claude":
-            // Reading this constructs the lazy singleton, which runs its
-            // first query; it turns true a moment later.
-            return ClaudeService.available
-        case "codex":
-            // Only where Codex has written a log with its limits.
-            return CodexService.available
-        case "battery":
-            return BatteryService.available
         case "volume":
             return AudioService.ready
-        case "brightness":
-            // A desktop has no backlight, the way it has no battery.
-            return BrightnessService.available
-        case "network":
-            // Disconnected is still a reading.
-            return true
         case "bluetooth":
             return BluetoothService.available
-        case "weather":
-            // Builds the service, which runs its first fetch.
-            return WeatherService.available
-        case "markets":
-            // Builds the service, which runs its first fetch; false with an
-            // empty list.
-            return MarketsService.available
-        case "github":
-            // False until a name is set and a grid comes back, so nothing
-            // shows on an unconfigured machine.
-            return GithubService.available
-        case "stats":
-            // The sampler runs from boot (shell.qml touches it).
-            return true
-        case "screentime":
-            // Recording from boot; an empty day still reads 0:00.
-            return true
-        case "updates":
-            // False on a machine with neither checkupdates nor pacman.
-            return UpdatesService.available
-        case "pet":
-            // `ready` is constant true; reading it builds the service, and
-            // the service's trickle runs while the pet is on the bar.
-            return PetService.ready
-        case "games":
-            return GamesService.ready
-        case "notes":
-            return NotesService.ready
-        case "tasks":
-            return TasksService.ready
-        case "photo":
-            // An empty one asks for a picture.
-            return true
-        case "lyrics":
-            // With nothing playing it says so, as the player does.
-            return true
         }
         return false
     }

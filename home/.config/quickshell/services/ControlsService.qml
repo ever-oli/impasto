@@ -41,36 +41,14 @@ Singleton {
     //   detail  subtitle in the launcher's `>` mode; also searched
     //   panel   island panel it opens, or "" for the settings window
     readonly property var doors: [
-        { id: "stats",      icon: "󰕬", label: "System statistics",
-          detail: "Processor, memory, disks, the network", panel: "stats" },
-        { id: "settings",   icon: "󰒓", label: "Settings",
-          detail: "The whole desk, in a window",           panel: "" },
-        { id: "pet",        icon: "󰏩", label: "Pet",
-          detail: "The creature living on the bar",        panel: "pet" },
-        { id: "games",      icon: "󰊗", label: "Games",
-          detail: "The arcade",                            panel: "games" },
-        { id: "notes",      icon: "󰎞", label: "Notes",
-          detail: "The deck of sticky notes",              panel: "notes" },
-        { id: "board",      icon: "󰄲", label: "Task board",
-          detail: "To do, doing, done",                    panel: "board" },
-        { id: "overview",   icon: "󰕰", label: "Workspace overview",
-          detail: "Every workspace side by side",          panel: "overview" },
         { id: "launcher",   icon: "󰍉", label: "Launcher",
           detail: "Where you already are",                 panel: "launcher" },
-        { id: "appearance", icon: "󰏘", label: "Appearance",
-          detail: "The wallpaper and the palette",         panel: "appearance" },
-        { id: "session",    icon: "󰐥", label: "Session menu",
-          detail: "Lock, log out, suspend, restart, off",  panel: "session" },
+        { id: "t3",         icon: "󰚩", label: "T3 Code",
+          detail: "The web service, the nightly, updates", panel: "t3" },
         { id: "keys",       icon: "󰌌", label: "Keys",
           detail: "Every shortcut, on one sheet",          panel: "keys" },
-        { id: "packages",   icon: "󰏗", label: "Packages",
-          detail: "Updates, what is installed, the AUR",   panel: "packages" },
-        { id: "servers",    icon: "󰒋", label: "Servers",
-          detail: "The ports your projects listen on",     panel: "servers" },
-        { id: "screentime", icon: "󰔛", label: "Screen time",
-          detail: "Where the day went, app by app",        panel: "screentime" },
-        { id: "camera",     icon: "󰄀", label: "Camera",
-          detail: "Effects and reactions for your calls",  panel: "camera" }
+        { id: "session",    icon: "󰐥", label: "Session menu",
+          detail: "Log out, restart, shut down",           panel: "session" }
     ]
 
     readonly property var defaultButtons: ["stats", "settings", "pet", "games", "notes", "board"]
@@ -238,13 +216,6 @@ Singleton {
 
     readonly property list<QtObject> toggleCatalogue: [
         Toggle {
-            key: "wifi"; icon: NetworkService.icon; label: "Wi-Fi"
-            detail: NetworkService.connectionName
-            active: NetworkService.wifiEnabled
-            expandable: true; panel: "wifi"
-            action: () => NetworkService.toggleWifi()
-        },
-        Toggle {
             key: "bluetooth"; icon: BluetoothService.icon; label: "Bluetooth"
             detail: BluetoothService.summary
             active: BluetoothService.enabled
@@ -252,13 +223,6 @@ Singleton {
             expandable: BluetoothService.available; panel: "bluetooth"
             // Toggling the radio swaps the audio sink; don't show a volume OSD.
             action: () => { OsdService.suppressAudio(); BluetoothService.toggle() }
-        },
-        Toggle {
-            key: "power"; icon: "󰓅"; label: "Power"
-            detail: SystemService.powerProfile || "Unknown"
-            active: SystemService.performanceMode
-            available: SystemService.ready
-            action: () => SystemService.toggle("power-profile")
         },
         Toggle {
             key: "focus"; icon: NotificationService.doNotDisturb ? "󰂛" : "󰂚"; label: "Focus"
@@ -275,63 +239,11 @@ Singleton {
             action: () => AudioService.toggleSourceMute()
         },
         Toggle {
-            key: "airplane"; icon: root.airborne ? "󰀝" : "󰀞"; label: "Airplane"
-            detail: root.airborne ? "Radios off" : "Radios on"
-            active: root.airborne
-            action: () => {
-                const turnOn = root.airborne
-                OsdService.suppressAudio()
-                NetworkService.setWifi(turnOn)
-                if (BluetoothService.available && BluetoothService.enabled !== turnOn)
-                    BluetoothService.toggle()
-            }
-        },
-        Toggle {
-            key: "nightlight"; icon: SunsetService.icon; label: "Night light"
-            detail: SunsetService.detail
-            active: SunsetService.on
-            available: SunsetService.available
-            expandable: SunsetService.available; panel: "nightlight"
-            action: () => SunsetService.toggle()
-        },
-        Toggle {
             key: "output"; icon: AudioService.icon; label: "Output"
             detail: AudioService.muted ? "Muted" : `${AudioService.volume}%`
             active: !AudioService.muted
             available: AudioService.ready
             action: () => AudioService.toggleMute()
-        },
-        Toggle {
-            key: "dock"; icon: "󱂠"; label: "Dock"
-            detail: SettingsService.dockEnabled ? "Shown" : "Hidden"
-            active: SettingsService.dockEnabled
-            action: () => SettingsService.set("dockEnabled", !SettingsService.dockEnabled)
-        },
-        Toggle {
-            key: "notch"; icon: "󰌢"; label: "Notch"
-            detail: SettingsService.islandAttached ? "Attached" : "Floating"
-            active: SettingsService.islandAttached
-            action: () => SettingsService.set("islandAttached", !SettingsService.islandAttached)
-        },
-        Toggle {
-            // All four at once; the settings set them one by one.
-            readonly property var shadows: ["windowShadow", "barShadow", "dockShadow", "widgetShadow"]
-            readonly property int count: shadows.filter(key => SettingsService[key]).length
-
-            key: "shadow"; icon: "󰘷"; label: "Shadows"
-            detail: count === shadows.length ? "On" : count === 0 ? "Off" : `${count} of ${shadows.length}`
-            active: count > 0
-            action: () => {
-                const on = count === 0
-                for (const key of shadows)
-                    SettingsService.set(key, on)
-            }
-        },
-        Toggle {
-            key: "game"; icon: "󰺵"; label: "Game mode"
-            detail: SettingsService.gameMode ? "No effects" : "Off"
-            active: SettingsService.gameMode
-            action: () => SettingsService.set("gameMode", !SettingsService.gameMode)
         },
         Toggle {
             key: "screenshot"; icon: "󰹑"; label: "Capture"
@@ -359,17 +271,6 @@ Singleton {
                                               CaptureService.settle)
         },
         Toggle {
-            key: "picker"; icon: PickerService.icon; label: "Colour"
-            detail: "A pixel"
-            active: PickerService.picking
-            available: PickerService.available
-            closes: true
-            // hyprpicker freezes the screen as it is, so wait for the panel
-            // to close. The delay is passed by the caller because a keybind
-            // with nothing open needs none.
-            action: () => PickerService.pick(PickerService.settle)
-        },
-        Toggle {
             key: "record"; icon: RecorderService.recording ? "󰑊" : "󰕧"
             label: "Record"
             detail: RecorderService.recording
@@ -392,7 +293,7 @@ Singleton {
     ]
 
     readonly property var defaultToggles:
-        ["wifi", "bluetooth", "power", "focus", "microphone", "airplane"]
+        ["focus", "output", "microphone", "screenshot", "record", "clearClipboard"]
 
     function tileOf(key: string): var {
         for (let index = 0; index < root.toggleCatalogue.length; index++) {
@@ -479,18 +380,8 @@ Singleton {
     readonly property var catalogue: [
         { id: "toggles",       name: "Toggles",       icon: "󰨚", sizes: ["2x2", "2x3", "2x4", "3x2", "3x3", "4x2", "4x3"] },
         { id: "volume",        name: "Volume",        icon: "󰕾", sizes: ["2x1", "3x1", "4x1"] },
-        { id: "brightness",    name: "Brightness",    icon: "󰃠", sizes: ["2x1", "3x1", "4x1"] },
-        { id: "appearance",    name: "Appearance",    icon: "󰏘", sizes: ["2x2", "2x3", "2x4", "3x3", "4x2"] },
-        { id: "media",         name: "Media",         icon: "󰝚", sizes: ["2x2", "2x3", "3x2", "4x2"] },
-        { id: "weather",       name: "Weather",       icon: "󰖐", sizes: ["2x1", "2x2", "2x3", "4x2"] },
-        { id: "calendar",      name: "Calendar",      icon: "󰃭", sizes: ["2x3", "2x4", "3x4"] },
         { id: "notifications", name: "Notifications", icon: "󰂚", sizes: ["3x2", "3x3", "2x4", "3x4", "2x6", "2x8", "3x8"] },
-        { id: "impasto",       name: "impasto",       icon: "󰏘", sizes: ["1x2", "2x2", "2x4"] },
-        { id: "pet",           name: "Pet",           icon: "󰏩", sizes: ["2x2", "2x3"] },
         { id: "clock",         name: "Clock",         icon: "󰥔", sizes: ["1x2", "2x2", "2x4"] },
-        { id: "games",         name: "Games",         icon: "󰊗", sizes: ["2x1", "2x2"] },
-        { id: "notes",         name: "Notes",         icon: "󰎞", sizes: ["1x2", "2x2", "2x4"] },
-        { id: "tasks",         name: "Tasks",         icon: "󰄲", sizes: ["1x2", "2x2", "2x3", "2x4"] },
         { id: "session",       name: "Session",       icon: "󰐥", sizes: ["1x1", "2x1", "3x1", "1x2", "2x2", "4x1"] },
         { id: "shortcuts",     name: "Shortcuts",     icon: "󰕰", sizes: ["1x1", "2x1", "3x1", "1x2", "2x2", "4x1", "6x1"] }
     ]
@@ -501,12 +392,10 @@ Singleton {
     readonly property var defaultBlocks: [
         { id: "toggles",       col: 0, row: 0, size: "2x3" },
         { id: "volume",        col: 0, row: 3, size: "2x1" },
-        { id: "brightness",    col: 0, row: 4, size: "2x1" },
-        { id: "appearance",    col: 0, row: 5, size: "2x3" },
-        { id: "media",         col: 2, row: 0, size: "2x2" },
-        { id: "weather",       col: 2, row: 2, size: "2x2" },
-        { id: "calendar",      col: 2, row: 4, size: "2x4" },
-        { id: "notifications", col: 4, row: 0, size: "2x8" }
+        { id: "clock",         col: 0, row: 4, size: "2x2" },
+        { id: "session",       col: 0, row: 6, size: "2x1" },
+        { id: "shortcuts",     col: 0, row: 7, size: "2x1" },
+        { id: "notifications", col: 2, row: 0, size: "2x8" }
     ]
 
     function entry(id: string): var {
@@ -949,6 +838,7 @@ Singleton {
     }
 
     function edit(on: bool): void {
+        on = false  // lean: the grid is fixed; arrange it in settings.json
         root.editing = on
         root.selected = ""
         if (!on) {

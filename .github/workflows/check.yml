@@ -2,7 +2,6 @@ name: check
 
 on:
   push:
-    branches: [main, dev]
   pull_request:
 
 jobs:
@@ -10,9 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Lua and zsh
-        run: sudo apt-get update && sudo apt-get install -y lua5.4 zsh
-
-      - name: Verify Python, Lua, zsh, bash, JSON and TOML syntax
-        run: ./setup check
+      - name: Syntax
+        run: |
+          bash -n setup home/.local/bin/impasto
+          python3 -m py_compile home/.local/bin/impasto-theme home/.config/quickshell/scripts/*.py
+          for f in home/.local/share/impasto/themes/*/colors.toml; do python3 -c "import tomllib,sys; tomllib.load(open(sys.argv[1],'rb'))" "$f"; done

@@ -93,57 +93,13 @@ def account_path(user):
         return None
 
 
-def set_name(name):
-    user = pwd.getpwuid(os.getuid()).pw_name
-    path = account_path(user)
-    if path is None:
-        return "AccountsService is not running"
-    done = subprocess.run(
-        ["busctl", "call", "org.freedesktop.Accounts", path,
-         "org.freedesktop.Accounts.User", "SetRealName", "s", "--", name.strip()],
-        capture_output=True, text=True, timeout=10)
-    return None if done.returncode == 0 else done.stderr.strip() or "not changed"
-
-
-def set_picture(path):
-    if not shared():
-        return "the picture helper is not installed (./setup system)"
-    try:
-        square = subprocess.run(
-            ["magick", f"{path}[0]", "-auto-orient", "-thumbnail", f"{SIDE}x{SIDE}^",
-             "-gravity", "center", "-extent", f"{SIDE}x{SIDE}", "-strip", "png:-"],
-            capture_output=True, timeout=30)
-    except (OSError, subprocess.TimeoutExpired) as error:
-        return f"could not read the picture: {error}"
-    if square.returncode != 0 or not square.stdout:
-        return "could not read the picture"
-    done = subprocess.run(["pkexec", HELPER, "set"], input=square.stdout,
-                          capture_output=True, timeout=60)
-    return None if done.returncode == 0 else "not changed"
-
-
-def clear_picture():
-    if not shared():
-        return "the picture helper is not installed (./setup system)"
-    done = subprocess.run(["pkexec", HELPER, "clear"], capture_output=True, timeout=60)
-    return None if done.returncode == 0 else "not changed"
-
-
 def main():
     args = sys.argv[1:] or ["get"]
     if args == ["get"]:
         print(json.dumps(account()))
         return
-    if len(args) == 2 and args[0] == "name":
-        error = set_name(args[1])
-    elif len(args) == 2 and args[0] == "picture":
-        error = clear_picture() if args[1] == "--clear" else set_picture(args[1])
-    else:
-        sys.stderr.write("Usage: account.py [get] | name <text> | picture <path> | picture --clear\n")
-        sys.exit(1)
-    print(json.dumps({"error": error}))
-    sys.exit(0 if error is None else 1)
-
+    sys.stderr.write("Usage: account.py [get]  (read only in the lean fork)\n")
+    sys.exit(1)
 
 if __name__ == "__main__":
     main()

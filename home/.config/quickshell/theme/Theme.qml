@@ -44,7 +44,8 @@ QtObject {
         return style === "glass" || style === "liquid"
     }
 
-    readonly property color island: "#000000"
+    // Lean fork: the island is ink, set by the theme (`impasto-theme`).
+    property color island: "#000000"
     readonly property color islandGround: root.groundOf(root.surfaceStyle)
 
     // The terminal's ground: `TERMINAL_TINT` and kitty's `background_opacity`.
@@ -76,11 +77,11 @@ QtObject {
     // sheen from one side.
     function rimOf(style: string): color {
         return style === "liquid" ? Qt.rgba(1, 1, 1, 0.08)
-            : style === "glass" ? Qt.rgba(1, 1, 1, 0.20) : "#262626"
+            : style === "glass" ? Qt.rgba(1, 1, 1, 0.20) : root.islandBorder
     }
-    readonly property color islandSurface: "#141414"
-    readonly property color islandSurfaceHover: "#1f1f1f"
-    readonly property color islandBorder: "#262626"
+    property color islandSurface: "#141414"
+    property color islandSurfaceHover: "#1f1f1f"
+    property color islandBorder: "#262626"
 
     // The desk's widgets have a ground of their own
     // (`SettingsService.desktopGround`; empty, from an old file, follows).
@@ -326,7 +327,7 @@ QtObject {
     // Up to 6 × 8 cells (`ControlsService.columns`, `rows`); one cell is one
     // toggle tile, and blocks span whole cells. A round button in the session
     // and shortcut blocks, and the gap between two: six across two cells.
-    readonly property int centreColumns: 6
+    readonly property int centreColumns: 4
     readonly property int centreRows: 8
     readonly property int centreButton: 42
     readonly property int centreButtonGap: 8
@@ -598,7 +599,8 @@ QtObject {
 
     readonly property var tokens: [
         "background", "surface", "surfaceHover", "border", "text", "textMuted",
-        "accent", "accentHover", "accentText", "red", "green", "yellow", "blue"
+        "accent", "accentHover", "accentText", "red", "green", "yellow", "blue",
+        "island", "islandSurface", "islandSurfaceHover", "islandBorder"
     ]
 
     // Tokens a palette does not define keep their current value.

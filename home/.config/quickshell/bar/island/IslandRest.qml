@@ -99,12 +99,10 @@ Item {
         readonly property alias hovered: mouse.containsMouse
 
         readonly property var marks: ({
-            recorder: recorderMark, privacy: privacyMark, timer: timerMark, media: mediaMark,
-            machine: machineMark, workspace: workspaceMark
+            recorder: recorderMark, workspace: workspaceMark
         })
         readonly property var figures: ({
-            recorder: recorderFigure, privacy: privacyFigure, timer: timerFigure, media: mediaFigure,
-            machine: machineFigure, workspace: workspaceFigure
+            recorder: recorderFigure, workspace: workspaceFigure
         })
 
         // Centred on its side, except the privacy mark split across both:
@@ -151,9 +149,7 @@ Item {
                 if (segment.activityId === "recorder")
                     RecorderService.toggle()
                 else if (segment.activityId === "workspace")
-                    ModuleService.togglePanel("overview")
-                else if (segment.activityId === "machine")
-                    ModuleService.togglePanel("machines")
+                    NiriService.toggleOverview()
                 else
                     ModuleService.activate(segment.activityId)
             }
@@ -200,157 +196,6 @@ Item {
         // ── PRIVACY ─────────────────────────────────────────────────────────
         //
         // What is in use, each in its fixed colour, and who is using it.
-        Component {
-            id: privacyMark
-
-            Row {
-                spacing: 6
-
-                Repeater {
-                    model: [
-                        { on: PrivacyService.microphone, glyph: "󰍬", tint: Theme.privacyMicrophone },
-                        { on: PrivacyService.cameraOn,   glyph: "󰄀", tint: Theme.privacyCamera },
-                        { on: PrivacyService.screen,     glyph: "󰍹", tint: Theme.privacyScreen }
-                    ].filter(kind => kind.on)
-
-                    Text {
-                        required property var modelData
-
-                        text: modelData.glyph
-                        font.family: Theme.fontMono
-                        font.pixelSize: Theme.fontSizeRegular + 1
-                        color: modelData.tint
-                    }
-                }
-            }
-        }
-
-        Component {
-            id: privacyFigure
-
-            Text {
-                width: Math.min(implicitWidth, ModuleService.privacyNameLimit,
-                                ModuleService.activitySide - 2 * ModuleService.activityInset)
-                text: PrivacyService.who
-                elide: Text.ElideRight
-                // The time's type, muted: the name is the lesser of the two.
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSizeRegular
-                font.weight: Font.DemiBold
-                color: Theme.textMuted
-            }
-        }
-
-        // ── COUNTDOWN ───────────────────────────────────────────────────────
-        Component {
-            id: timerMark
-
-            RingIndicator {
-                width: 16
-                height: 16
-                thickness: 2
-                progress: TimerService.progress
-                trackColor: Theme.indicatorDim
-                fillColor: TimerService.tint
-            }
-        }
-
-        Component {
-            id: timerFigure
-
-            Text {
-                text: TimerService.display
-                font.family: Theme.fontMono
-                font.pixelSize: Theme.fontSizeSmall
-                font.weight: Font.DemiBold
-                color: TimerService.paused ? Theme.textMuted : Theme.text
-            }
-        }
-
-        // ── TRACK ───────────────────────────────────────────────────────────
-        //
-        // The artwork, and the real spectrum: bars animated on a timer keep
-        // moving through silence.
-        Component {
-            id: mediaMark
-
-            ClippingRectangle {
-                width: 20
-                height: 20
-                radius: width * Theme.pictureCorner
-                // None behind a picture: a player may send its logo on transparency.
-                color: art.visible ? "transparent" : Theme.surfaceHoverIn(QsWindow.window)
-
-                Component.onCompleted: MediaService.subscribe()
-                Component.onDestruction: MediaService.release()
-
-                Image {
-                    id: art
-                    anchors.fill: parent
-                    source: MediaService.artUrl
-                    visible: source != "" && status === Image.Ready
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    sourceSize.width: 40
-                    sourceSize.height: 40
-                }
-
-                Text {
-                    anchors.centerIn: parent
-                    visible: !art.visible
-                    text: "󰎇"
-                    font.family: Theme.fontMono
-                    font.pixelSize: 11
-                    color: Theme.indicator
-                }
-            }
-        }
-
-        Component {
-            id: mediaFigure
-
-            Spectrum {
-                height: 14
-                barWidth: 2
-                minimum: 2
-                active: MediaService.playing
-                barColor: Theme.indicator
-
-                Component.onCompleted: CavaService.subscribe()
-                Component.onDestruction: CavaService.release()
-            }
-        }
-
-        // ── A VIRTUAL MACHINE ───────────────────────────────────────────────
-        //
-        // The system's mark, and how long it has run; with more than one
-        // running, how many.
-        Component {
-            id: machineMark
-
-            Text {
-                text: VmService.mark(VmService.running[0]?.os ?? "")
-                font.family: Theme.fontMono
-                font.pixelSize: Theme.fontSizeMedium
-                color: VmService.running[0]?.paused ? Theme.textMuted : Theme.text
-            }
-        }
-
-        Component {
-            id: machineFigure
-
-            Text {
-                width: Math.min(implicitWidth, ModuleService.activitySide - 2 * ModuleService.activityInset)
-                elide: Text.ElideRight
-                text: VmService.running.length > 1 ? `${VmService.running.length} ${Tr.t("running")}`
-                    : VmService.uptime(VmService.running[0]?.started ?? 0)
-                font.family: Theme.fontMono
-                font.pixelSize: Theme.fontSizeSmall
-                font.weight: Font.DemiBold
-                color: Theme.text
-            }
-        }
-
         // ── WORKSPACE ───────────────────────────────────────────────────────
         //
         // The one this screen shows, for a bar without the workspaces strip:
@@ -378,13 +223,13 @@ Item {
 
                 readonly property string screenName: QsWindow.window && QsWindow.window.screen
                     ? QsWindow.window.screen.name : ""
-                readonly property int number: HyprlandService.activeOn(shown.screenName)
-                    || HyprlandService.activeId
+                readonly property int number: NiriService.activeOn(shown.screenName)
+                    || NiriService.activeId
                 readonly property string label: {
-                    const found = HyprlandService.named.find(workspace => workspace.id === shown.number)
+                    const found = NiriService.named.find(workspace => workspace.id === shown.number)
                     const name = found && typeof found.name === "string" ? found.name : ""
                     return name !== "" && name !== `${shown.number}` ? name
-                        : `${HyprlandService.numberOn(shown.number, shown.screenName)}`
+                        : `${NiriService.numberOn(shown.number, shown.screenName)}`
                 }
 
                 property int was: 0

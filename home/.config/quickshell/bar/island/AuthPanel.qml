@@ -34,16 +34,11 @@ Item {
     Process {
         id: capsReader
 
-        command: ["hyprctl", "devices", "-j"]
+        // niri does not report Caps Lock; the kernel's LED does.
+        command: ["sh", "-c", "cat /sys/class/leds/*capslock/brightness 2>/dev/null | grep -qx '[1-9]' && echo 1 || echo 0"]
         running: true
         stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    root.capsLock = (JSON.parse(text).keyboards ?? []).some(board => board.capsLock)
-                } catch (error) {
-                    root.capsLock = false
-                }
-            }
+            onStreamFinished: root.capsLock = text.trim() === "1"
         }
     }
 

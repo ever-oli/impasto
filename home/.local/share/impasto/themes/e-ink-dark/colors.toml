@@ -1,0 +1,54 @@
+# E-Ink Dark — e-ink.nvim grayscale palette over dark gold paper
+# Source: https://github.com/e-ink-colorscheme/e-ink.nvim
+# Warm graphite ramp on aged dark paper — one hue, in the gold family.
+
+mode = "dark"
+
+accent = "#D2AD55"        # light gold — the single leading hue
+selection = "#2E2A1E"
+selection_foreground = "#D6CFC0"
+selection_background = "#2E2A1E"
+muted = "#75705E"
+
+background = "#1B1914"    # dark gold paper
+dark_background = "#110F0B"
+darker_background = "#0B0A06"
+lighter_background = "#262217"
+
+foreground = "#D6CFC0"    # warm pale ink
+dark_foreground = "#918B7C"
+light_foreground = "#B7B09E"
+bright_foreground = "#E8E2D2"
+
+red = "#CE6D62"
+yellow = "#CBB06B"        # already in the gold family
+orange = "#CD7D52"
+green = "#BB9E43"         # everforest green retired to the gold family
+cyan = "#96916A"          # khaki in place of teal
+blue = "#9C8B70"          # tan in place of slate
+magenta = "#BA6E8B"
+brown = "#8C7260"
+
+bright_red = "#DE8C82"
+bright_yellow = "#DDC48D"
+bright_green = "#D3B85F"
+bright_cyan = "#B3AE8A"
+bright_blue = "#B4A28A"
+bright_magenta = "#C98BA5"
+
+color0 = "#1B1914"
+color1 = "#CE6D62"
+color2 = "#BB9E43"
+color3 = "#CBB06B"
+color4 = "#9C8B70"
+color5 = "#BA6E8B"
+color6 = "#96916A"
+color7 = "#D6CFC0"
+color8 = "#918B7C"
+color9 = "#DE8C82"
+color10 = "#D3B85F"
+color11 = "#DDC48D"
+color12 = "#B4A28A"
+color13 = "#C98BA5"
+color14 = "#B3AE8A"
+color15 = "#E8E2D2"

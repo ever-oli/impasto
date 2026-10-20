@@ -31,7 +31,7 @@ ColumnLayout {
 
     // Reloaded on open, so rebinds made since startup show up.
     Component.onCompleted: {
-        HyprlandService.loadBinds()
+        NiriService.loadBinds()
         field.forceActiveFocus()
     }
 
@@ -136,7 +136,7 @@ ColumnLayout {
         Text {
             anchors.centerIn: parent
             visible: root.entries.length === 0
-            text: HyprlandService.binds.length === 0 ? "Reading the keys…" : "No key does that."
+            text: NiriService.binds.length === 0 ? "Reading the keys…" : "No key does that."
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSizeRegular
             color: Theme.textMuted

@@ -79,11 +79,7 @@ Item {
         }
     }
 
-    Component.onCompleted: {
-        SystemService.subscribe()
-        NetworkService.refresh()
-    }
-    Component.onDestruction: SystemService.release()
+    Component.onCompleted: NetworkService.refresh()
 
     ListView {
         id: pager

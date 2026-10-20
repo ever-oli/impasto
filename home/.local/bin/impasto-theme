@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+"""impasto-theme — the four ink themes, applied everywhere at once.
+
+  impasto-theme list
+  impasto-theme set <name> [wallpaper]   e-ink · e-ink-dark · red-ink · red-ink-dark
+  impasto-theme current
+  impasto-theme next                     cycle the four themes
+  impasto-theme next-wallpaper
+
+Reads ~/.local/share/impasto/themes/<name>/colors.toml and writes:
+  shell     ~/.local/state/impasto/theme.json   (the shell watches it)
+  alacritty ~/.config/alacritty/impasto-theme.toml (imported, live reload)
+  helix     ~/.config/helix/themes/impasto.toml  (theme = "impasto")
+  niri      ~/.config/niri/impasto-theme.kdl     (included; focus ring, border)
+  mako      ~/.config/mako/config
+  fuzzel    ~/.config/fuzzel/fuzzel.ini
+  wallpaper swaybg, run as a user service so it survives this script
+"""
+import json, os, re, subprocess, sys, tomllib
+
+HOME = os.path.expanduser("~")
+CFG = os.environ.get("XDG_CONFIG_HOME", f"{HOME}/.config")
+STATE = os.environ.get("XDG_STATE_HOME", f"{HOME}/.local/state") + "/impasto"
+THEMES = f"{HOME}/.local/share/impasto/themes"
+DEFAULT = "e-ink"
+
+
+def names():
+    return sorted(d for d in os.listdir(THEMES) if os.path.isfile(f"{THEMES}/{d}/colors.toml"))
+
+
+def write(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+        f.write(text)
+    os.replace(tmp, path)
+
+
+def ensure_line(path, line, pattern=None, top=False):
+    """Make sure a config file carries `line` (replacing a matching one)."""
+    text = open(path).read() if os.path.exists(path) else ""
+    if pattern and re.search(pattern, text, re.M):
+        text = re.sub(pattern, line, text, count=1, flags=re.M)
+    elif line not in text:
+        text = (line + "\n" + text) if top else (text.rstrip("\n") + "\n" + line + "\n").lstrip("\n")
+    write(path, text)
+
+
+def h(c):  # "#RRGGBB" -> "RRGGBB"
+    return c.lstrip("#")
+
+
+def mix(a, b, t):
+    """a blended towards b by t, as #rrggbb."""
+    a, b = (tuple(int(x.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)) for x in (a, b))
+    return "#%02x%02x%02x" % tuple(round(p + (q - p) * t) for p, q in zip(a, b))
+
+
+def shell(c, name):
+    """The island is ink: on a light theme the darkest ink with paper text,
+    on a dark one the darkest paper with the theme's own text."""
+    dark = c.get("mode") == "dark"
+    ink = c["darker_background"] if dark else c["bright_foreground"]
+    text = c["foreground"] if dark else c["background"]
+    return {
+        "island": ink,
+        "islandSurface": mix(ink, text, 0.07),
+        "islandSurfaceHover": mix(ink, text, 0.12),
+        "islandBorder": mix(ink, text, 0.16),
+        "background": ink, "surface": mix(ink, text, 0.07),
+        "surfaceHover": mix(ink, text, 0.12), "border": mix(ink, text, 0.18),
+        "text": text, "textMuted": mix(text, ink, 0.4),
+        "accent": c["accent"] if dark else mix(c["accent"], c["background"], 0.25),
+        "accentHover": mix(c["accent"], text, 0.3),
+        "accentText": ink,
+        "red": c["red"], "green": c["green"], "yellow": c["yellow"], "blue": c["blue"],
+    }
+
+
+def alacritty(c):
+    n = lambda i: c[f"color{i}"]
+    return f"""# written by impasto-theme
+[colors.primary]
+background = "{c['background']}"
+foreground = "{c['foreground']}"
+[colors.cursor]
+cursor = "{c['accent']}"
+text = "{c['background']}"
+[colors.selection]
+background = "{c['selection_background']}"
+text = "{c['selection_foreground']}"
+[colors.normal]
+black = "{n(0)}"
+red = "{n(1)}"
+green = "{n(2)}"
+yellow = "{n(3)}"
+blue = "{n(4)}"
+magenta = "{n(5)}"
+cyan = "{n(6)}"
+white = "{n(7)}"
+[colors.bright]
+black = "{n(8)}"
+red = "{n(9)}"
+green = "{n(10)}"
+yellow = "{n(11)}"
+blue = "{n(12)}"
+magenta = "{n(13)}"
+cyan = "{n(14)}"
+white = "{n(15)}"
+"""
+
+
+def helix(c):
+    return f"""# written by impasto-theme
+"ui.background" = {{ bg = "bg" }}
+"ui.text" = "fg"
+"ui.text.focus" = {{ fg = "bright" }}
+"ui.cursor" = {{ fg = "bg", bg = "accent" }}
+"ui.cursor.primary" = {{ fg = "bg", bg = "accent" }}
+"ui.cursor.match" = {{ bg = "sel", modifiers = ["bold"] }}
+"ui.selection" = {{ bg = "sel" }}
+"ui.linenr" = "muted"
+"ui.linenr.selected" = {{ fg = "accent", modifiers = ["bold"] }}
+"ui.statusline" = {{ fg = "fg", bg = "bg2" }}
+"ui.statusline.inactive" = {{ fg = "muted", bg = "bg2" }}
+"ui.statusline.normal" = {{ fg = "bg", bg = "accent" }}
+"ui.statusline.insert" = {{ fg = "bg", bg = "green" }}
+"ui.statusline.select" = {{ fg = "bg", bg = "magenta" }}
+"ui.popup" = {{ bg = "bg2" }}
+"ui.window" = "muted"
+"ui.help" = {{ fg = "fg", bg = "bg2" }}
+"ui.menu" = {{ fg = "fg", bg = "bg2" }}
+"ui.menu.selected" = {{ fg = "bg", bg = "accent" }}
+"ui.virtual.whitespace" = "bg3"
+"ui.virtual.ruler" = {{ bg = "bg2" }}
+"ui.virtual.inlay-hint" = "muted"
+"ui.cursorline.primary" = {{ bg = "bg2" }}
+"comment" = {{ fg = "muted", modifiers = ["italic"] }}
+"keyword" = {{ fg = "fg", modifiers = ["bold"] }}
+"function" = "fg2"
+"type" = "brown"
+"constant" = "accent"
+"string" = "green"
+"variable" = "fg"
+"operator" = "fg2"
+"punctuation" = "muted"
+"tag" = "accent"
+"attribute" = "brown"
+"markup.heading" = {{ fg = "accent", modifiers = ["bold"] }}
+"markup.link.url" = {{ fg = "blue", modifiers = ["underlined"] }}
+"diff.plus" = "green"
+"diff.minus" = "red"
+"diff.delta" = "yellow"
+"error" = "red"
+"warning" = "orange"
+"info" = "blue"
+"hint" = "muted"
+"diagnostic.error" = {{ underline = {{ color = "red", style = "curl" }} }}
+"diagnostic.warning" = {{ underline = {{ color = "orange", style = "curl" }} }}
+
+[palette]
+bg = "{c['background']}"
+bg2 = "{c['dark_background']}"
+bg3 = "{c['darker_background']}"
+fg = "{c['foreground']}"
+fg2 = "{c['light_foreground']}"
+bright = "{c['bright_foreground']}"
+muted = "{c['muted']}"
+accent = "{c['accent']}"
+sel = "{c['selection_background']}"
+red = "{c['red']}"
+green = "{c['green']}"
+yellow = "{c['yellow']}"
+orange = "{c['orange']}"
+blue = "{c['blue']}"
+magenta = "{c['magenta']}"
+brown = "{c['brown']}"
+"""
+
+
+def niri(c):
+    return f"""// written by impasto-theme
+layout {{
+    focus-ring {{
+        active-color "{c['accent']}"
+        inactive-color "{c['muted']}"
+    }}
+    border {{
+        active-color "{c['accent']}"
+        inactive-color "{c['dark_background']}"
+    }}
+}}
+"""
+
+
+def mako(c):
+    return f"""# written by impasto-theme
+background-color={c['background']}
+text-color={c['foreground']}
+border-color={c['accent']}
+progress-color=over {c['selection_background']}
+border-size=2
+border-radius=10
+default-timeout=5000
+font=Inter 11
+"""
+
+
+def fuzzel(c):
+    return f"""# written by impasto-theme
+[main]
+font=Inter:size=12
+terminal=alacritty -e
+[colors]
+background={h(c['background'])}f2
+text={h(c['foreground'])}ff
+prompt={h(c['accent'])}ff
+placeholder={h(c['muted'])}ff
+input={h(c['bright_foreground'])}ff
+match={h(c['accent'])}ff
+selection={h(c['selection_background'])}ff
+selection-text={h(c['selection_foreground'])}ff
+selection-match={h(c['accent'])}ff
+border={h(c['accent'])}ff
+[border]
+width=2
+radius=12
+"""
+
+
+def wallpapers(name):
+    folder = f"{THEMES}/{name}/backgrounds"
+    if not os.path.isdir(folder):
+        return []
+    return sorted(f"{folder}/{f}" for f in os.listdir(folder)
+                  if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp")))
+
+
+def set_wallpaper(path, colour):
+    """swaybg as a transient user unit: owned by systemd, not this shell."""
+    subprocess.run(["systemctl", "--user", "stop", "impasto-wallpaper"],
+                   stderr=subprocess.DEVNULL)
+    subprocess.run(["systemctl", "--user", "reset-failed", "impasto-wallpaper"],
+                   stderr=subprocess.DEVNULL)
+    args = ["swaybg", "-m", "fill", "-c", colour] + (["-i", path] if path else [])
+    subprocess.run(["systemd-run", "--user", "--quiet", "--collect",
+                    "--unit", "impasto-wallpaper", "-p", "Restart=on-failure", *args])
+
+
+def current():
+    try:
+        return json.load(open(f"{STATE}/theme.json"))
+    except Exception:
+        return {}
+
+
+def apply(name, wallpaper=None):
+    if name not in names():
+        sys.exit(f"no theme {name!r} (have: {', '.join(names())})")
+    with open(f"{THEMES}/{name}/colors.toml", "rb") as f:
+        c = tomllib.load(f)
+    walls = wallpapers(name)
+    if wallpaper is None:
+        before = current()
+        keep = os.path.basename(before.get("wallpaper", ""))
+        wallpaper = next((w for w in walls if os.path.basename(w) == keep), None) \
+            or next((w for w in walls if w.endswith("wrinkled-paper.jpg")), walls[0] if walls else "")
+    title = name.replace("-", " ").title()
+    write(f"{STATE}/theme.json", json.dumps({"id": name, "name": title, "mode": c.get("mode", "light"),
+                                              "wallpaper": wallpaper, "shell": shell(c, name)}, indent=1))
+
+    write(f"{CFG}/alacritty/impasto-theme.toml", alacritty(c))
+    ala = f"{CFG}/alacritty/alacritty.toml"
+    if not os.path.exists(ala):
+        write(ala, '[general]\nimport = ["~/.config/alacritty/impasto-theme.toml"]\n\n[font]\nsize = 12\n')
+    elif "impasto-theme.toml" not in open(ala).read():
+        print(f"note: add ~/.config/alacritty/impasto-theme.toml to general.import in {ala}")
+
+    write(f"{CFG}/helix/themes/impasto.toml", helix(c))
+    ensure_line(f"{CFG}/helix/config.toml", 'theme = "impasto"', r'^theme\s*=.*$', top=True)
+
+    write(f"{CFG}/niri/impasto-theme.kdl", niri(c))
+    write(f"{CFG}/mako/config", mako(c))
+    write(f"{CFG}/fuzzel/fuzzel.ini", fuzzel(c))
+
+    # Live reloads; each is harmless when that program is not running.
+    for cmd in (["makoctl", "reload"], ["pkill", "-USR1", "-x", "hx"],
+                ["niri", "msg", "action", "load-config-file"]):
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    set_wallpaper(wallpaper, c["background"])
+    print(f"{name} · {os.path.basename(wallpaper) if wallpaper else 'no wallpaper'}")
+
+
+def main():
+    verb = sys.argv[1] if len(sys.argv) > 1 else "current"
+    if verb == "list":
+        print("\n".join(names()))
+    elif verb == "set":
+        apply(sys.argv[2] if len(sys.argv) > 2 else DEFAULT, sys.argv[3] if len(sys.argv) > 3 else None)
+    elif verb == "next":
+        have = names()
+        now = current().get("id", DEFAULT)
+        apply(have[(have.index(now) + 1) % len(have)] if now in have else DEFAULT)
+    elif verb == "next-wallpaper":
+        now = current()
+        walls = wallpapers(now.get("id", DEFAULT))
+        at = walls.index(now["wallpaper"]) if now.get("wallpaper") in walls else -1
+        apply(now.get("id", DEFAULT), walls[(at + 1) % len(walls)] if walls else "")
+    elif verb == "restore":
+        apply(current().get("id", DEFAULT), current().get("wallpaper") or None)
+    elif verb == "current":
+        print(current().get("id", DEFAULT))
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()

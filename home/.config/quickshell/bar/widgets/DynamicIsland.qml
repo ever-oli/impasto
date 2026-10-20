@@ -36,9 +36,8 @@ Rectangle {
 
     // While a note is open the island is the note: paper to the edge, with no
     // rim or padding.
-    readonly property bool paper: islandState.openPanel === "notes" && NotesService.opened !== ""
-    readonly property var paperNote: NotesService.entry(NotesService.opened)
-    readonly property color paperColor: NotesService.paperOf(root.paperNote ? root.paperNote.tint : "yellow")
+    readonly property bool paper: false
+    readonly property color paperColor: "transparent"
     // A module detail brings its own margins.
     readonly property int panelPad: root.paper
         ? 0 : (islandState.openPanel === "module" ? Theme.cardInset : Theme.panelPadding)
@@ -74,7 +73,6 @@ Rectangle {
     // default, so an island without a bar gets the size it asks for.
     property int roomForPanel: 100000
 
-    readonly property int overviewRows: Math.ceil(HyprlandService.maximum / 5)
 
     // ── PANEL SIZES ─────────────────────────────────────────────────────────
     //
@@ -82,48 +80,24 @@ Rectangle {
     // before the panel inside it is loaded.
     readonly property var panelSizes: ({
         controls:   { width: ControlsService.panelWidth, height: ControlsService.panelHeight },
-        appearance: root.appearanceSize,
-        palette:    root.appearanceSize,
-        stats:      { width: 940,  height: 614 },
         // Depends on the results when `launcherFits` is on.
         launcher:   { width: LauncherService.panelWidth,
                       height: LauncherService.panelHeight },
-        wifi:       { width: 420,  height: 500 },
         // The control centre's volume, opened out.
         sound:      { width: AudioService.panelWidth, height: AudioService.panelHeight },
         microphone: { width: AudioService.panelWidth, height: AudioService.microphoneHeight },
-        nightlight: { width: SunsetService.panelWidth, height: SunsetService.panelHeight },
-        brightness: { width: BrightnessService.panelWidth, height: BrightnessService.panelHeight },
         bluetooth:  { width: 420,  height: 500 },
         session:    { width: 720,  height: 180 },
         // A program asking for root (`PolkitService`).
         auth:       { width: 460,  height: 236 },
-        machines:   { width: 860,  height: 580 },
-        // A row per server, from two to six before it scrolls.
-        servers:    { width: ServersService.panelWidth, height: ServersService.panelHeight },
-        screentime: { width: 940,  height: 614 },
-        camera:     { width: CameraService.panelWidth, height: CameraService.panelHeight },
-        // A row per creature, plus one for the next egg.
-        pet:        { width: 560,  height: 205 + 62 * PetService.family.length },
-        // The shelf of cards, or the game being played at its own size.
-        games:      GamesService.playing !== ""
-            ? GamesService.panelSize(GamesService.playing)
-            : { width: GamesService.shelfWidth, height: GamesService.shelfHeight },
-        // Declared by their services, which the panels read back for layout.
-        notes:      { width: NotesService.panelWidth, height: NotesService.panelHeight },
-        board:      { width: TasksService.panelWidth, height: TasksService.panelHeight },
         // The key sheet's columns come from the compositor's bind list.
         keys:       { width: ShortcutService.sheetWidth, height: ShortcutService.sheetHeight },
-        packages:   { width: PackagesService.panelWidth, height: PackagesService.panelHeight },
         module:     root.moduleSize,
         // A tray item's menu, a row per entry.
         tray:       { width: TrayService.menuWidth, height: TrayService.menuHeight },
-        overview:   { width: 1560, height: 72 + root.overviewRows * 190 }
+        t3:         { width: T3Service.panelWidth, height: T3Service.panelHeight }
     })
 
-    // One panel under two names (its two strips), so switching between them
-    // slides instead of rebuilding. Fits five strip tiles and the large one.
-    readonly property var appearanceSize: ({ width: 940, height: 196 })
 
     // A module's detail, sized from the catalogue.
     readonly property var moduleSize: ModuleService.openSize(ModuleService.openId)
@@ -169,29 +143,14 @@ Rectangle {
 
     readonly property var panelComponents: ({
         controls: controlsPanel,
-        appearance: appearancePanel,
-        palette: appearancePanel,
         launcher: launcherPanel,
-        wifi: networkDetail,
         sound: soundDetail,
         microphone: microphoneDetail,
-        nightlight: nightLightDetail,
-        brightness: brightnessDetail,
         bluetooth: bluetoothDetail,
-        stats: statsPanel,
-        overview: overviewPanel,
         session: sessionPanel,
         auth: authPanel,
-        machines: machinesPanel,
-        servers: serversPanel,
-        screentime: screenTimePanel,
-        camera: cameraPanel,
-        pet: petPanel,
-        games: gamesPanel,
-        notes: notesPanel,
-        board: boardPanel,
         keys: keysPanel,
-        packages: packagesPanel,
+        t3: t3Panel,
         module: moduleDetail,
         tray: trayMenu
     })
@@ -246,7 +205,7 @@ Rectangle {
     readonly property bool restBusy: islandState.layer === islandState.layerModules
         && (collapsedLoader.item?.busy ?? false)
 
-    readonly property bool canSummarise: SettingsService.islandSummary
+    readonly property bool canSummarise: false && SettingsService.islandSummary
         && root.active
         && !root.summaryHeld
         && !root.landing
@@ -517,7 +476,7 @@ Rectangle {
 
     Component {
         id: summaryLayer
-        IslandSummary {}
+        Item {}
     }
 
     Component {
@@ -556,16 +515,6 @@ Rectangle {
         }
     }
 
-    Component {
-        id: appearancePanel
-        AppearancePanel {
-            page: islandState.openPanel === "palette" ? "palette" : "wallpaper"
-            onClosed: root.close()
-            // Up and Down switch strips by panel name, so `page` follows
-            // `openPanel`.
-            onPanelRequested: panel => root.open(panel)
-        }
-    }
 
     Component {
         id: launcherPanel
@@ -583,10 +532,6 @@ Rectangle {
 
     // Wi-Fi and Bluetooth are panels of their own rather than views inside the
     // control centre, because a panel's size is keyed on `openPanel`.
-    Component {
-        id: networkDetail
-        NetworkDetail { onBack: root.open("controls") }
-    }
 
     Component {
         id: soundDetail
@@ -598,15 +543,7 @@ Rectangle {
         MicrophoneDetail { onBack: root.open("controls") }
     }
 
-    Component {
-        id: brightnessDetail
-        BrightnessDetail { onBack: root.open("controls") }
-    }
 
-    Component {
-        id: nightLightDetail
-        NightLightDetail { onBack: root.open("controls") }
-    }
 
     Component {
         id: bluetoothDetail
@@ -618,15 +555,7 @@ Rectangle {
         TrayMenuPanel { onClosed: root.close() }
     }
 
-    Component {
-        id: statsPanel
-        StatsPanel { onClosed: root.close() }
-    }
 
-    Component {
-        id: overviewPanel
-        OverviewPanel { onClosed: root.close() }
-    }
 
     Component {
         id: sessionPanel
@@ -638,44 +567,17 @@ Rectangle {
         AuthPanel {}
     }
 
-    Component {
-        id: machinesPanel
-        MachinesPanel { onClosed: root.close() }
-    }
+
+
+
+
+
+
+
 
     Component {
-        id: serversPanel
-        ServersPanel { onClosed: root.close() }
-    }
-
-    Component {
-        id: screenTimePanel
-        ScreenTimePanel { onClosed: root.close() }
-    }
-
-    Component {
-        id: cameraPanel
-        CameraPanel { onClosed: root.close() }
-    }
-
-    Component {
-        id: petPanel
-        PetPanel { onClosed: root.close() }
-    }
-
-    Component {
-        id: gamesPanel
-        GamesPanel { onClosed: root.close() }
-    }
-
-    Component {
-        id: notesPanel
-        NotesPanel { onClosed: root.close() }
-    }
-
-    Component {
-        id: boardPanel
-        BoardPanel { onClosed: root.close() }
+        id: t3Panel
+        T3Panel { onClosed: root.close() }
     }
 
     Component {
@@ -683,10 +585,6 @@ Rectangle {
         KeysPanel { onClosed: root.close() }
     }
 
-    Component {
-        id: packagesPanel
-        PackagesPanel { onClosed: root.close() }
-    }
 
     // A module asking for a panel: the arcade's detail opening the arcade.
     Connections {

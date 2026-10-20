@@ -63,7 +63,7 @@ Singleton {
 
     readonly property var screen: {
         const named = Quickshell.screens.find(screen => screen.name === root.screenName)
-        return named ?? MonitorService.primaryScreen ?? Quickshell.screens[0] ?? null
+        return named ?? Quickshell.screens[0] ?? null
     }
 
     readonly property real ratio: {
@@ -117,7 +117,7 @@ Singleton {
         if (kind !== "")
             root.setKind(kind)
         root.to = destination !== "" && root.offers(destination) ? destination : "file"
-        root.screenName = HyprlandService.focusedMonitor
+        root.screenName = NiriService.focusedMonitor
         root.busy = true
         root.launch.interval = after
         root.launch.restart()

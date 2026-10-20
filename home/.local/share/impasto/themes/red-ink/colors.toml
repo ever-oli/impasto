@@ -1,0 +1,58 @@
+# Red Ink — "e-ink, but the ink is red"
+# Paper: parchment from omarchy-venice-from-above (mattbbia)
+# Ink:   the red of omarchy-roseofdune-theme (HANCORE-linux), #A02B16
+# Structure: e-ink.nvim — one hue, all others in its family.
+
+mode = "light"
+
+accent = "#A02B16"         # the red ink
+selection = "#C68D95"      # roseofdune's dusted-rose selection
+selection_foreground = "#7C1B0B"
+selection_background = "#C68D95"
+muted = "#B0A296"
+
+background = "#F5F2E9"     # Venice parchment
+dark_background = "#EBE4D7"
+darker_background = "#E2D6C4"
+lighter_background = "#FBF8F0"
+
+foreground = "#A02B16"     # red ink instead of black
+dark_foreground = "#8A2312"
+light_foreground = "#B9502F"
+bright_foreground = "#7C1B0B"
+
+red = "#B62F14"
+yellow = "#C08A2E"         # ochre — dry ink smear
+orange = "#C25424"         # vermilion
+green = "#9E4F5B"          # roseofdune's rose "green"
+cyan = "#A34D63"           # faded rose-cyan
+blue = "#8A4A3E"           # wine, standing in for blue
+magenta = "#78292E"        # deep wine (roseofdune magenta)
+brown = "#6E4A3A"          # roseofdune brown
+
+bright_red = "#C4402A"
+bright_yellow = "#CD9A46"
+bright_green = "#B05E6A"
+bright_cyan = "#B56278"
+bright_blue = "#9A5A50"
+bright_magenta = "#8A3640"
+
+hyprland_active_border = "rgba(A02B16ff)"
+hyprland_inactive_border = "rgba(C8AC86ff)"
+
+color0 = "#F5F2E9"
+color1 = "#B62F14"
+color2 = "#9E4F5B"
+color3 = "#C08A2E"
+color4 = "#8A4A3E"
+color5 = "#78292E"
+color6 = "#A34D63"
+color7 = "#A02B16"
+color8 = "#B9502F"
+color9 = "#C4402A"
+color10 = "#B05E6A"
+color11 = "#CD9A46"
+color12 = "#9A5A50"
+color13 = "#8A3640"
+color14 = "#B56278"
+color15 = "#7C1B0B"

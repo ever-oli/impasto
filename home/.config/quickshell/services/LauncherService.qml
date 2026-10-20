@@ -39,9 +39,6 @@ QtObject {
         { id: "windows",   prefix: SettingsService.launcherPrefix("windows"),
           label: "Windows",   icon: "󰖯",
           hint: "Find an open window", empty: "No window by that name is open" },
-        { id: "timer",     prefix: SettingsService.launcherPrefix("timer"),
-          label: "Timer",     icon: "󰔟",
-          hint: "Start a countdown",   empty: "A duration — 25m, 90s, 1:30" },
         { id: "clipboard", prefix: SettingsService.launcherPrefix("clipboard"),
           label: "Clipboard", icon: "󰅍",
           hint: "Copy something again",
@@ -226,8 +223,6 @@ QtObject {
             return root.desk(term)
         case "windows":
             return root.windows(term)
-        case "timer":
-            return root.timer(raw)
         case "clipboard":
             return root.clipboard(term)
         case "emoji":
@@ -319,6 +314,16 @@ QtObject {
             })
         }
 
+        // The four ink themes, applied by `impasto-theme`.
+        for (const theme of ThemeService.themes) {
+            const title = theme.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+            offer({
+                kind: "theme", id: theme, icon: theme === ThemeService.activeId ? "󰄬" : "󰏘",
+                name: `Theme: ${title}`, subtitle: theme === ThemeService.activeId
+                    ? "In use" : "Shell, terminal, Helix, niri, fuzzel, wallpaper"
+            })
+        }
+
         for (const mode of root.modes) {
             // Skip the current mode and the plain-text one.
             if (mode.id === "desk" || mode.prefix === "")
@@ -349,17 +354,6 @@ QtObject {
         return lead.concat(rest)
     }
 
-    function timer(text: string): var {
-        const milliseconds = TimerService.parse(text)
-        if (milliseconds <= 0)
-            return []
-        return [{
-            kind: "timer", id: "", icon: "󰔟",
-            name: `Start a ${root.spell(milliseconds)} timer`,
-            subtitle: "Counts down on the island",
-            milliseconds: milliseconds
-        }]
-    }
 
     // Clipboard history, newest first (ordering is `ClipboardService`'s).
     function clipboard(term: string): var {
@@ -393,7 +387,7 @@ QtObject {
     // the launcher opens.
     function windows(term: string): var {
         const found = []
-        for (const client of HyprlandService.clients) {
+        for (const client of NiriService.clients) {
             if (found.length >= root.maxResults)
                 break
             const title = (client.title ?? "").toLowerCase()
@@ -444,10 +438,10 @@ QtObject {
             if (tile)
                 tile.activate()
         }
-        else if (entry.kind === "timer")
-            TimerService.start(entry.milliseconds, entry.subtitle ?? "")
+        else if (entry.kind === "theme")
+            ThemeService.setTheme(entry.id)
         else if (entry.kind === "window")
-            HyprlandService.focusWindow(entry.id)
+            NiriService.focusWindow(entry.id)
         else if (entry.kind === "calculation")
             root.copy(entry.name)
         else if (entry.kind === "clip")

@@ -10,7 +10,6 @@
 import QtQuick
 import QtQuick.Effects
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Wayland
 
 import "../theme"
@@ -50,8 +49,8 @@ PanelWindow {
     WlrLayershell.namespace: "impasto-bar"
     // A request for root rises over a full-screen window, which covers the
     // top layer; the bar goes back down once it is answered.
-    WlrLayershell.layer: island.state.openPanel === "auth" && island.expanded
-        ? WlrLayer.Overlay : WlrLayer.Top
+    // Open, the bar rises above the click catcher (on Top) below it.
+    WlrLayershell.layer: island.expanded ? WlrLayer.Overlay : WlrLayer.Top
     // What is drawn here takes the island's glass (`Theme.surfaceIn`).
     readonly property bool glassy: true
     readonly property string groundStyle: Theme.surfaceStyle
@@ -230,7 +229,7 @@ PanelWindow {
     // No input at all while desktop widgets are being arranged: dragging one
     // over the bar would move the pointer to this surface, and the desktop
     // would drop the widget. None either where nothing is painted.
-    readonly property bool inert: DesktopService.editing || !root.painted || root.away
+    readonly property bool inert: !root.painted || root.away
 
     // Zen (`barHidden`): the bar waits above the screen and the island comes
     // down only for what it has to show — a panel, a notification, a
@@ -273,15 +272,27 @@ PanelWindow {
     // while the session is locked, where a grab would keep the keyboard from
     // the other screens' lock.
     readonly property bool holdsKeyboard: root.live && island.expanded
-        && !CaptureService.active && !LockService.locked
+        && !CaptureService.active
 
+    // niri has no focus grab, so an open island takes the keyboard outright
+    // and a transparent sheet under it catches the click that closes it.
     WlrLayershell.keyboardFocus: root.holdsKeyboard
-        ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
-    HyprlandFocusGrab {
-        active: root.holdsKeyboard
-        windows: [root]
-        onCleared: root.dismiss()
+    PanelWindow {
+        screen: root.screen
+        visible: root.holdsKeyboard
+        anchors { top: true; bottom: true; left: true; right: true }
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.layer: WlrLayer.Top
+        WlrLayershell.namespace: "impasto-catcher"
+        color: "transparent"
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+            onPressed: root.dismiss()
+        }
     }
 
     HoverHandler {
@@ -458,7 +469,7 @@ PanelWindow {
                         height: root.height
                         opacity: root.edgeToEdge ? 1 : 0
                         bandHeight: band.height
-                        corner: bezelEdge.corner
+                        corner: SettingsService.screenCorners ? Theme.screenRadius : 0
                         dropLeft: drop.x
                         dropRight: drop.x + drop.width
                         dropDepth: drop.visible ? drop.depth : 0
@@ -535,7 +546,7 @@ PanelWindow {
                         height: root.height
                         visible: root.edgeToEdge && body.visible
                         bandHeight: band.height
-                        corner: bezelEdge.corner
+                        corner: SettingsService.screenCorners ? Theme.screenRadius : 0
                         dropLeft: drop.x
                         dropRight: drop.x + drop.width
                         dropDepth: drop.visible ? drop.depth : 0
@@ -741,112 +752,6 @@ PanelWindow {
             Behavior on border.color { ColorAnimation { duration: Theme.durationMedium } }
         }
 
-        // The control centre's tray card while its grid is being arranged. On this
-        // surface so blocks can be dragged from it onto the island; it fills the
-        // surface and starts under the island.
-        Item {
-            id: overlay
-
-            anchors.fill: parent
-            z: 3
-
-            // Beside the island when the screen has room on both sides for
-            // the card's widest block: two cards of one size on the left, the
-            // grid's size over the top row, and the card of blocks on the
-            // right, each side as tall as the island at its largest, whatever
-            // size it is now. Measured
-            // against the panel's declared size, not the island's, which is
-            // still opening. Otherwise the size and the blocks stack under it.
-            readonly property real side: (overlay.width - ControlsService.panelWidth) / 2
-                - 2 * Theme.desktopGutter
-            readonly property bool aside: blocks.item !== null && overlay.side >= blocks.item.narrowest
-            readonly property real tall: ControlsService.tallestPanel
-            readonly property real cardWidth: blocks.item ? blocks.item.card.width : 0
-            // The cards' top: the island's, but never flush with the screen
-            // edge when the island is attached, which the card of blocks
-            // cannot be either.
-            readonly property real cardsTop: Math.max(root.islandTopMargin, Theme.desktopGutter)
-            // Half the island each, unless the top row's editor needs more.
-            readonly property real half: Math.max((overlay.tall - Theme.desktopGutter) / 2,
-                sideCards.item ? sideCards.item.need : 0)
-
-            // Under the island, when there is no room beside it.
-            Loader {
-                id: arranging
-
-                x: (parent.width - width) / 2
-                y: root.islandTopMargin + island.height + Theme.desktopGutter
-                active: root.live && ControlsService.editing && !overlay.aside
-                sourceComponent: GridSize {}
-            }
-
-            Loader {
-                id: sideCards
-
-                x: (overlay.width - ControlsService.panelWidth) / 2
-                    - Theme.desktopGutter - overlay.cardWidth
-                y: overlay.cardsTop
-                active: root.live && ControlsService.editing && overlay.aside
-                sourceComponent: Column {
-                    readonly property real need: topRow.implicitHeight + 2 * Theme.panelPadding
-
-                    spacing: Theme.desktopGutter
-
-                    // The figure over the miniature, filling the card.
-                    Rectangle {
-                        width: overlay.cardWidth
-                        height: overlay.half
-                        radius: Theme.radiusLarge
-                        color: Theme.island
-                        border.color: Theme.borderIn(QsWindow.window)
-                        border.width: 1
-
-                        GridSize {
-                            anchors.fill: parent
-                            anchors.margins: Theme.panelPadding
-                            bare: true
-                            filling: true
-                        }
-                    }
-
-                    // The top row's buttons, arranged as on the settings page.
-                    Rectangle {
-                        width: overlay.cardWidth
-                        height: overlay.half
-                        radius: Theme.radiusLarge
-                        color: Theme.island
-                        border.color: Theme.borderIn(QsWindow.window)
-                        border.width: 1
-
-                        TopRowEditor {
-                            id: topRow
-
-                            x: Theme.panelPadding
-                            y: Theme.panelPadding
-                            width: parent.width - 2 * Theme.panelPadding
-                            fillTo: parent.height - 2 * Theme.panelPadding
-                        }
-                    }
-                }
-            }
-
-            Loader {
-                id: blocks
-
-                anchors.fill: parent
-                active: root.live && ControlsService.editing
-                sourceComponent: ControlsTray {
-                    host: overlay
-                    homeLeft: overlay.aside
-                        ? (overlay.width + ControlsService.panelWidth) / 2 + Theme.desktopGutter : -1
-                    room: overlay.side
-                    tall: 2 * overlay.half + Theme.desktopGutter
-                    homeTop: overlay.aside ? overlay.cardsTop
-                        : arranging.y + arranging.height + Theme.desktopGutter
-                }
-            }
-        }
-
         // Notch fillets flaring from the island's edges out to the screen edge.
         // In one capsule they follow whichever edge is further out, the band's or
         // the island's, since a spring curve can push the island past the band.
@@ -869,88 +774,6 @@ PanelWindow {
             visible: SettingsService.notched
             color: island.surfaceColor
             sheenReach: root.notchSheen
-        }
-
-        // On glass, attached, the island and its fillets are one pane: the
-        // light from the top runs on into the fillets, and the thick edge
-        // follows the outline below rather than the island's own rectangle.
-        // Its light falls as the sheen's does, from one side on liquid, over
-        // the whole pane fillets and all.
-        LitEdge {
-            id: notchEdge
-
-            readonly property real fillet: Theme.radiusNotch * 2
-            readonly property real shapeHeight: root.unified ? band.height : island.height
-
-            x: root.shapeLeft - notchEdge.fillet
-            width: root.shapeRight - root.shapeLeft + 2 * notchEdge.fillet
-            height: notchEdge.shapeHeight
-            // Edge to edge, the band is the bezel's own edge and the island
-            // drops out of it with no outline to trace.
-            visible: SettingsService.notched && !island.paper && !root.edgeToEdge
-
-            Repeater {
-                model: Theme.glass ? [[1, 1], [2, 0.6], [3, 0.35], [4, 0.15]] : []
-
-                NotchOutline {
-                    required property var modelData
-
-                    inset: modelData[0]
-                    shapeLeft: notchEdge.fillet
-                    shapeRight: notchEdge.width - notchEdge.fillet
-                    shapeHeight: notchEdge.shapeHeight
-                    radius: island.radius
-                    color: Qt.rgba(1, 1, 1, Theme.edgeOf(Theme.surfaceStyle) * modelData[1])
-                }
-            }
-
-            // Attached, the hairline runs down the fillets and round the shape,
-            // and not along the screen edge. In one capsule only while the
-            // island has the band, as `outline` above. Lit from one side, the
-            // rim's light is drawn here so it fades with the edge.
-            NotchOutline {
-                shapeLeft: notchEdge.fillet
-                shapeRight: notchEdge.width - notchEdge.fillet
-                shapeHeight: notchEdge.shapeHeight
-                radius: island.radius
-                color: !root.unified || root.islandTaken
-                    ? (notchEdge.lit ? Qt.rgba(1, 1, 1, Theme.litRim) : Theme.islandRim)
-                    : "transparent"
-
-                Behavior on color { ColorAnimation { duration: Theme.durationMedium } }
-            }
-        }
-
-        // The bezel's edge, on glass: one rim and thick edge round the band's
-        // underside, the screen's corners and whatever drops out of it, lit
-        // as one pane — from one side on liquid, which falls on its two ends.
-        LitEdge {
-            id: bezelEdge
-
-            readonly property real corner: SettingsService.screenCorners ? Theme.screenRadius : 0
-
-            width: root.width
-            height: band.height + Math.max(bezelEdge.corner, drop.visible ? drop.depth : 0)
-            visible: root.edgeToEdge && Theme.glass && !island.paper
-
-            Repeater {
-                model: [[0, 1], [1, 1], [2, 0.6], [3, 0.35], [4, 0.15]]
-
-                BezelOutline {
-                    required property var modelData
-
-                    inset: modelData[0]
-                    bandHeight: band.height
-                    corner: bezelEdge.corner
-                    dropLeft: drop.x
-                    dropRight: drop.x + drop.width
-                    dropDepth: drop.visible ? drop.depth : 0
-                    dropRadius: island.radius
-                    color: modelData[0] === 0
-                        ? (bezelEdge.lit ? Qt.rgba(1, 1, 1, Theme.litRim) : Theme.islandRim)
-                        : Qt.rgba(1, 1, 1, Theme.edgeOf(Theme.surfaceStyle) * modelData[1])
-                }
-            }
         }
 
         component BareShadow: MultiEffect {

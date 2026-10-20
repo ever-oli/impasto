@@ -53,7 +53,7 @@ ColumnLayout {
     // than watching the XDG directories; the new list lands about 50 ms later.
     Component.onCompleted: {
         searchField.forceActiveFocus()
-        HyprlandService.loadClients()
+        NiriService.loadClients()
         LauncherService.refresh()
         EmojiService.fresh = false
         if (root.mode.id === "emoji")

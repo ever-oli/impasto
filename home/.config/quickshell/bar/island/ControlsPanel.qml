@@ -153,7 +153,7 @@ ColumnLayout {
         TapHandler {
             acceptedButtons: Qt.RightButton
             gesturePolicy: TapHandler.ReleaseWithinBounds
-            onTapped: ControlsService.edit(!ControlsService.editing)
+            onTapped: {}
         }
 
         // Left-click on the background closes the inspector. A block's own
@@ -226,22 +226,8 @@ ColumnLayout {
         }
 
         // The selected block's options, on a card beside it.
-        Loader {
-            anchors.fill: parent
-            z: 5
-            active: root.editing && ControlsService.selected !== ""
-                && ControlsService.selected !== "top"
-            sourceComponent: BlockInspector { board: surface }
-        }
 
         // The top row's, under it at the right.
-        Loader {
-            anchors.right: parent.right
-            y: 0
-            z: 5
-            active: root.editing && ControlsService.selected === "top"
-            sourceComponent: TopRowInspector { limit: surface.height }
-        }
     }
 
     Component {

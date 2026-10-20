@@ -65,7 +65,7 @@ PanelWindow {
         function onOpened(): void {
             root.selection = Qt.rect(0, 0, 0, 0)
             root.dragging = false
-            HyprlandService.loadClients()
+            NiriService.loadClients()
             keys.forceActiveFocus()
         }
     }
@@ -298,7 +298,7 @@ PanelWindow {
     // compositor's; the corner is added to ask and taken off to answer.
     // hyprctl lists windows bottom to top, so the last match is the visible one.
     function windowUnder(x: real, y: real): rect {
-        const clients = HyprlandService.clientsOn(HyprlandService.activeId)
+        const clients = NiriService.clientsOn(NiriService.activeId)
         const left = root.screen?.x ?? 0
         const top = root.screen?.y ?? 0
         let found = Qt.rect(0, 0, 0, 0)

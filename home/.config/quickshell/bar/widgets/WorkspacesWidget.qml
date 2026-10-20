@@ -48,7 +48,7 @@ Rectangle {
     // it falls back to the focused one.
     readonly property string screenName: root.QsWindow.window?.screen?.name ?? ""
     readonly property int activeId: root.preview ? 2
-        : HyprlandService.activeOn(root.screenName) || HyprlandService.activeId
+        : NiriService.activeOn(root.screenName) || NiriService.activeId
 
     readonly property int dotSize: 6
     readonly property int activeWidth: 22
@@ -83,11 +83,11 @@ Rectangle {
     }
 
     function isShown(n: int): bool {
-        return root.preview ? n <= 5 : HyprlandService.isVisibleOn(n, root.screenName)
+        return root.preview ? n <= 5 : NiriService.isVisibleOn(n, root.screenName)
     }
 
     function isOccupied(n: int): bool {
-        return root.preview ? n === 1 || n === 3 : HyprlandService.isOccupied(n)
+        return root.preview ? n === 1 || n === 3 : NiriService.isOccupied(n)
     }
 
     implicitHeight: Theme.capsuleHeight
@@ -143,7 +143,7 @@ Rectangle {
         Repeater {
             id: repeater
 
-            model: root.preview ? 5 : HyprlandService.span
+            model: root.preview ? 5 : NiriService.span
 
             Item {
                 id: slot
@@ -242,7 +242,7 @@ Rectangle {
                     visible: root.written
                     anchors.centerIn: parent
                     text: root.written ? root.glyphOf(root.preview ? slot.workspaceId
-                        : HyprlandService.numberOn(slot.workspaceId, root.screenName)) : ""
+                        : NiriService.numberOn(slot.workspaceId, root.screenName)) : ""
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSizeSmall
                     font.weight: Font.DemiBold
@@ -261,7 +261,7 @@ Rectangle {
                     enabled: !root.preview
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: HyprlandService.focus(slot.workspaceId)
+                    onClicked: NiriService.focus(slot.workspaceId)
                 }
             }
         }
