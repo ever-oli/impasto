@@ -213,7 +213,7 @@ QtObject {
     // Status indicators are fixed: a wallpaper-derived accent must not change
     // what a battery ring means.
     readonly property color indicator: "#ffffff"
-    readonly property color indicatorDim: "#4d4d4d"
+    property color indicatorDim: "#4d4d4d"
     readonly property color indicatorGood: "#32d74b"
     readonly property color indicatorWarn: "#ffd60a"
     readonly property color indicatorBad: "#ff453a"
@@ -602,7 +602,7 @@ QtObject {
     readonly property var tokens: [
         "background", "surface", "surfaceHover", "border", "text", "textMuted",
         "accent", "accentHover", "accentText", "red", "green", "yellow", "blue",
-        "island", "islandSurface", "islandSurfaceHover", "islandBorder"
+        "island", "islandSurface", "islandSurfaceHover", "islandBorder", "indicatorDim"
     ]
 
     // Tokens a palette does not define keep their current value.

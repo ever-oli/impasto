@@ -6,6 +6,7 @@
   impasto-theme current
   impasto-theme next                     cycle the four themes
   impasto-theme next-wallpaper
+  impasto-theme audit [name...]          WCAG contrast check; exits 1 on any failure
 
 colors.toml is the single source of truth. Templates in
 ~/.local/share/impasto/themed/*.tpl (Omarchy's {{ key }} syntax, see
@@ -63,25 +64,96 @@ def mix(a, b, t):
     return "#%02x%02x%02x" % tuple(round(p + (q - p) * t) for p, q in zip(a, b))
 
 
+def luminance(colour):
+    rgb = [int(colour.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    rgb = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in rgb]
+    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
+
+
+def contrast(a, b):
+    """WCAG 2 contrast ratio of two #rrggbb colours."""
+    hi, lo = sorted((luminance(a), luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def legible(fg, grounds, need, toward):
+    """fg, blended toward `toward` only as far as it takes to reach `need`
+    against every ground. Keeps the hue; just moves it off the ground."""
+    for step in range(51):
+        out = mix(fg, toward, step / 50)
+        if min(contrast(out, g) for g in grounds) >= need:
+            return out
+    return toward
+
+
 def shell(c, name):
     """The island is ink: on a light theme the darkest ink with paper text,
-    on a dark one the darkest paper with the theme's own text."""
+    on a dark one the darkest paper with the theme's own text. Every colour
+    the bar draws on it is pushed toward the text until it reads (AA)."""
     dark = c.get("mode") == "dark"
     ink = c["darker_background"] if dark else c["bright_foreground"]
     text = c["foreground"] if dark else c["background"]
+    surface, hover = mix(ink, text, 0.07), mix(ink, text, 0.12)
+    grounds = [ink, surface, hover]
+    accent = legible(c["accent"] if dark else mix(c["accent"], c["background"], 0.25), grounds, 4.5, text)
+    tint = lambda key: legible(c[key], grounds, 4.5, text)
     return {
         "island": ink,
-        "islandSurface": mix(ink, text, 0.07),
-        "islandSurfaceHover": mix(ink, text, 0.12),
+        "islandSurface": surface,
+        "islandSurfaceHover": hover,
         "islandBorder": mix(ink, text, 0.16),
-        "background": ink, "surface": mix(ink, text, 0.07),
-        "surfaceHover": mix(ink, text, 0.12), "border": mix(ink, text, 0.18),
-        "text": text, "textMuted": mix(text, ink, 0.4),
-        "accent": c["accent"] if dark else mix(c["accent"], c["background"], 0.25),
-        "accentHover": mix(c["accent"], text, 0.3),
-        "accentText": ink,
-        "red": c["red"], "green": c["green"], "yellow": c["yellow"], "blue": c["blue"],
+        "background": ink, "surface": surface,
+        "surfaceHover": hover, "border": mix(ink, text, 0.18),
+        "text": legible(text, grounds, 7, "#ffffff" if dark else text),
+        "textMuted": legible(mix(text, ink, 0.4), grounds, 4.5, text),
+        "indicatorDim": legible(mix(text, ink, 0.7), [ink], 3, text),
+        "accent": accent,
+        "accentHover": legible(mix(accent, text, 0.3), grounds, 4.5, text),
+        "accentText": legible(ink, [accent], 4.5, "#000000" if luminance(accent) > 0.18 else "#ffffff"),
+        "red": tint("red"), "green": tint("green"), "yellow": tint("yellow"), "blue": tint("blue"),
     }
+
+
+def pairs(c):
+    """Every foreground/ground pair the themed apps actually draw, with the
+    contrast it needs: 4.5 for text (muted and dim included), 3 for marks."""
+    bar = shell(c, "")
+    isl = [("island", bar["island"]), ("row", bar["islandSurface"]), ("selected row", bar["islandSurfaceHover"])]
+    bg, out = c["background"], []
+    for fg in ("text", "textMuted", "accent", "accentHover", "red", "green", "yellow", "blue"):
+        out += [("bar", f"{fg} on {g}", bar[fg], colour, 4.5) for g, colour in isl]
+    out += [("bar", "workspace dim dot on island", bar["indicatorDim"], bar["island"], 3),
+            ("bar", "accentText on accent", bar["accentText"], bar["accent"], 4.5)]
+    for i in list(range(1, 16)):
+        out.append(("ghostty", f"color{i} on background", c[f"color{i}"], bg, 4.5))
+    out += [("ghostty", "foreground on background", c["foreground"], bg, 4.5),
+            ("ghostty", "selection text", c["selection_foreground"], c["selection_background"], 4.5),
+            ("ghostty", "cursor", c["accent"], bg, 3)]
+    for key in ("foreground", "accent", "muted", "red", "green", "yellow", "blue", "magenta", "cyan",
+                "light_foreground", "dark_foreground", "bright_foreground"):
+        out.append(("helix/btop", f"{key} on background", c[key], bg, 4.5))
+    out.append(("helix", "focus text on lighter_background", c["foreground"], c["lighter_background"], 4.5))
+    for key in ("foreground", "color4", "color2", "color5", "color8"):
+        out.append(("helix", f"statusline background on {key}", bg, c[key], 4.5))
+    return out
+
+
+def audit(which):
+    """Print every pair under its threshold and the worst per theme; exit 1
+    if any fails, so a palette edit can't make a theme unreadable again."""
+    bad = 0
+    for name in which:
+        with open(f"{THEMES}/{name}/colors.toml", "rb") as f:
+            c = tomllib.load(f)
+        rows = [(contrast(fg, g) / need, app, what, fg, g, contrast(fg, g), need) for app, what, fg, g, need in pairs(c)]
+        rows.sort()
+        fails = [r for r in rows if r[5] < r[6]]
+        bad += len(fails)
+        worst = rows[0]
+        print(f"{name}: {len(rows)} pairs, {len(fails)} under threshold; worst {worst[1]} {worst[2]} {worst[5]:.2f}:1 (needs {worst[6]})")
+        for _, app, what, fg, g, ratio, need in fails:
+            print(f"  FAIL {app:10} {what:38} {fg} on {g} {ratio:5.2f} < {need}")
+    return 1 if bad else 0
 
 
 TEMPLATES = f"{HOME}/.local/share/impasto/themed"
@@ -236,6 +308,8 @@ def main():
     lock = open(f"{STATE}/theme.lock", "w")
     fcntl.flock(lock, fcntl.LOCK_EX)
     verb = sys.argv[1] if len(sys.argv) > 1 else "current"
+    if verb in ("audit", "--audit"):
+        sys.exit(audit(sys.argv[2:] or names()))
     if verb == "list":
         print("\n".join(names()))
     elif verb == "set":

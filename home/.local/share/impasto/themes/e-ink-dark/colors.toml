@@ -8,7 +8,7 @@ accent = "#D2AD55"        # light gold — the single leading hue
 selection = "#2E2A1E"
 selection_foreground = "#D6CFC0"
 selection_background = "#2E2A1E"
-muted = "#75705E"
+muted = "#87826A"
 
 background = "#1B1914"    # dark gold paper
 dark_background = "#110F0B"

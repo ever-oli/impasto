@@ -8,7 +8,7 @@ accent = "#E85F6F"         # sakura red
 selection = "#230E18"      # sakura selection
 selection_foreground = "#F0EAED"
 selection_background = "#230E18"
-muted = "#7A5C66"
+muted = "#946F79"
 
 background = "#0D0509"     # sakura near-black
 dark_background = "#060204"
