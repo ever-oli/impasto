@@ -48,7 +48,9 @@ Scope {
         root.island?.open("launcher")
     }
 
-    readonly property var panels: ["launcher", "ask", "controls", "session", "keys", "t3",
+    // Panels that are really the launcher opened on a sigil.
+    readonly property var launcherModes: ["clipboard", "emoji", "windows", "files"]
+    readonly property var panels: ["windows", "files", "launcher", "ask", "controls", "session", "keys", "t3",
         "bluetooth", "sound", "microphone", "clipboard", "emoji"]
 
     IpcHandler {
@@ -58,7 +60,7 @@ Scope {
         function open(name: string): string {
             if (root.panels.indexOf(name) < 0)
                 return root.fail(`not a panel: "${name}" (${root.panels.join(", ")})`)
-            if (name === "clipboard" || name === "emoji")
+            if (root.launcherModes.indexOf(name) >= 0)
                 root.openLauncherOn(name)
             else
                 root.island?.open(name)
@@ -69,7 +71,7 @@ Scope {
         function toggle(name: string): string {
             if (root.panels.indexOf(name) < 0)
                 return root.fail(`not a panel: "${name}" (${root.panels.join(", ")})`)
-            if (name === "clipboard" || name === "emoji")
+            if (root.launcherModes.indexOf(name) >= 0)
                 root.openLauncherOn(name)
             else
                 root.island?.toggle(name)
@@ -265,6 +267,19 @@ Scope {
             LauncherService.query = ""
             root.island?.open("launcher")
             return root.ok({ path: path })
+        }
+
+        // Open at the root with `text` typed, e.g. `palette search "5 ft to cm"`.
+        function search(text: string): string {
+            MenuService.reset()
+            LauncherService.query = text
+            root.island?.open("launcher")
+            return root.ok({ query: text })
+        }
+
+        // The rows the palette shows right now, for tests.
+        function rows(): string {
+            return root.ok({ rows: LauncherService.results.slice(0, 8).map(r => `${r.kind}: ${r.name} | ${r.subtitle ?? ""}`) })
         }
     }
 

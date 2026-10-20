@@ -135,6 +135,12 @@ ColumnLayout {
     // Shift or Ctrl with Enter opens a copied image in imv instead of copying
     // it; on any other row it is a plain Enter.
     function confirm(entry: var, modifiers: int): void {
+        // Shift or Ctrl with Enter on a file opens a terminal where it is.
+        if (entry && entry.kind === "file" && (modifiers & (Qt.ShiftModifier | Qt.ControlModifier))) {
+            FinderService.reveal(entry.id)
+            root.closed()
+            return
+        }
         if (entry && entry.kind === "clip" && entry.file
                 && (modifiers & (Qt.ShiftModifier | Qt.ControlModifier))) {
             Quickshell.execDetached(["imv", entry.file])
@@ -466,7 +472,8 @@ ColumnLayout {
                     // this binding is the row.
                     readonly property bool isApp: row.modelData.kind === "app"
                     readonly property string iconSource: badge.isApp && row.modelData.icon
-                        ? Theme.appIcon(row.modelData.icon) : ""
+                        ? Theme.appIcon(row.modelData.icon)
+                        : row.modelData.appIcon ? Theme.appIcon(row.modelData.appIcon) : ""
 
                     // Copied images show a thumbnail: two screenshots often
                     // share a name and a size.

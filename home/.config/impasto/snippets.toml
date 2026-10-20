@@ -1,0 +1,45 @@
+# Snippets and quicklinks for the notch palette (Alt+Space).
+#   snippet:   type its name or keyword at the root; Enter types the text
+#              into the window you were in (wtype).
+#   quicklink: type "<key> <words>" at the root; Enter opens it in Helium.
+#              {q} is replaced by the words.
+
+[[snippet]]
+name = "My email"
+keyword = "email"
+text = "you@example.com"        # put your address here
+
+[[snippet]]
+name = "Shrug"
+keyword = "shrug"
+text = "¯\\_(ツ)_/¯"
+
+[[snippet]]
+name = "Today's date"
+keyword = "date"
+text = "2026-10-20"             # static; edit or replace
+
+[[snippet]]
+name = "Thanks reply"
+keyword = "ty"
+text = "Thanks! I'll take a look and get back to you today."
+
+[[quicklink]]
+key = "g"
+name = "Google"
+url = "https://www.google.com/search?q={q}"
+
+[[quicklink]]
+key = "gh"
+name = "GitHub"
+url = "https://github.com/search?q={q}&type=repositories"
+
+[[quicklink]]
+key = "aw"
+name = "Arch Wiki"
+url = "https://wiki.archlinux.org/index.php?search={q}"
+
+[[quicklink]]
+key = "yt"
+name = "YouTube"
+url = "https://www.youtube.com/results?search_query={q}"

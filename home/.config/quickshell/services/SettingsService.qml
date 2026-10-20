@@ -136,7 +136,7 @@ Singleton {
     // The first character that selects each launcher mode. Stored as
     // overrides keyed by mode id, so a new mode needs no new key.
     readonly property var launcherPrefixDefaults: ({
-        calculate: "=", desk: ">", windows: "@", timer: "!", clipboard: "'",
+        calculate: "=", desk: ">", windows: "@", timer: "!", clipboard: "'", files: "/",
         emoji: ":"
     })
 

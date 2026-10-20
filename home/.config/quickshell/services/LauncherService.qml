@@ -47,6 +47,9 @@ QtObject {
         { id: "emoji",     prefix: SettingsService.launcherPrefix("emoji"),
           label: "Emoji",     icon: "󰇲",
           hint: "Copy an emoji",       empty: "No emoji by that name" },
+        { id: "files",     prefix: SettingsService.launcherPrefix("files"),
+          label: "Files",     icon: "󰈞",
+          hint: "Find a file in your home", empty: "Type part of a path — Enter opens, Shift+Enter opens a terminal there" },
         { id: "apps",      prefix: "",  label: "Apps",      icon: "󰀻",
           hint: "Search applications",
           empty: `No application matches. Type ${SettingsService.launcherPrefix("desk")} for what the shell itself can do.` }
@@ -71,6 +74,14 @@ QtObject {
     // panel height depends on the results and the island must know its size
     // before the panel exists. Cleared when the panel closes.
     property string query: ""
+    onQueryChanged: {
+        const mode = root.modeFor(root.query)
+        const raw = root.termFor(root.query)
+        if (mode.id === "files")
+            FinderService.findFiles(raw)
+        else if (mode.id === "calculate" || mode.id === "apps")
+            FinderService.calculate(raw)
+    }
 
     readonly property var results: root.search(root.query)
 
@@ -219,6 +230,8 @@ QtObject {
         switch (mode.id) {
         case "calculate":
             return root.calculate(raw)
+        case "files":
+            return root.fileRows()
         case "desk":
             return root.desk(term)
         case "windows":
@@ -237,14 +250,19 @@ QtObject {
             return MenuService.results(term)
         const ask = { kind: "panel", id: "ask", panel: "ask", icon: "󰚩", name: "Ask",
                       subtitle: "The assistant, with your screen as context" }
+        const windowsFolder = { kind: "mode", id: "windows", icon: "󰖯", name: "Windows",
+                                subtitle: "Switch to an open window", sigil: SettingsService.launcherPrefix("windows") }
         if (term === "")
-            return MenuService.tree.slice(0, 1).map(MenuService.row).concat([ask],
+            return MenuService.tree.slice(0, 1).map(MenuService.row).concat([ask, windowsFolder],
                 MenuService.tree.slice(1).map(MenuService.row), root.rank(term))
+        const top = root.calculate(raw).concat(root.quicklinkRows(raw))
+        const extras = root.snippetRows(term).concat(root.windows(term).slice(0, 3))
         const commands = MenuService.filter(MenuService.leaves, term).map(MenuService.row)
         const lead = commands.filter(c => c.name.toLowerCase().startsWith(term))
         const rest = commands.filter(c => !c.name.toLowerCase().startsWith(term))
         const asks = "ask".startsWith(term) ? [ask] : []
-        return asks.concat(lead, root.rank(term).slice(0, root.maxResults), rest)
+        const folders = root.fuzzyName(windowsFolder.name, term) ? [windowsFolder] : []
+        return top.concat(asks, lead, root.rank(term).slice(0, root.maxResults), extras, folders, rest)
     }
 
     // All applications matching `term`, sorted by:
@@ -286,16 +304,44 @@ QtObject {
         return found
     }
 
+    // qalc answers asynchronously (`FinderService`); the row appears when it does.
     function calculate(expression: string): var {
-        if (expression === "" || !root.arithmetic.test(expression))
-            return []
-        const value = root.evaluate(expression)
-        if (value === null)
+        const value = FinderService.calcFor(expression)
+        if (value === "")
             return []
         return [{
             kind: "calculation", id: "", icon: "󰃬",
-            name: `${value}`, subtitle: `${expression}  ·  Enter copies it`
+            name: value, subtitle: `${expression}  ·  Enter copies it`
         }]
+    }
+
+    function fuzzyName(name: string, term: string): bool {
+        return FinderService.fuzzy(name, term) >= 0
+    }
+
+    function quicklinkRows(raw: string): var {
+        const hit = FinderService.quicklinkFor(raw)
+        return hit ? [{ kind: "quicklink", id: hit.link.key, icon: "󰖟", link: hit.link, term: hit.term,
+                        name: `${hit.link.name}: ${hit.term}`, subtitle: "Enter opens it in Helium" }] : []
+    }
+
+    function snippetRows(term: string): var {
+        return FinderService.snippets
+            .map(sn => ({ sn: sn, score: Math.min(...[sn.name, sn.keyword ?? ""].map(h => {
+                const v = FinderService.fuzzy(h, term); return v < 0 ? 99 : v })) }))
+            .filter(x => x.score < 4).sort((a, b) => a.score - b.score).slice(0, 4)
+            .map(x => ({ kind: "snippet", id: x.sn.name, icon: "󰅪", text: x.sn.text,
+                         name: x.sn.name, subtitle: `${x.sn.keyword ? x.sn.keyword + "  ·  " : ""}Enter types: ${x.sn.text.replace(/\n/g, " ⏎ ").slice(0, 60)}` }))
+    }
+
+    function fileRows(): var {
+        return FinderService.files.map(path => {
+            const slash = path.replace(/\/$/, "").lastIndexOf("/")
+            const isDir = path.endsWith("/")
+            return { kind: "file", id: path, icon: isDir ? "󰉋" : "󰈔",
+                     name: path.replace(/\/$/, "").slice(slash + 1),
+                     subtitle: path.slice(0, slash).replace(FinderService.home, "~") }
+        })
     }
 
     // ── DESK MODE ───────────────────────────────────────────────────────────
@@ -407,10 +453,11 @@ QtObject {
                 break
             const title = (client.title ?? "").toLowerCase()
             const cls = (client.class ?? "").toLowerCase()
-            if (term !== "" && !title.includes(term) && !cls.includes(term))
+            if (term !== "" && !title.includes(term) && !cls.includes(term)
+                    && FinderService.fuzzy(title, term) < 0 && FinderService.fuzzy(cls, term) < 0)
                 continue
             found.push({
-                kind: "window", id: client.address, icon: "󰖯",
+                kind: "window", id: client.address, icon: "󰖯", appIcon: client.class,
                 name: client.title || client.class,
                 subtitle: `${client.class}  ·  workspace ${client.workspace.id}`
             })
@@ -463,6 +510,12 @@ QtObject {
             ClipboardService.copy(entry.id)
         else if (entry.kind === "emoji")
             EmojiService.copy(entry.item)
+        else if (entry.kind === "quicklink")
+            FinderService.openLink(entry.link, entry.term)
+        else if (entry.kind === "snippet")
+            FinderService.paste(entry.text)
+        else if (entry.kind === "file")
+            FinderService.open(entry.id)
         // `panel` and `mode` entries are handled by the launcher panel: the
         // service does not know about the island, and a mode row keeps the
         // launcher open.

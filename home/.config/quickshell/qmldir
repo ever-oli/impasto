@@ -25,6 +25,7 @@ singleton ClipboardService   1.0 services/ClipboardService.qml
 singleton EmojiService       1.0 services/EmojiService.qml
 singleton PolkitService      1.0 services/PolkitService.qml
 singleton TrayService        1.0 services/TrayService.qml
+singleton FinderService    1.0 services/FinderService.qml
 singleton MenuService      1.0 services/MenuService.qml
 singleton AskService       1.0 services/AskService.qml
 singleton PickerService    1.0 services/PickerService.qml

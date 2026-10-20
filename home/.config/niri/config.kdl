@@ -116,6 +116,8 @@ binds {
     Ctrl+Alt+T { spawn "impasto" "picker" "theme"; }
     Ctrl+Alt+B { spawn "impasto" "picker" "wallpaper"; }
     Ctrl+Alt+V { spawn "impasto" "toggle" "clipboard"; }
+    Alt+W hotkey-overlay-title="Switch window" { spawn "impasto" "toggle" "windows"; }
+    Alt+Slash hotkey-overlay-title="Find a file" { spawn "impasto" "toggle" "files"; }
     Ctrl+Alt+E { spawn "impasto" "toggle" "emoji"; }
     Ctrl+Alt+S { spawn "impasto" "capture" "region"; }
     Ctrl+Alt+A { spawn "impasto" "capture"; }
