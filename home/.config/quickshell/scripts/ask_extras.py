@@ -32,7 +32,7 @@ def modes():
                     k, v = line.split(":", 1)
                     meta[k.strip()] = v.strip()
         out.append({"id": mode_id, "name": meta.get("name", mode_id), "icon": meta.get("icon", "󰚩"),
-                    "sources": meta.get("sources", "").split(), "rules": meta.get("rules", "none"),
+                    "sources": meta.get("sources", "").split(), "rules": meta.get("rules", "none"), "act": meta.get("act", "off"),
                     "body": body.strip()})
     order = {"general": 0}
     return sorted(out, key=lambda m: (order.get(m["id"], 1), m["name"]))

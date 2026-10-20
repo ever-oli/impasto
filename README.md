@@ -67,3 +67,4 @@ helix, niri's focus ring and border, mako and fuzzel, and runs swaybg as the `no
 | Alt+Shift+Y / W | Next theme / next wallpaper |
 
 GPL-3.0, like upstream.
+- [INSTALL.md](INSTALL.md): fresh Arch setup. Build mode: `notch evolve`.

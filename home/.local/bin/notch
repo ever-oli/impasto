@@ -7,8 +7,10 @@
 #   notch close
 #   notch ask "<question>" [screen|region]  the notch assistant
 #   notch ask capture | mode <id>         grab the Helium tab · pick a mode
-#   notch ask backend pi|opencode         which agent answers (Pi = OptChat memory)
-#   notch ask --backend pi "<question>"   one question to Pi, printed here
+#   notch ask --backend pi "<question>"   one question, printed here
+#   notch ask backend opencode|pi          hidden fallback switch (Pi is the engine)
+#   notch install [--dry-run]              bootstrap a fresh Arch machine (INSTALL.md)
+#   notch evolve "<request>"               Build mode: Notch changes itself (gated)
 #   notch picker [theme|wallpaper]       the carousel in the notch
 #   notch palette [Folder/Sub]           the palette, opened at a folder
 #   notch capture [region|window|screen] | text | record
@@ -32,18 +34,13 @@ case $verb in
     ask)          case "${1:-}" in
                       capture) call ask capture ;;
                       mode)    call ask mode "${2:?mode id}" ;;
-                      backend) call ask backend "${2:?pi or opencode}" ;;
-                      --backend) b="${2:?pi or opencode}"; q="${3:?question}"
-                               printf '{"op":"ask","text":%s}\n' "$(printf %s "$q" | python3 -c 'import json,sys;print(json.dumps(sys.stdin.read()))')" |
-                                   python3 "$HOME/.config/quickshell/scripts/ask.py" --backend "$b" --once |
-                                   python3 -c 'import json,sys
-for l in sys.stdin:
-    e=json.loads(l)
-    if e["type"]=="chunk": print(e["text"],end="",flush=True)
-    elif e["type"]=="error": print("error:",e["text"],file=sys.stderr)
-print()' ;;
+                      --backend) exec notch-ask-cli --backend "${2:?pi or opencode}" "${3:?question}" ;;
+                      backend) python3 "$HOME/.config/quickshell/scripts/ask.py" backend "${2:?pi or opencode}"
+                               call ask backend "$2" >/dev/null 2>&1 || true ;;
                       *)       call ask ask "${1:?question}" "${2:-none}" ;;
                   esac ;;
+    install)      exec "${NOTCH_SRC:-$HOME/.local/src/notch}/install" "$@" ;;
+    evolve)       exec notch-ask-cli --mode notch "${1:?what should Notch change about itself?}" ;;
     panels)       call panel list ;;
     capture)
         case ${1:-} in

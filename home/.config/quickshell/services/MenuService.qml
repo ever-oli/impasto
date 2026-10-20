@@ -47,6 +47,8 @@ Singleton {
             { icon: "󰋚", name: "Ask history", subtitle: "Past questions; Enter copies the answer", itemIcon: "󰚩",
               source: `python3 ${Quickshell.shellPath("scripts/ask.py")} history`,
               each: `python3 ${Quickshell.shellPath("scripts/ask.py")} answer {} | wl-copy && notify-send "Answer copied"` },
+            { icon: "󰑓", name: "Ask Notch to change itself", subtitle: "Build mode: edits the repo, tests, opens a PR; every write asks first",
+              sh: `qs ipc call ask mode notch && qs ipc call panel open ask` },
             { icon: "󰀄", name: "Edit profile", subtitle: "Sent to interview modes, 8000 characters", sh: "ghostty -e helix ~/.config/notch/profile.md" },
             { icon: "󰘦", name: "Modes folder", subtitle: "Drop a .md file to add a mode", sh: "ghostty --working-directory=$HOME/.config/notch/modes" },
             { icon: "󰈙", name: "Reference files", subtitle: "files/<mode>/ — PDF, DOCX, text", sh: "mkdir -p ~/.config/notch/files && xdg-open ~/.config/notch/files" }

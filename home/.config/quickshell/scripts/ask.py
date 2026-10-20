@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""ask.py — the notch assistant's bridge to its agent: `opencode acp` (ACP, the
-default) or Pi with OptChat durable memory (`--backend pi`, or "pi" in
+"""ask.py — the notch assistant's bridge to its agent: Pi (the default and only visible engine) or `opencode acp` (hidden fallback,
+`notch ask backend opencode`) Pi with OptChat durable memory (`--backend pi`, or "pi" in
 ~/.config/notch/ask-backend). Pi keeps one never-ending chat under
 ~/.local/state/notch/pi; its tool calls go through notch-gate.ts.
 
@@ -30,12 +30,14 @@ def _backend():
     if "--backend" in sys.argv:
         return sys.argv[sys.argv.index("--backend") + 1]
     try:
-        return open(f"{CONF}/ask-backend").read().strip() or "opencode"
+        return open(f"{CONF}/ask-backend").read().strip() or "pi"
     except OSError:
-        return os.environ.get("ASK_BACKEND", "opencode")
+        return os.environ.get("ASK_BACKEND", "pi")
 BACKEND = _backend()
 PI = os.environ.get("ASK_PI", f"{HOME}/.local/share/mise/installs/node/latest/bin/pi")
-PI_STATE = f"{STATE}/pi"
+# ASK_PI_STATE / ASK_PI_SESSION let tests use their own chat, never the live notch one.
+PI_STATE = os.environ.get("ASK_PI_STATE", f"{STATE}/pi")
+PI_SESSION = os.environ.get("ASK_PI_SESSION", "notch")
 AGENT = os.environ.get("ASK_AGENT", f"{HOME}/.local/share/mise/installs/opencode/latest/node_modules/.bin/opencode")
 SAFE = {"read", "search", "fetch", "think"}
 ACT = f"""You can operate Ever's Linux desktop (niri, Wayland) with shell commands:
@@ -73,7 +75,7 @@ if BACKEND == "pi":
     os.makedirs(PI_STATE, exist_ok=True)
     env = dict(os.environ, NOTCH_PI_ACT=f"{PI_STATE}/act",
                PATH=os.path.dirname(PI) + ":" + os.environ.get("PATH", ""))
-    agent = subprocess.Popen([PI, "--mode", "rpc", "--session-dir", PI_STATE, "--session-id", "notch",
+    agent = subprocess.Popen([PI, "--mode", "rpc", "--session-dir", PI_STATE, "--session-id", PI_SESSION,
                               "--optchat-channel", "notch", "--no-context-files",
                               "-e", os.path.join(os.path.dirname(os.path.abspath(__file__)), "notch-gate.ts")]
                              + (["--model", os.environ["ASK_PI_MODEL"]] if os.environ.get("ASK_PI_MODEL") else []),
@@ -84,6 +86,8 @@ else:
                          stderr=subprocess.DEVNULL, text=True, bufsize=1, env=env, cwd=HOME)
 next_id, waiting, pending = [0], {}, {}
 session, act_mode, turn = [None], [False], {"q": "", "a": ""}
+# {"op":"answer","allow":true,"session":true} approves the rest of this session.
+auto_ok = [False]
 # Rolling context: after ROLL turns the session is summarised and replaced by
 # a fresh one seeded with the summary and the last KEEP turns.
 ROLL, KEEP = 12, 4
@@ -200,6 +204,9 @@ def pi_reader():
             rid = msg["id"]
             def pick(allow, rid=rid):
                 send({"type": "extension_ui_response", "id": rid, "confirmed": bool(allow)})
+            if auto_ok[0]:
+                emit(type="tool", title=f"Auto-approved: {msg.get('title') or 'action'}", status="pending")
+                pick(True); continue
             pending[rid] = pick
             emit(type="permission", id=rid, title=msg.get("title") or "Action", detail=msg.get("message") or "")
         elif kind == "extension_ui_request" and msg.get("method") in ("select", "input", "editor"):
@@ -247,6 +254,9 @@ def compose(cmd):
         parts.append(extras.files_block(mode["id"], cmd.get("text", "")))
     if act_mode[0]:
         parts.append(ACT)
+    lessons = f"{CONF}/lessons.md"
+    if mode.get("act") == "on" and os.path.exists(lessons):
+        parts.append(f"<lessons source=\"Ever's past corrections\">\n{open(lessons).read()[-6000:]}\n</lessons>")
     if seed[0]:
         parts.append(seed[0]); seed[0] = ""
     if captured[0]:
@@ -289,7 +299,8 @@ def ask(cmd):
         answer_one(cmd)
 
 def answer_one(cmd):
-    act_mode[0] = bool(cmd.get("act"))
+    # A mode with `act: on` (Build) always works with tools, behind the gate.
+    act_mode[0] = bool(cmd.get("act")) or (extras.mode_of(cmd.get("mode", "general")) or {}).get("act") == "on"
     text = compose(cmd)
     blocks = []
     shot = {"screen": "grim -o Virtual-1 -", "region": 'g=$(slurp) && grim -g "$g" -'}.get(cmd.get("screen"))
@@ -366,9 +377,11 @@ for line in sys.stdin:
             pick(False)
         pending.clear()
     elif op == "answer" and cmd.get("id") in pending:
+        if cmd.get("allow") and cmd.get("session"):
+            auto_ok[0] = True
         pending.pop(cmd["id"])(bool(cmd.get("allow")))
     elif op == "reset":
-        session[0] = None
+        session[0] = None; auto_ok[0] = False
         turns.clear(); seed[0] = ""; captured[0] = None
         conversation[0] = str(int(time.time() * 1000))
 agent.terminate()
