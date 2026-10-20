@@ -32,7 +32,7 @@ def modes():
                     k, v = line.split(":", 1)
                     meta[k.strip()] = v.strip()
         out.append({"id": mode_id, "name": meta.get("name", mode_id), "icon": meta.get("icon", "󰚩"),
-                    "sources": meta.get("sources", "").split(), "rules": meta.get("rules", "none"),
+                    "sources": meta.get("sources", "").split(), "rules": meta.get("rules", "none"), "act": meta.get("act", "off"),
                     "body": body.strip()})
     order = {"general": 0}
     return sorted(out, key=lambda m: (order.get(m["id"], 1), m["name"]))
@@ -41,9 +41,25 @@ def mode_of(mode_id):
     all_ = modes()
     return next((m for m in all_ if m["id"] == mode_id), all_[0] if all_ else None)
 
-def rules():
+def _rules_parts():
+    """The _rules.md file split at the GROUNDED-ONLY marker: above it are the
+    layers every mode carries (security, voice, admissions that go beyond
+    interviews); below it the interview contracts for grounded modes only."""
     path = f"{CONF}/modes/_rules.md"
-    return "\n".join(l for l in open(path).read().splitlines() if not l.startswith("# ")) if os.path.exists(path) else ""
+    if not os.path.exists(path):
+        return "", ""
+    text = open(path).read()
+    shipped = lambda part: "\n".join(l for l in part.splitlines() if not l.startswith("# "))
+    if "GROUNDED-ONLY BELOW" in text:
+        shared, grounded = text.split("GROUNDED-ONLY BELOW", 1)
+        return shipped(shared).strip(), shipped(grounded).strip()
+    return shipped(text).strip(), ""
+
+def rules():
+    return _rules_parts()[0]
+
+def rules_grounded():
+    return _rules_parts()[1]
 
 def profile():
     path = f"{CONF}/profile.md"
