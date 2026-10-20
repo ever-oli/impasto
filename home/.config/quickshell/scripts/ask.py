@@ -17,7 +17,7 @@ One session is kept, so follow-ups share it; `reset` starts a new one.
 Reads (read/search/fetch/think) are allowed; anything else is denied unless
 the question was asked in act mode, where the shell asks Ever first.
 """
-import base64, json, os, subprocess, sys, threading, time
+import base64, glob, json, os, subprocess, sys, threading, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ask_extras as extras
@@ -80,6 +80,15 @@ if BACKEND == "pi":
         """Start (or restart, after a roll or a reset) the Pi process and its stdout reader."""
         global agent
         os.makedirs(PI_STATE, exist_ok=True)
+        # One transcript per session id: rolls and resets pile these up forever.
+        # The durable store keeps every original (optchat.source), so old
+        # transcripts are replayable debris — keep the recent dozen, drop the rest.
+        try:
+            olds = sorted(glob.glob(f"{PI_STATE}/*_{PI_SESSION}*.jsonl"))
+            for old in olds[:-12]:
+                os.unlink(old)
+        except OSError:
+            pass
         env = dict(os.environ, NOTCH_PI_ACT=f"{PI_STATE}/act",
                    PATH=os.path.dirname(PI) + ":" + os.environ.get("PATH", ""))
         agent = subprocess.Popen([PI, "--mode", "rpc", "--session-dir", PI_STATE, "--session-id", pi_sess[0],
