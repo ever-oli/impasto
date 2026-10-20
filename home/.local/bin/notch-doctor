@@ -40,7 +40,7 @@ be=$(cat "$cfg/notch/ask-backend" 2>/dev/null || echo pi)
 m=$(python3 -c 'import json,os;d=json.load(open(os.path.expanduser("~/.pi/agent/settings.json")));print(d.get("defaultProvider","")+"/"+d.get("defaultModel",""))' 2>/dev/null)
 [ -n "${m#/}" ] && ok "Pi model $m" || no "Pi has no default model (run pi, /login, /model)"
 if [ -z "${NOTCH_DOCTOR_FAST:-}" ] && [ -x "$pi" ]; then
-    a=$(cd /tmp && PATH=$(dirname "$pi"):$PATH timeout 90 "$pi" -p --no-session --no-context-files "Reply with exactly: PONG" 2>/dev/null | tr -d '[:space:]')
+    a=$(cd /tmp && PATH=$(dirname "$pi"):$PATH timeout 90 "$pi" -p --no-session --no-context-files "Reply with exactly: PONG" </dev/null 2>/dev/null | tr -d '[:space:]')
     [ "$a" = PONG ] && ok "Pi answers" || no "Pi did not answer (got: ${a:0:40})"
 fi
 command -v opencode >/dev/null && ok "opencode hidden fallback (notch ask backend opencode)" || warn "no opencode fallback"
