@@ -80,14 +80,11 @@ Singleton {
               sh: "f=/tmp/clipboard-$(date +%s).txt; wl-paste > $f && localsend $f" }
         ] },
         { icon: "󰏘", name: "Style", subtitle: "Theme, font, wallpaper, corners", items: [
-            { icon: "󰏘", name: "Theme", itemIcon: "󰏘",
-              source: "impasto-theme list", each: "impasto-theme set {}" },
+            { icon: "󰏘", name: "Theme", subtitle: "Carousel: arrows preview, Enter keeps", sh: "impasto picker theme" },
             { icon: "󰛖", name: "Font", subtitle: "Terminal", itemIcon: "󰛖",
               source: "fc-list : family | grep 'Nerd Font Mono' | cut -d, -f1 | sort -u",
               each: "impasto-font {}" },
-            { icon: "󰸉", name: "Wallpaper", itemIcon: "󰸉",
-              source: `t=$(impasto-theme current); for f in ${Quickshell.env("HOME")}/.local/share/impasto/themes/$t/backgrounds/*; do printf '%s\\t%s\\n' "$(basename "$f")" "$f"; done`,
-              each: 'impasto-theme set "$(impasto-theme current)" {}' },
+            { icon: "󰸉", name: "Wallpaper", subtitle: "Carousel of this theme's backgrounds", sh: "impasto picker wallpaper" },
             { icon: "󰢡", name: "Corners", items: [
                 { icon: "󰝤", name: "Sharp windows", sh: "sed -i 's/geometry-corner-radius [0-9]*/geometry-corner-radius 0/' ~/.config/niri/config.kdl" },
                 { icon: "󰢡", name: "Round windows", sh: "sed -i 's/geometry-corner-radius [0-9]*/geometry-corner-radius 14/' ~/.config/niri/config.kdl" }

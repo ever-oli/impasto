@@ -40,7 +40,7 @@ def binds_blocks(text):
 
 NAMES = {
     "toggle launcher": ("Shell", "Palette"), "toggle ask": ("Shell", "Ask the assistant"),
-    "palette Style/Theme": ("Shell", "Pick a theme"), "palette Style/Wallpaper": ("Shell", "Pick a wallpaper"), "toggle controls": ("Shell", "Control centre"),
+    "picker theme": ("Shell", "Pick a theme"), "picker wallpaper": ("Shell", "Pick a wallpaper"), "toggle controls": ("Shell", "Control centre"),
     "toggle t3": ("Shell", "T3 Code"), "toggle keys": ("Shell", "Keys"),
     "toggle clipboard": ("Shell", "Clipboard history"), "toggle emoji": ("Shell", "Emoji"),
     "toggle session": ("Shell", "Session menu"), "focus toggle": ("Shell", "Do not disturb"),

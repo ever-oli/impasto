@@ -96,6 +96,7 @@ Rectangle {
         // A tray item's menu, a row per entry.
         tray:       { width: TrayService.menuWidth, height: TrayService.menuHeight },
         t3:         { width: T3Service.panelWidth, height: T3Service.panelHeight },
+        picker:     { width: 900, height: 400 },
         ask:        { width: 760, height: AskService.messages.length ? 460 : 220 }
     })
 
@@ -153,6 +154,7 @@ Rectangle {
         keys: keysPanel,
         t3: t3Panel,
         ask: askPanel,
+        picker: pickerPanel,
         module: moduleDetail,
         tray: trayMenu
     })
@@ -517,6 +519,11 @@ Rectangle {
         }
     }
 
+
+    Component {
+        id: pickerPanel
+        PickerPanel { onClosed: root.close() }
+    }
 
     Component {
         id: askPanel

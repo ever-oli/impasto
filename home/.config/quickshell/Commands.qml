@@ -225,6 +225,29 @@ Scope {
         }
     }
 
+    // `impasto picker theme|wallpaper`: the carousel in the notch.
+    IpcHandler {
+        target: "picker"
+
+        function open(kind: string): string {
+            PickerService.open(kind === "wallpaper" ? "wallpaper" : "theme")
+            root.island?.open("picker")
+            return root.ok({ kind: PickerService.kind })
+        }
+
+        // Scripted arrows and Enter, for testing without a keyboard.
+        function step(delta: int): string {
+            PickerService.step(delta)
+            return root.ok({ index: PickerService.index })
+        }
+
+        function keep(): string {
+            PickerService.keep()
+            root.island?.close()
+            return root.ok()
+        }
+    }
+
     // `impasto palette Style/Theme` opens the palette at that folder.
     IpcHandler {
         target: "palette"

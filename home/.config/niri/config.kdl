@@ -110,9 +110,11 @@ binds {
     Ctrl+Alt+Space { spawn "impasto" "toggle" "launcher"; }
     Alt+A { spawn "impasto" "toggle" "ask"; }
     Mod+A { spawn "impasto" "toggle" "ask"; }
+    Alt+Y { spawn "impasto" "ask" "capture"; }
+    Mod+Y { spawn "impasto" "ask" "capture"; }
     Mod+Ctrl+Space { spawn "impasto" "toggle" "launcher"; }
-    Ctrl+Alt+T { spawn "impasto" "palette" "Style/Theme"; }
-    Ctrl+Alt+B { spawn "impasto" "palette" "Style/Wallpaper"; }
+    Ctrl+Alt+T { spawn "impasto" "picker" "theme"; }
+    Ctrl+Alt+B { spawn "impasto" "picker" "wallpaper"; }
     Ctrl+Alt+V { spawn "impasto" "toggle" "clipboard"; }
     Ctrl+Alt+E { spawn "impasto" "toggle" "emoji"; }
     Ctrl+Alt+S { spawn "impasto" "capture" "region"; }
@@ -124,8 +126,8 @@ binds {
     Ctrl+Alt+N { spawn "impasto" "focus" "toggle"; }
     Ctrl+Alt+Escape { spawn "impasto" "toggle" "session"; }
     Ctrl+Alt+Q { spawn "impasto" "toggle" "session"; }
-    Mod+Ctrl+T { spawn "impasto" "palette" "Style/Theme"; }
-    Mod+Ctrl+B { spawn "impasto" "palette" "Style/Wallpaper"; }
+    Mod+Ctrl+T { spawn "impasto" "picker" "theme"; }
+    Mod+Ctrl+B { spawn "impasto" "picker" "wallpaper"; }
     Mod+Ctrl+V { spawn "impasto" "toggle" "clipboard"; }
     Mod+Ctrl+E { spawn "impasto" "toggle" "emoji"; }
     Mod+Ctrl+S { spawn "impasto" "capture" "region"; }
