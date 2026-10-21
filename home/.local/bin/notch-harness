@@ -164,7 +164,16 @@ def run_turn(turn):
     book = ledger()
     print(f"· a turn failed: {question[:70]}")
 
-    change = propose(question, answer, "the answer failed")
+    # One proposal per failure: the reflector's, if it already made one.
+    change = None
+    for waiting in lessons.proposals():
+        if waiting.get("question") == question[:300]:
+            change = {"lesson": waiting.get("lesson", ""),
+                      "scope": waiting.get("scope", "general")}
+            print("· the reflector already proposed a change")
+            break
+    if change is None:
+        change = propose(question, answer, "the answer failed")
     if not change:
         print("  no change proposed")
         return

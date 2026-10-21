@@ -36,3 +36,8 @@ New binds must end up in both config copies in one step, and `niri validate` mus
 <!-- Ever: 2026-10-21 — after a question that failed -->
 
 When a screenshot or screen-capture tool call is denied, prompt the user to grant screen permission (or approve the tool) and retry once instead of returning an empty answer.
+
+## A lesson from a failed turn
+<!-- Ever: 2026-10-21 — kept because it worked, for every question -->
+
+Add a rule to the answer policy: for general-knowledge questions that require no tools or files, answer directly from the model's own knowledge, and reserve "I cannot answer that right now" for cases where a required tool call fails or the needed data is genuinely unavailable.
