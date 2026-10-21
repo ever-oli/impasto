@@ -49,3 +49,30 @@ app — so the comparison is worth writing down.
 answer and checks each one by the thing itself, not by reading the text
 and hoping: the engine for an answer, the renderer for a picture, the
 memory for a lesson, the gate for the tools.
+
+## The bench, on their own tasks
+
+`tests/assistant-bench.py` is the harder version: it takes Natively's
+reference tasks — the transcript, the human-written gold fact sheet and
+their judge rubric — and puts our answers through the same judge. It is
+the only fair way to ask "as well as Natively" without running their
+Electron app.
+
+    NATIVELY_BENCH=.../benchmark python3 tests/assistant-bench.py \
+        --ref .../references/TEAM-S.json --transcript .../transcripts/src/TEAM-S.txt
+
+| task | ours | facts present / partial / missing | Natively, best of six | Natively, their current setup |
+|---|---|---|---|---|
+| TEAM-S | **8.0** | 27 / 2 / 0 | 7.0 | 5.7 |
+| SALES-S | **9.0** | 25 / 1 / 2 | 8.3 | 5.7 |
+| INT-M | **7.0** | 35 / 17 / 9 | 4.3 | 3.3 |
+
+Ours, on their tasks, with their rubric: 8.0 average. Theirs, on the
+same tasks: 6.5 at their best, 4.9 in the configuration they ship.
+No contradictions on any of the three.
+
+Three caveats, stated plainly: the judges are different models (a free
+one here, Gemini 3.1 Pro there), so the scales are not identical; our
+pipeline is one pass where theirs chunks and reduces; and our judge
+shares a family with our answer, which flatters us. Three tasks is
+three tasks — their suite is eleven.
