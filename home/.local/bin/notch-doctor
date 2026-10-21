@@ -18,6 +18,8 @@ else no "no $kdl"; fi
 echo "Shell"
 pgrep -u "$(id -u)" -x qs >/dev/null || pgrep -u "$(id -u)" -x quickshell >/dev/null && ok "quickshell running" || no "quickshell not running"
 qs ipc call palette rows >/dev/null 2>&1 && ok "palette IPC answers" || warn "palette IPC did not answer (no session env?)"
+f=$(qs ipc call modules failed 2>/dev/null)
+case $f in *'"failed":{}'*) ok "all bar modules loaded";; '') warn "modules IPC did not answer";; *) no "modules failed to load: $(sed 's/.*"failed"://; s/}}$/}/' <<<"$f") (fix, then: qs ipc call modules reload <name>)";; esac
 echo "Orb"
 [ -f "$cfg/quickshell/orb/Orb.qml" ] && ok "orb installed" || no "orb missing from $cfg/quickshell/orb"
 grep -q '"orb" "toggle"' "$kdl" 2>/dev/null && ok "orb bound ($(grep '"orb" "toggle"' "$kdl" | awk '{print $1}' | head -1))" || no "orb not bound in $kdl"

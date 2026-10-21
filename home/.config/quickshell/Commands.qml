@@ -53,6 +53,24 @@ Scope {
     readonly property var panels: ["windows", "files", "launcher", "ask", "controls", "session", "keys", "t3",
         "bluetooth", "sound", "microphone", "clipboard", "emoji"]
 
+    // Bar and island modules, each loaded on its own (ModuleService).
+    IpcHandler {
+        target: "modules"
+
+        function list(): string {
+            return root.ok({ modules: ModuleService.catalogue.map(m => m.id), failed: Object.keys(ModuleService.failed) })
+        }
+        function failed(): string {
+            return root.ok({ failed: ModuleService.failed })
+        }
+        function reload(name: string): string {
+            if (!ModuleService.catalogue.some(m => m.id === name))
+                return root.fail(`not a module: "${name}"`)
+            ModuleService.reload(name)
+            return root.ok({ reloaded: name })
+        }
+    }
+
     IpcHandler {
         target: "panel"
 

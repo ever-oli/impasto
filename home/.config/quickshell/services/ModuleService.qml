@@ -51,6 +51,26 @@ Singleton {
           width: (SettingsService.clockShowsDate ? 240 : 150) + root.clock12hExtra, height: Theme.capsuleHeight }
     ]
 
+    // ── ISOLATION ───────────────────────────────────────────────────────────
+    // Modules load one by one through Module.qml. A failure lands here (and in
+    // the log) instead of taking the bar down; `notch doctor` lists it.
+    property var failed: ({})
+    property var generations: ({})
+    function generationOf(id: string): int { return root.generations[id] ?? 0 }
+    function markFailed(id: string, file: string): void {
+        if (root.failed[id]) return
+        console.warn(`notch: module "${id}" (${file}) failed to load and was skipped`)
+        const f = Object.assign({}, root.failed); f[id] = file; root.failed = f
+    }
+    function markLoaded(id: string): void {
+        if (!root.failed[id]) return
+        const f = Object.assign({}, root.failed); delete f[id]; root.failed = f
+    }
+    function reload(id: string): void {
+        const f = Object.assign({}, root.failed); delete f[id]; root.failed = f
+        const g = Object.assign({}, root.generations); g[id] = root.generationOf(id) + 1; root.generations = g
+    }
+
     function entry(id: string): var {
         return root.catalogue.find(item => item.id === id) ?? root.catalogue[0]
     }

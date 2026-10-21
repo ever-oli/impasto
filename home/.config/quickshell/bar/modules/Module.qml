@@ -12,46 +12,48 @@ import QtQuick
 import "../../theme"
 import "../../services"
 
-// Maps a module id to its component, so the bar, the island and the services
+// Maps a module id to its file, so the bar, the island and the services
 // pass ids around as strings.
 //
-// `compact` is the ring face for modules that have one
-// (`ModuleService.ringed`); otherwise the detail is built. A new module needs a
-// row here and one in the catalogue.
+// Each module loads on its own from its file (idea from k4ditano/k4, MIT):
+// one that fails to load is logged in ModuleService.failed and skipped, and
+// the rest of the bar keeps working. `qs ipc call modules reload <id>`
+// reloads it from disk. A new module needs a row here and in the catalogue.
 Item {
     id: root
 
     property string moduleId: ""
     property bool compact: false
 
-    readonly property var components: ({
-        clock: clockModule,
-        volume: volumeModule,
-        network: networkModule,
-        bluetooth: bluetoothModule,
-        notifications: notificationsModule,
-        t3: t3Module,
-        machine: cloudModule,
-        idle: cloudModule,
-        battery: batteryModule
+    readonly property var files: ({
+        clock: "ClockModule.qml",
+        volume: "VolumeModule.qml",
+        network: "NetworkModule.qml",
+        bluetooth: "BluetoothModule.qml",
+        notifications: "NotificationsModule.qml",
+        t3: "T3Module.qml",
+        machine: "CloudModule.qml",
+        idle: "CloudModule.qml",
+        battery: "BatteryModule.qml"
     })
 
-    implicitWidth: holder.implicitWidth
-    implicitHeight: holder.implicitHeight
+    implicitWidth: holder.item ? holder.implicitWidth : 0
+    implicitHeight: holder.item ? holder.implicitHeight : 0
 
     Loader {
         id: holder
         anchors.fill: parent
-        active: root.moduleId !== ""
-        sourceComponent: root.components[root.moduleId] ?? null
+        active: root.moduleId !== "" && root.files[root.moduleId] !== undefined
+        // The generation in the query makes a reload read the file again.
+        source: active ? Qt.resolvedUrl(root.files[root.moduleId]) + "?g=" + ModuleService.generationOf(root.moduleId) : ""
+        onLoaded: {
+            if (item.compact !== undefined)
+                item.compact = Qt.binding(() => root.compact)
+            ModuleService.markLoaded(root.moduleId)
+        }
+        onStatusChanged: {
+            if (status === Loader.Error)
+                ModuleService.markFailed(root.moduleId, root.files[root.moduleId])
+        }
     }
-
-    Component { id: clockModule;   ClockModule {} }
-    Component { id: volumeModule;     VolumeModule { compact: root.compact } }
-    Component { id: networkModule;    NetworkModule {} }
-    Component { id: bluetoothModule;  BluetoothModule {} }
-    Component { id: notificationsModule; NotificationsModule {} }
-    Component { id: t3Module;         T3Module {} }
-    Component { id: cloudModule;      CloudModule {} }
-    Component { id: batteryModule;    BatteryModule {} }
 }
