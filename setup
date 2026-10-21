@@ -71,12 +71,23 @@ files() {
             case "$src" in \#*) continue ;; esac
             [ -e "$dir/$src" ] || continue
             dest="$HOME/$dst"
-            if [ -e "$dest" ] && ! cmp -s "$dir/$src" "$dest"; then
-                mkdir -p "$BACKUP/$(dirname "$dst")"
-                cp -a "$dest" "$BACKUP/$dst"
+            # A directory lands as the destination itself, not inside it:
+            # another package may have made the directory already.
+            if [ -d "$dir/$src" ]; then
+                if [ -e "$dest" ] && ! diff -rq "$dir/$src" "$dest" >/dev/null 2>&1; then
+                    mkdir -p "$BACKUP/$(dirname "$dst")"
+                    cp -a "$dest" "$BACKUP/$dst"
+                fi
+                mkdir -p "$dest"
+                cp -a "$dir/$src/." "$dest/"
+            else
+                if [ -e "$dest" ] && ! cmp -s "$dir/$src" "$dest"; then
+                    mkdir -p "$BACKUP/$(dirname "$dst")"
+                    cp -a "$dest" "$BACKUP/$dst"
+                fi
+                mkdir -p "$(dirname "$dest")"
+                cp -a "$dir/$src" "$dest"
             fi
-            mkdir -p "$(dirname "$dest")"
-            cp -a "$dir/$src" "$dest"
             echo "$dst" >> "$MANIFEST"
         done < "$manifest"
     done

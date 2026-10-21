@@ -13,7 +13,6 @@ folder, says what it is, and says where its files land.
 | Package | What it is | Lands in |
 |---|---|---|
 | `packages/shell` | the quickshell app: bar, island, panels, theme | `~/.config/quickshell` |
-| `packages/assistant` | the ask bridge, the engines, the harness that learns | `~/.config/quickshell/scripts`, `~/.config/notch`, `~/.local/bin` |
 | `packages/media` | the catalogue and the watching | `~/.config/quickshell/scripts`, `~/.local/bin` |
 | `packages/radar` | Notchstorm, the weather radar | `~/.local/bin` |
 | `packages/layouts` | the per-desktop window plans | `~/.local/bin` |
@@ -34,7 +33,7 @@ says it has.
 | Bar: launcher button, niri workspaces, tray, T3 chip, notifications, network, volume, control centre | `bar/` |
 | The island: launcher (apps, `=` calculator, `>` desk and themes, windows, clipboard, emoji) | `bar/island/LauncherPanel.qml`, `services/LauncherService.qml` |
 | **Catalogue**: anime from AniList, films and series from TMDB, and the watching — the picture plays in the island terminal, not in a window | `bar/island/AnimePanel.qml`, `services/AnimeService.qml`, `scripts/stream.py`, `notch-watch`, `notch-resolve.mjs` |
-| **Assistant**: the ask panel, four engines (Cua Driver, an instabox box, opencode, Pi), a memory of its own mistakes, and QML and mermaid drawn in the answer | `bar/island/AskPanel.qml`, `services/AskService.qml`, `scripts/ask.py`, `scripts/ask_lessons.py`, `notch-qml` |
+| **Handoff**: the notch has no brain of its own — it says what it knows (the panel, the posting, the profile to read) and hands it to the agent in front of it | `Commands.qml` (`context`, `work`), `services/T3Service.qml` |
 | **Notchstorm**: the radar, live sweep and all | `bar/island/NotchstormPanel.qml`, `services/NotchstormService.qml`, `notchstorm` |
 | **Layouts**: per-desktop plans for the windows | `controls/LayoutsBlock.qml`, `notch-layout` |
 | Notifications (the shell is the server) and the OSD | `NotificationLayer`, `OsdLayer`, `NotificationService` |
@@ -84,7 +83,8 @@ niri msg action spawn -- qs -n     # or log in again; the niri config spawns it
 ```
 notch open|toggle launcher|controls|t3|keys|session|clipboard|emoji|anime|notchstorm
 notch capture [region|window|screen] | capture text | record
-notch ask "<question>" [screen|region]
+notch context get|hand             what the notch knows, or hand it over
+notch work [get|platforms|hand n]  the work: postings and platforms
 notch t3 [get|refresh|update|open]
 notch volume <n> | volume mute     notch focus toggle
 notch-theme set e-ink|e-ink-dark|red-ink|red-ink-dark · next · next-wallpaper

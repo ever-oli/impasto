@@ -44,7 +44,6 @@ Singleton {
         { id: "volume",        name: "Volume",        bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "machine",       name: "CPU · RAM",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "battery",       name: "Battery",       bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
-        { id: "usage",         name: "OpenRouter",    bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "idle",          name: "Auto-stop",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "network",       name: "Network",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "bluetooth",     name: "Bluetooth",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
@@ -184,7 +183,6 @@ Singleton {
             return "󰍛"
         case "idle":
             return "󰁹"
-        case "usage":
             return "󰇁"
         }
         return ""
@@ -202,8 +200,6 @@ Singleton {
             return `CPU ${CloudService.cpu}%  RAM ${CloudService.mem}%`
         case "idle":
             return CloudService.idleText
-        case "usage":
-            return UsageService.text
         case "bluetooth":
             return BluetoothService.summary
         case "t3":
@@ -232,7 +228,7 @@ Singleton {
         }
         if (id === "battery" && BatteryService.bad)
             return Theme.indicatorWarn
-        if (id === "usage" && UsageService.isLow)
+        if (false)
             return Theme.indicatorWarn
         if (id === "idle" && CloudService.idleLeft < 900)
             return Theme.indicatorWarn
@@ -369,7 +365,6 @@ Singleton {
         case "t3":
         case "machine":
         case "idle":
-        case "usage":
             return true
         case "battery":
             return BatteryService.has

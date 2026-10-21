@@ -1,6 +1,6 @@
 # Installing Notch on a fresh Arch machine
 
-Notch is Ever's Arch distro: niri + Quickshell, with Pi as the notch's engine.
+Notch is Ever's Arch distro: niri + Quickshell, with T3 Code as the engine next door.
 Two repos: **ever-oli/dotfiles** (chezmoi, branch `notch-desktop`, machine bits) and
 **ever-oli/notch** (branch `main`, the shell). One script does it all:
 
@@ -20,24 +20,25 @@ chezmoi init --apply --branch notch-desktop ever-oli/dotfiles   # clones Notch t
    `home/` into `~`, backing up to `~/.config-backups/`), `./setup theme`.
 5. **greetd/niri:** `system/etc/greetd/config.toml` from the dotfiles to `/etc/greetd/`,
    `systemctl enable greetd`; it autologins into `niri-session`, which spawns `qs`.
-6. **Pi:** `mise use -g node@latest`, `npm i -g @earendil-works/pi-coding-agent
-   @mermaid-js/mermaid-cli`, `pi install git:github.com/kevinqz/optchat-durable@v0.5.0`
-   (OptChat + pi-durable memory). `~/.config/notch/ask-backend` = `pi`.
-   opencode is a hidden fallback: `notch ask backend opencode`.
+6. **The agent:** T3 Code (or any opencode-based agent) does the thinking.
+   The notch has no brain of its own: it says what it knows and hands it
+   over. `notch context hand` puts the context on the clipboard and T3 in
+   front of it. The notch's own skill, modes and rules live in
+   `~/.config/opencode/skill/notch/`.
 
 ## Add by hand (never committed)
-- `pi` → `/login` (OpenRouter, ChatGPT, Claude or an API key) → `/model`
-  (needs ≥40k context; vision preferred).
-- `gh auth login` (Build mode pushes and opens PRs with it).
+- `gh auth login` (the agent pushes and opens PRs with it).
 - `~/.config/notch/profile.md`, `~/.config/notch/files/<mode>/` (private).
 - RustDesk password, SSH keys, any API keys.
 
-## Build mode: Notch changes itself
-Palette → **Ask Notch to change itself**, or `notch evolve "<request>"`. It works in
-`~/src/notch` and `~/src/dotfiles` with `notch-dev` (branch, test, PR, deploy, restart-qs,
-sync-dots); every write asks first (`a` approves the rest of the run). Pushing straight to
-`main` directly only happens with `echo on > ~/.config/notch/auto-merge`. Corrections go to
-tests first, then `~/.config/notch/lessons.md`, which Build mode reads every time.
+## The agent: the thinking happens next door
+The notch is a device — a catalogue, a screen, a set of postings, and an
+island terminal. T3 Code (or any opencode agent) does the thinking, and
+the seam is small: `notch context get` says what the notch knows, and
+`notch context hand` puts it on the clipboard and brings T3 up. From
+there the agent drives the notch back (`qs ipc call panel open anime`,
+`notch work …`) and the desktop (`notch-act`).
+Corrections go to `~/.config/notch/lessons.md`, which the agent reads.
 
 ## Check
-`notch doctor` — hotkeys, shell, Pi model + answer, text size, dependencies.
+`notch doctor` — hotkeys, shell, the agent, text size, dependencies.

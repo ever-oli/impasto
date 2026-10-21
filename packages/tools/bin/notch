@@ -6,12 +6,9 @@
 #                                 bluetooth sound microphone clipboard emoji
 #                                 anime notchstorm
 #   notch close
-#   notch ask "<question>" [screen|region]  the notch assistant
-#   notch ask capture | mode <id>         grab the Helium tab · pick a mode
-#   notch ask --backend pi "<question>"   one question, printed here
-#   notch ask backend cua|box|opencode|pi  the engine: Cua Driver (default), an instabox box, opencode, Pi
+#   notch context get|hand             what the notch knows, or hand it over
+#   notch work [get|platforms|hand n]  the work: postings and platforms
 #   notch install [--dry-run]              bootstrap a fresh Arch machine (INSTALL.md)
-#   notch evolve "<request>"               Build mode: Notch changes itself (gated)
 #   notch picker [theme|wallpaper]       the carousel in the notch
 #   notch palette [Folder/Sub]           the palette, opened at a folder
 #   notch capture [region|window|screen] | text | record
@@ -21,6 +18,7 @@
 #   notch theme set <name> | get           (notch-theme does the work)
 #   notch say <text> [icon]                a line on the island
 #   notch learn "<lesson>"                 a correction that sticks forever (lessons.md)
+#   notch hand [job|platform] <n>          the work, on the clipboard, T3 in front
 #   notch reload
 #   notch doctor                         check binds, shell, dependencies
 set -euo pipefail
@@ -33,16 +31,19 @@ case $verb in
     close)        call panel close ;;
     palette)      call palette open "${1:-/}" ;;   # a folder in the menu tree
     picker)       call picker open "${1:-theme}" ;;
-    ask)          case "${1:-}" in
-                      capture) call ask capture ;;
-                      mode)    call ask mode "${2:?mode id}" ;;
-                      --backend) exec notch-ask-cli --backend "${2:?cua, box, opencode or pi}" "${3:?question}" ;;
-                      backend) python3 "$HOME/.config/quickshell/scripts/ask.py" backend "${2:?cua, box, opencode or pi}"
-                               call ask backend "$2" >/dev/null 2>&1 || true ;;
-                      *)       call ask ask "${1:?question}" "${2:-none}" ;;
-                  esac ;;
+    context)
+        case "${1:-get}" in
+            hand) call context hand ;;
+            *)    call context get ;;
+        esac ;;
+    work)
+        case "${1:-get}" in
+            platforms) call work platforms ;;
+            platform)  call work platform "${2:?which platform}" ;;
+            hand)      call work hand "${2:-job}" "${3:?which one}" ;;
+            *)         call work get ;;
+        esac ;;
     install)      exec "${NOTCH_SRC:-$HOME/.local/src/notch}/install" "$@" ;;
-    evolve)       exec notch-ask-cli --mode notch "${1:?what should Notch change about itself?}" ;;
     panels)       call panel list ;;
     capture)
         case ${1:-} in

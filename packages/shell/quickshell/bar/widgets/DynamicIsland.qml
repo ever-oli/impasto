@@ -99,7 +99,6 @@ Rectangle {
         notchstorm: { width: 900, height: 560 },
         // Rows of posters, the big one at the top.
         anime:      { width: 1040, height: 640 },
-        ask:        { width: 760, height: AskService.messages.length ? 460 : 220 }
     })
 
 
@@ -154,7 +153,6 @@ Rectangle {
         auth: authPanel,
         keys: keysPanel,
         t3: t3Panel,
-        ask: askPanel,
         picker: pickerPanel,
         notchstorm: notchstormPanel,
         anime: animePanel,
@@ -535,11 +533,6 @@ Rectangle {
     Component {
         id: animePanel
         AnimePanel { onClosed: root.close() }
-    }
-
-    Component {
-        id: askPanel
-        AskPanel { onClosed: root.close() }
     }
 
     Component {

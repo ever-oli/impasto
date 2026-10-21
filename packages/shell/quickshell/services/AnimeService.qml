@@ -132,39 +132,23 @@ Singleton {
         }
     }
 
-    // Ask about a posting: the assistant gets the whole thing, in the
-    // mode for looking for work, with the profile in hand.
-    function askAboutJob(job: var): void {
+    // Hand a posting over. The notch has no brain of its own: it says
+    // what it knows — the posting, the panel, the profile to read — and
+    // the agent in front of it does the thinking.
+    function handJob(job: var): void {
         if (!job)
             return
-        const posting = "A posting: " + job.title +
-            (job.company ? " at " + job.company : "") +
-            (job.location ? " (" + job.location + ")" : "") +
-            (job.salary ? " — " + job.salary : "") +
-            "\n" + job.url +
-            "\n\nWhat does this job want, how well do I fit, and what would you write for me?"
-        askAboutWork(posting)
+        Quickshell.execDetached(["qs", "ipc", "call", "work", "hand", "job",
+                                 String(root.jobs.indexOf(job))])
     }
 
-    // Ask about a platform: what it pays, what it wants, and what to
-    // bring to the sign-up.
-    function askAboutPlatform(platform: var): void {
+    // The same for a platform: what it pays, what it wants, and the
+    // honest note about where you have to live.
+    function handPlatform(platform: var): void {
         if (!platform)
             return
-        const asks = platform.requirements.join("; ")
-        const question = "I want to sign up for " + platform.name +
-            " (" + platform.rate + "), for " + platform.work + ".\n" +
-            "What it wants: " + asks + ".\n" +
-            (root.platformNote ? root.platformNote + "\n" : "") +
-            "\nWhat do I need to do first, what can you write for me from my " +
-            "profile, and what am I missing?"
-        askAboutWork(question)
-    }
-
-    // The question goes to the assistant through the island, in the mode
-    // for looking for work.
-    function askAboutWork(question: string): void {
-        Quickshell.execDetached(["qs", "ipc", "call", "ask", "work", question])
+        Quickshell.execDetached(["qs", "ipc", "call", "work", "hand", "platform",
+                                 String(root.platforms.indexOf(platform))])
     }
 
     readonly property Process watchProcess: Process {

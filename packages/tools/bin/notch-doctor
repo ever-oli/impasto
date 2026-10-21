@@ -9,7 +9,7 @@ cfg=${XDG_CONFIG_HOME:-$HOME/.config}
 echo "Hotkeys (niri)"
 kdl=$cfg/niri/config.kdl
 if [ -f "$kdl" ]; then
-    for want in "launcher:palette" "ask:assistant" "picker.{0,4}theme:theme picker" "windows:window switcher" "files:file search"; do
+    for want in "launcher:palette" "picker.{0,4}theme:theme picker" "windows:window switcher" "files:file search"; do
         pat=${want%%:*}; label=${want#*:}
         grep -Eq "notch.*($pat)" "$kdl" && ok "$label bound" || no "$label not bound in $kdl"
     done
@@ -34,18 +34,9 @@ grep -q "\"fontSize\": $fsz" "$st" 2>/dev/null && ok "shell follows it" || no "t
 grep -q "font-size = $((fsz+2))" "$cfg/ghostty/notch-theme" 2>/dev/null && ok "ghostty follows it" || no "ghostty not at $((fsz+2))"
 grep -q "size=$((fsz+1))" "$cfg/fuzzel/fuzzel.ini" 2>/dev/null && ok "fuzzel follows it" || no "fuzzel not at $((fsz+1))"
 gsettings get org.gnome.desktop.interface font-name 2>/dev/null | grep -q " $fsz'" && ok "GTK follows it" || warn "GTK font not at $fsz"
-echo "Engine (Pi)"
-pi=$HOME/.local/share/mise/installs/node/latest/bin/pi
-be=$(cat "$cfg/notch/ask-backend" 2>/dev/null || echo pi)
-[ "$be" = pi ] && ok "Pi drives the notch" || warn "fallback engine active: $be (notch ask backend pi to switch back)"
-[ -x "$pi" ] && ok "pi installed" || no "pi missing ($pi)"
-m=$(python3 -c 'import json,os;d=json.load(open(os.path.expanduser("~/.pi/agent/settings.json")));print(d.get("defaultProvider","")+"/"+d.get("defaultModel",""))' 2>/dev/null)
-[ -n "${m#/}" ] && ok "Pi model $m" || no "Pi has no default model (run pi, /login, /model)"
-if [ -z "${NOTCH_DOCTOR_FAST:-}" ] && [ -x "$pi" ]; then
-    a=$(cd /tmp && PATH=$(dirname "$pi"):$PATH timeout 90 "$pi" -p --no-session --no-context-files "Reply with exactly: PONG" </dev/null 2>/dev/null | tr -d '[:space:]')
-    [ "$a" = PONG ] && ok "Pi answers" || no "Pi did not answer (got: ${a:0:40})"
-fi
-command -v opencode >/dev/null && ok "opencode hidden fallback (notch ask backend opencode)" || warn "no opencode fallback"
+echo "The agent"
+command -v t3 >/dev/null && ok "T3 Code is installed" || warn "no T3 Code: the notch hands its context over, but there is nothing to hand it to"
+[ -f "$HOME/.config/opencode/skill/notch/SKILL.md" ] && ok "the notch skill is in place" || warn "no notch skill for the agent"
 ls "$HOME"/.cache/notch/chrome/chrome-headless-shell/*/*/chrome-headless-shell >/dev/null 2>&1 && ok "mermaid renderer (chrome-headless-shell)" || no "no chrome-headless-shell: ./setup fonts (Helium breaks mmdc)"
 echo "Dependencies (deps.tsv)"
 deps=${XDG_DATA_HOME:-$HOME/.local/share}/notch/deps.tsv

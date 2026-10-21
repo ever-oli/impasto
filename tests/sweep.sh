@@ -20,7 +20,7 @@ ipc() { timeout 25 qs ipc call "$@" 2>&1; }
 
 # ── the panels ───────────────────────────────────────────────────────────────
 head_ "panels"
-for panel in launcher controls t3 keys session clipboard emoji anime notchstorm ask; do
+for panel in launcher controls t3 keys session clipboard emoji anime notchstorm; do
     answer=$(ipc panel open "$panel")
     if echo "$answer" | grep -q '"ok":true'; then
         sleep 1.2
@@ -58,7 +58,7 @@ done
 head_ "scripts"
 # Each script is asked for its own help, which every one of them must
 # answer without a word.
-for script in notch notch-act notch-ask-cli notch-dev notch-doctor notch-font \
+for script in notch notch-act notch-dev notch-doctor notch-font \
               notch-layout notch-mov notch-qml notchstorm notch-term \
               notch-theater notch-theme notch-updates notch-video notch-watch \
               notch-webapp; do
@@ -99,7 +99,7 @@ fi
 
 # ── the python bridges ───────────────────────────────────────────────────────
 head_ "bridges"
-for script in ask.py ask_extras.py ask_lessons.py ask_box.py stream.py; do
+for script in stream.py jobs.py; do
     path="$HOME/.config/quickshell/scripts/$script"
     if [ ! -f "$path" ]; then
         no "$script is installed"
@@ -113,29 +113,6 @@ if [ -n "$answer" ]; then ok "the catalogue has a TMDB token"; else no "the cata
 
 answer=$(timeout 40 python3 "$HOME/.config/quickshell/scripts/stream.py" episodes 1396 --season 1 2>&1)
 if echo "$answer" | grep -q '"episode"'; then ok "the catalogue lists episodes"; else no "the catalogue lists episodes"; fi
-
-# ── the engine and the memory ────────────────────────────────────────────────
-head_ "assistant"
-answer=$(timeout 200 notch ask --backend opencode "answer with the single word: ok" 2>&1 | tail -1)
-if [ -n "$answer" ]; then ok "the assistant answers on a free model" "$answer"; else no "the assistant answers on a free model"; fi
-
-answer=$(timeout 30 python3 - <<'PY' 2>&1
-import importlib.util, os, sys, tempfile
-spec = importlib.util.spec_from_file_location(
-    "ask_lessons", os.path.expanduser("~/.config/quickshell/scripts/ask_lessons.py"))
-lessons = importlib.util.module_from_spec(spec); spec.loader.exec_module(lessons)
-work = tempfile.mkdtemp()
-lessons.LESSONS = os.path.join(work, "lessons.md")
-lessons.PROPOSALS = os.path.join(work, "proposals.json")
-lessons.propose("a question", "a lesson")
-assert lessons.candidate("a question")
-lessons.settle(True)
-assert "a lesson" in open(lessons.LESSONS).read()
-assert lessons.proposals() == []
-print("cycle ok")
-PY
-)
-if echo "$answer" | grep -q "cycle ok"; then ok "the memory proposes, probes and keeps"; else no "the memory proposes, probes and keeps" "$answer"; fi
 
 # ── the radar ────────────────────────────────────────────────────────────────
 head_ "radar"

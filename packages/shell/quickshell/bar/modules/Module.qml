@@ -35,7 +35,6 @@ Item {
         machine: "CloudModule.qml",
         idle: "CloudModule.qml",
         battery: "BatteryModule.qml",
-        usage: "UsageModule.qml",
         playing: "PlayingModule.qml"
     })
 

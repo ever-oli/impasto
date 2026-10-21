@@ -1,1 +1,3 @@
 notch .local/share/notch
+notch/profile.md .config/notch/profile.md
+notch/snippets.toml .config/notch/snippets.toml

@@ -36,6 +36,14 @@ Scope {
         return said === "toggle" ? !now : null
     }
 
+    // The handoff. The notch has no brain of its own: what it knows goes
+    // on the clipboard, and the agent in front of it takes it from there.
+    function hand(brief: string): string {
+        Quickshell.execDetached(["wl-copy", "--", brief])
+        T3Service.open()
+        return root.ok({ handed: true })
+    }
+
     // The clipboard and the emoji are launcher modes: asked for again on the
     // same mode it closes.
     function openLauncherOn(mode: string): void {
@@ -50,7 +58,7 @@ Scope {
 
     // Panels that are really the launcher opened on a sigil.
     readonly property var launcherModes: ["clipboard", "emoji", "windows", "files"]
-    readonly property var panels: ["windows", "files", "launcher", "ask", "controls", "session", "keys", "t3",
+    readonly property var panels: ["windows", "files", "launcher", "controls", "session", "keys", "t3",
         "bluetooth", "sound", "microphone", "clipboard", "emoji", "anime", "notchstorm"]
 
     // Bar and island modules, each loaded on its own (ModuleService).
@@ -235,60 +243,57 @@ Scope {
             return JSON.stringify(AnimeService.platforms)
         }
 
-        // Ask about one of them, by name: `qs ipc call work platform Outlier`.
+        // One of them, by name: `qs ipc call work platform Outlier`.
         function platform(name: string): string {
             const wanted = (name || "").toLowerCase()
             const found = AnimeService.platforms.find(
                 (one) => one.name.toLowerCase() === wanted)
             if (!found)
                 return root.fail(`no platform: "${name}"`)
-            AnimeService.askAboutPlatform(found)
-            return root.ok({ platform: found.name })
+            return JSON.stringify(found)
+        }
+
+        // Hand a piece of the work over: the posting or the platform, on
+        // the clipboard, with T3 in front. The notch does not think about
+        // it — it says what it knows and lets the agent on the other side
+        // do the thinking.
+        function hand(kind: string, index: string): string {
+            const what = kind === "platform" ? AnimeService.platforms
+                                             : AnimeService.jobs
+            const one = what[parseInt(index)]
+            if (!one)
+                return root.fail(`no ${kind} at ${index}`)
+            const brief = kind === "platform"
+                ? "an ai training platform:\n" + JSON.stringify(one, null, 1) +
+                  "\n\nwhat does it want before I can sign up, and what am I missing?"
+                : "a remote job posting:\n" + JSON.stringify(one, null, 1) +
+                  "\n\nwhat does it want, how well do I fit, and what would you write for me?"
+            return root.hand(brief)
         }
     }
 
-    // `notch ask "question" [screen|region]` asks from a script or a bind.
+    // What the notch knows, for whoever is asking. No model on this side
+    // of it: the notch is a device — a catalogue, a screen, a set of
+    // postings — and the agent in front of it is the one that thinks.
     IpcHandler {
-        target: "ask"
+        target: "context"
 
-        function ask(text: string, screen: string): string {
-            root.island?.open("ask")
-            AskService.ask(text, screen || "none")
-            return root.ok()
+        function get(): string {
+            const hero = AnimeService.hero
+            return JSON.stringify({
+                panel: root.island?.state.openPanel || "",
+                hero: hero ? { title: hero.title || "", year: hero.year || "" } : null,
+                work: AnimeService.jobs.slice(0, 5),
+                platforms: AnimeService.platforms.map((one) => ({ name: one.name, rate: one.rate })),
+                profile: "~/.config/notch/profile.md",
+                lessons: "~/.config/notch/lessons.md"
+            })
         }
 
-        // Asking about the work puts the assistant in the mode for looking
-        // for work: the profile, the fit, the drafts.
-        function work(text: string): string {
-            AskService.mode = "looking-for-work"
-            root.island?.open("ask")
-            AskService.ask(text, "none")
-            return root.ok()
-        }
-
-        // Alt+Y: the active Helium tab, held for the next question.
-        function capture(): string {
-            root.island?.open("ask")
-            AskService.bridge.running = true
-            AskService.capture()
-            return root.ok()
-        }
-
-        function mode(id: string): string {
-            AskService.mode = id
-            return root.ok({ mode: id })
-        }
-
-        // `notch ask backend pi|opencode`: which agent answers.
-        function backend(name: string): string {
-            AskService.setBackend(name)
-            return root.ok({ backend: AskService.backend })
-        }
-
-        // Start over: a fresh session with the same durable memory.
-        function reset(): string {
-            AskService.reset()
-            return root.ok()
+        // The whole context, handed over: on the clipboard and in front.
+        function hand(): string {
+            return root.hand("the notch right now:\n" + get() +
+                             "\n\nwhat should I do about this?")
         }
     }
 

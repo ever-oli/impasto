@@ -5,8 +5,8 @@ shell. MIT; keep GPL code (caelestia, end-4, vicinae) out.
 
 ## What's installed
 - **Compositor:** niri (`~/.config/niri/config.kdl`, one bind per line; `niri validate`). greetd autologins `ever` into `niri-session`.
-- **Shell:** Quickshell (`home/.config/quickshell`): bar, notch island, palette, assistant (`scripts/ask.py` → `opencode acp`).
-- **CLIs** (`home/.local/bin`): `notch` (palette, picker), `notch-theme`, `notch-font`, `notch-act`, `notch-doctor`; `impasto` is a compat symlink.
+- **Shell:** Quickshell (`packages/shell/quickshell` → `~/.config/quickshell`): bar, notch island, palette, catalogue. No assistant: the thinking happens in T3 Code, and the notch hands its context over.
+- **CLIs** (`packages/*/bin` → `~/.local/bin`): `notch` (palette, picker), `notch-theme`, `notch-font`, `notch-act`, `notch-doctor`; `impasto` is a compat symlink.
 - **Themes:** `home/.local/share/notch/themes/<name>/colors.toml` is the source of truth; `themed/*.tpl` render Ghostty, Helix, niri, fuzzel, btop, fastfetch, fzf, GTK, qt6ct, T3, Helium policy.
 - **Text size:** `notch-font size <n>` (default 11) → `~/.config/notch/font-size`; notch-theme renders it everywhere (shell `Theme.fs()`, Ghostty n+2, fuzzel n+1, GTK, qt6ct, mako).
 - **Layouts:** per-desktop presets — `notch-layout <preset> [idx]`; files in `home/.local/share/notch/layouts/*.kdl` are the source, state in `~/.local/state/notch/layouts.json`, applied through `~/.config/niri/notch-layout.kdl` (an include; desktops 1..N named by index on a Control-centre "Layouts" block tap).
@@ -17,7 +17,6 @@ shell. MIT; keep GPL code (caelestia, end-4, vicinae) out.
 
 ## k4-style pieces
 - **Modules:** each bar/island module loads alone; `qs ipc call modules failed`, `… reload <id>`.
-- **OpenRouter meter:** `usage` on the bar; polls every 10 min, warns under $1. Key read from Pi at run time.
 - **Island terminal:** `notch-term toggle` (Alt+\`, or the  button): Ghostty `com.notch.island` on tmux `notch`.
 - **ASCII Theater:** `notch-theater toggle` (Alt+Shift+\`, the 󰿎 button, palette "ASCII Theater"): Ghostty `com.notch.theater`, own tmux socket `notch-theater`.
 - **Palette:** keybinds by what they do (Enter runs safe ones), `SSH: <host>` rows from `~/.ssh/config`.

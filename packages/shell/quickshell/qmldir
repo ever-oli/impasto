@@ -28,11 +28,9 @@ singleton PolkitService      1.0 services/PolkitService.qml
 singleton TrayService        1.0 services/TrayService.qml
 singleton FinderService    1.0 services/FinderService.qml
 singleton MenuService      1.0 services/MenuService.qml
-singleton AskService       1.0 services/AskService.qml
 singleton PickerService    1.0 services/PickerService.qml
 singleton FontSizeService  1.0 services/FontSizeService.qml
 singleton CloudService     1.0 services/CloudService.qml
-singleton UsageService     1.0 services/UsageService.qml
 singleton BatteryService   1.0 services/BatteryService.qml
 
 Card             1.0 components/Card.qml

@@ -302,7 +302,7 @@ Item {
                 }
 
                 TapHandler {
-                    onTapped: AnimeService.askAboutPlatform(modelData)
+                    onTapped: AnimeService.handPlatform(modelData)
                 }
             }
         }
@@ -349,7 +349,7 @@ Item {
                 }
 
                 TapHandler {
-                    onTapped: AnimeService.askAboutJob(modelData)
+                    onTapped: AnimeService.handJob(modelData)
                 }
             }
         }
