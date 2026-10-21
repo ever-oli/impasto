@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""notch-video — play a video in a terminal.
+
+mpv can draw into a terminal: `--vo=tct` writes the picture as true
+colour characters, so a video plays where the text is, with no window and
+no GPU. That matters here: this machine's EGL is broken, so mpv's own
+video output can only open an X11 surface, which fights the shell.
+
+  notch-video <url-or-file>          play it here
+  notch-video <url> --referer <url>  for sources that ask for one
+  notch-video <url> --title "…"      the title the player shows
+"""
+
+import os
+import subprocess
+import sys
+
+
+def main():
+    args = sys.argv[1:]
+    if not args or args[0] in ("-h", "--help"):
+        sys.exit(__doc__)
+    source = None
+    referer = None
+    title = None
+    i = 0
+    while i < len(args):
+        if args[i] == "--referer":
+            i += 1
+            referer = args[i]
+        elif args[i] == "--title":
+            i += 1
+            title = args[i]
+        elif args[i] in ("--url", "-u"):
+            i += 1
+            source = args[i]
+        else:
+            source = args[i]
+        i += 1
+    if not source:
+        sys.exit("notch-video: nothing to play")
+
+    command = ["mpv", "--vo=tct", "--no-terminal-osc"]
+    if referer:
+        command.append(f"--referrer={referer}")
+    if title:
+        command.append(f"--force-media-title={title}")
+    command.append(source)
+    # The terminal's own mpv config asks for a window; the picture is the
+    # terminal here.
+    env = dict(os.environ)
+    env["MPV_HOME"] = env.get("MPV_HOME", os.path.expanduser("~/.config/mpv"))
+    try:
+        os.execvp(command[0], command)
+    except OSError as error:
+        sys.exit(f"notch-video: {error}")
+
+
+if __name__ == "__main__":
+    main()
