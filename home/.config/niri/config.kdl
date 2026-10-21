@@ -113,12 +113,12 @@ window-rule {
     open-focused false
 }
 
-// A video playing in the browser (the notch-player class): drops under
-// the notch, the way the theater does, so the shell keeps the top of the
-// screen. A native Wayland window, so the app id is known when it opens
-// and the rule applies.
+// A video playing in the browser: drops under the notch, the way the
+// theater does, so the shell keeps the top of the screen. Chromium keeps
+// its own wayland app id, so the rule matches the embed's title instead.
 window-rule {
-    match app-id=r#"^notch-player$"#
+    match title=r#"^player\.videasy\.to"#
+    match title=r#"^www\.vidking\.net"#
     open-floating true
     open-focused true
     default-floating-position x=0 y=44 relative-to="top"

@@ -82,7 +82,7 @@ Item {
         Text {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            text: AnimeService.busy ? "…" : "anilist"
+            text: AnimeService.busy ? "…" : (AnimeService.films ? "anilist · tmdb" : "anilist")
             font.family: Theme.fontMono
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.textMuted
@@ -167,7 +167,7 @@ Item {
                     text: "watch"
                     icon: "󰐊"
                     active: true
-                    onClicked: AnimeService.watch(hero.show ? hero.show.romaji || hero.show.title : "")
+                    onClicked: AnimeService.watch(hero.show)
                 }
 
                 PillButton {

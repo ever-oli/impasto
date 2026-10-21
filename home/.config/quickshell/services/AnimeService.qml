@@ -22,6 +22,9 @@ Singleton {
     property var rows: []
     property string query: ""
     property bool busy: false
+    // A TMDB token turns the film and series shelves on; without one the
+    // panel is anime only.
+    property bool films: false
 
     function load(): void {
         root.busy = true
@@ -40,20 +43,30 @@ Singleton {
         searchProcess.running = true
     }
 
-    function watch(title: string): void {
-        if (!title)
+    // Play one title. Anime is hianime's, through ani-cli in the island
+    // terminal; a film or a series is a VidSrc embed, opened in the
+    // browser, which drops under the notch.
+    function watch(item: var): void {
+        if (!item)
             return
-        Quickshell.execDetached(["notch-anime", "watch", title])
+        if (item.kind === "anime") {
+            Quickshell.execDetached(["notch-anime", "watch", item.romaji || item.title])
+            return
+        }
+        const kind = item.kind === "tv" ? "tv" : "movie"
+        Quickshell.execDetached(["python3", Quickshell.shellPath("scripts/stream.py"),
+                                "play", kind, String(item.id)])
     }
 
     readonly property Process rowsProcess: Process {
-        command: ["python3", Quickshell.shellPath("scripts/anime.py"), "rows"]
+        command: ["python3", Quickshell.shellPath("scripts/stream.py"), "rows"]
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
                     const found = JSON.parse(text)
                     root.hero = found.hero
                     root.rows = found.rows
+                    root.films = found.token
                 } catch (error) {}
                 root.busy = false
             }
@@ -61,7 +74,7 @@ Singleton {
     }
 
     readonly property Process searchProcess: Process {
-        command: ["python3", Quickshell.shellPath("scripts/anime.py"), "search", root.query]
+        command: ["python3", Quickshell.shellPath("scripts/stream.py"), "search", root.query]
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
