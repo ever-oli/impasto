@@ -6,7 +6,7 @@
 # q in the stream quits; closing only kills the "notch-theater" tmux socket.
 # Placement is a niri window rule on app-id com.notch.theater (config.kdl).
 set -u
-ID=com.notch.theater
+ID=${NOTCH_THEATER_ID:-com.notch.theater}   # tests: com.notch.theater-shot opens unfocused
 SOCK=${NOTCH_THEATER_SOCK:-notch-theater}
 # Layout, in cells: the stream is a fixed 80x23 canvas. The tmux window is the
 # marquee (row 1); the stream runs in a bordered popup that hugs it exactly:

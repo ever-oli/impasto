@@ -99,10 +99,16 @@ window-rule {
 // ASCII Theater (notch-theater): drops down under the notch. No size here: Ghostty
 // sizes itself in cells (82x26 + 8x4 px padding) so the 80x23 stream fits exactly.
 window-rule {
-    match app-id=r#"^com\.notch\.theater$"#
+    match app-id=r#"^com\.notch\.theater(-shot)?$"#
     open-floating true
     open-focused true
     default-floating-position x=0 y=44 relative-to="top"
+}
+
+// notch-theater screenshots by the agent: never takes keyboard focus.
+window-rule {
+    match app-id=r#"^com\.notch\.theater-shot$"#
+    open-focused false
 }
 
 screenshot-path "~/Pictures/Screenshots/%Y-%m-%d_%H-%M-%S.png"
