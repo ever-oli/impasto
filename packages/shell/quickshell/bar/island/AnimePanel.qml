@@ -98,7 +98,7 @@ Item {
         anchors.right: parent.right
         anchors.top: top.bottom
         anchors.topMargin: 12
-        height: Math.max(200, parent.height * 0.42)
+        height: Math.max(200, parent.height * 0.36)
 
         readonly property var show: AnimeService.hero
 
@@ -233,45 +233,124 @@ Item {
 
     // ── THE SHELVES ─────────────────────────────────────────────────────────
 
-    // The work: remote postings, from the boards that publish them
-    // without a key. One press asks the assistant about it.
-    ListView {
+    // ── THE WORK ────────────────────────────────────────────────────────────
+
+    // The work: the AI training platforms, which are a table of where to
+    // sign up, and the remote postings, which are a feed. One press asks
+    // the assistant about either, in the mode for looking for work.
+    Column {
         id: work
 
-        visible: AnimeService.jobs.length > 0
+        visible: AnimeService.platforms.length > 0 || AnimeService.jobs.length > 0
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: hero.bottom
         anchors.topMargin: 10
-        height: 58
-        orientation: ListView.Horizontal
-        spacing: 8
-        clip: true
-        model: AnimeService.jobs
+        spacing: 4
 
-        delegate: Rectangle {
-            required property var modelData
+        Text {
+            text: "AI TRAINING WORK"
+            anchors.left: parent.left
+            anchors.leftMargin: 24
+            font.family: Theme.fontBar
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.textMuted
+        }
 
-            width: Math.min(320, work.width / 3)
-            height: 44
-            radius: 8
-            color: Theme.surface
+        ListView {
+            id: platforms
 
-            Text {
-                anchors.left: parent.left
-                anchors.leftMargin: 10
-                anchors.right: parent.right
-                anchors.rightMargin: 10
-                anchors.verticalCenter: parent.verticalCenter
-                elide: Text.ElideRight
-                font.family: Theme.fontBar
-                font.pixelSize: Theme.fontSizeSmall
-                color: Theme.text
-                text: modelData.title + (modelData.company ? " · " + modelData.company : "")
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 42
+            orientation: ListView.Horizontal
+            spacing: 8
+            clip: true
+            model: AnimeService.platforms
+
+            delegate: Rectangle {
+                required property var modelData
+
+                width: 300
+                height: 42
+                radius: 8
+                color: Theme.surface
+
+                Text {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 10
+                    anchors.right: rate.left
+                    anchors.rightMargin: 8
+                    anchors.verticalCenter: parent.verticalCenter
+                    elide: Text.ElideRight
+                    font.family: Theme.fontBar
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.text
+                    text: modelData.name
+                }
+
+                Text {
+                    id: rate
+
+                    anchors.right: parent.right
+                    anchors.rightMargin: 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    font.family: Theme.fontMono
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.accent
+                    text: modelData.rate
+                }
+
+                TapHandler {
+                    onTapped: AnimeService.askAboutPlatform(modelData)
+                }
             }
+        }
 
-            TapHandler {
-                onTapped: AnimeService.askAboutJob(modelData)
+        Text {
+            text: "REMOTE WORK"
+            anchors.left: parent.left
+            anchors.leftMargin: 24
+            font.family: Theme.fontBar
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.textMuted
+        }
+
+        ListView {
+            id: postings
+
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 40
+            orientation: ListView.Horizontal
+            spacing: 8
+            clip: true
+            model: AnimeService.jobs
+
+            delegate: Rectangle {
+                required property var modelData
+
+                width: Math.min(320, postings.width / 3)
+                height: 40
+                radius: 8
+                color: Theme.surface
+
+                Text {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 10
+                    anchors.right: parent.right
+                    anchors.rightMargin: 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    elide: Text.ElideRight
+                    font.family: Theme.fontBar
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.text
+                    text: modelData.title + (modelData.company ? " · " + modelData.company : "")
+                }
+
+                TapHandler {
+                    onTapped: AnimeService.askAboutJob(modelData)
+                }
             }
         }
     }

@@ -229,6 +229,22 @@ Scope {
             return JSON.stringify({ jobs: AnimeService.jobs.length,
                                    first: AnimeService.jobs[0] || null })
         }
+
+        // The platforms: what they are, and what they want.
+        function platforms(): string {
+            return JSON.stringify(AnimeService.platforms)
+        }
+
+        // Ask about one of them, by name: `qs ipc call work platform Outlier`.
+        function platform(name: string): string {
+            const wanted = (name || "").toLowerCase()
+            const found = AnimeService.platforms.find(
+                (one) => one.name.toLowerCase() === wanted)
+            if (!found)
+                return root.fail(`no platform: "${name}"`)
+            AnimeService.askAboutPlatform(found)
+            return root.ok({ platform: found.name })
+        }
     }
 
     // `notch ask "question" [screen|region]` asks from a script or a bind.
@@ -238,6 +254,15 @@ Scope {
         function ask(text: string, screen: string): string {
             root.island?.open("ask")
             AskService.ask(text, screen || "none")
+            return root.ok()
+        }
+
+        // Asking about the work puts the assistant in the mode for looking
+        // for work: the profile, the fit, the drafts.
+        function work(text: string): string {
+            AskService.mode = "looking-for-work"
+            root.island?.open("ask")
+            AskService.ask(text, "none")
             return root.ok()
         }
 

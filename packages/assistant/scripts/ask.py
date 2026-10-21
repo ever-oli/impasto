@@ -22,6 +22,7 @@ import base64, json, os, subprocess, sys, threading, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ask_box as box
 import ask_extras as extras
+import ask_pi as pi
 
 HOME = os.path.expanduser("~")
 STATE = os.environ.get("XDG_STATE_HOME", f"{HOME}/.local/state") + "/notch"
@@ -167,81 +168,6 @@ def reader():
             box.update({k: msg[k] for k in ("result", "error") if k in msg}); box["event"].set()
     emit(type="error", text="The agent stopped.")
 
-# ── Pi (RPC JSONL) ─────────────────────────────────────────────────────────
-pi_done, pi_box = threading.Event(), {}
-
-def pi_request(cmd):
-    next_id[0] += 1
-    box = {"event": threading.Event()}
-    waiting[str(next_id[0])] = box
-    send(dict(cmd, id=str(next_id[0])))
-    box["event"].wait()
-    if not box.get("success"):
-        raise RuntimeError(box.get("error") or "Pi refused the command")
-    return box.get("data") or {}
-
-def pi_reader():
-    for raw in agent.stdout:  # bytes, split on LF only
-        try:
-            msg = json.loads(raw)
-        except ValueError:
-            continue
-        kind = msg.get("type")
-        if kind == "response" and msg.get("id") in waiting:
-            box = waiting.pop(msg["id"]); box.update(msg); box["event"].set()
-        elif kind == "message_update":
-            ev = msg.get("assistantMessageEvent") or {}
-            if ev.get("type") == "text_delta":
-                turn["a"] += ev["delta"]; emit(type="chunk", text=ev["delta"])
-            elif ev.get("type") == "thinking_delta":
-                emit(type="thought", text=ev["delta"])
-            elif ev.get("type") == "error":
-                pi_box["error"] = str(ev.get("error") or ev.get("reason"))
-        elif kind == "message_end":
-            m = msg.get("message") or {}
-            if m.get("role") == "assistant" and m.get("errorMessage"):
-                pi_box["error"] = m["errorMessage"]
-        elif kind == "tool_execution_start":
-            emit(type="tool", title=msg.get("toolName", "tool"), status="pending")
-        elif kind == "tool_execution_end":
-            emit(type="tool", title=msg.get("toolName", "tool"), status="failed" if msg.get("isError") else "completed")
-        elif kind == "agent_settled":
-            pi_box["stop"] = "cancelled" if msg.get("aborted") else "end_turn"; pi_done.set()
-        elif kind == "extension_ui_request" and msg.get("method") == "confirm":
-            rid = msg["id"]
-            def pick(allow, rid=rid):
-                send({"type": "extension_ui_response", "id": rid, "confirmed": bool(allow)})
-            if auto_ok[0]:
-                emit(type="tool", title=f"Auto-approved: {msg.get('title') or 'action'}", status="pending")
-                pick(True); continue
-            pending[rid] = pick
-            # Unanswered approvals are denied after ASK_APPROVE_TIMEOUT.
-            def expire(rid=rid):
-                if pending.pop(rid, None):
-                    emit(type="tool", title="Approval timed out: denied", status="failed")
-                    send({"type": "extension_ui_response", "id": rid, "confirmed": False})
-            threading.Timer(float(os.environ.get("ASK_APPROVE_TIMEOUT", 180)), expire).start()
-            emit(type="permission", id=rid, title=msg.get("title") or "Action", detail=msg.get("message") or "")
-        elif kind == "extension_ui_request" and msg.get("method") in ("select", "input", "editor"):
-            send({"type": "extension_ui_response", "id": msg["id"], "cancelled": True})
-    emit(type="error", text="The agent stopped.")
-
-def pi_prompt(text, images):
-    open(f"{PI_STATE}/act", "w").write("1" if act_mode[0] else "0")
-    pi_done.clear(); pi_box.clear()
-    data = pi_request({"type": "prompt", "message": text, "images": images})
-    # Timeout guard: a stuck turn is aborted.
-    if data.get("disposition") != "handled" and not pi_done.wait(float(os.environ.get("ASK_PI_TIMEOUT", 300))):
-        send({"type": "abort"})
-        for pick in list(pending.values()):
-            pick(False)
-        pending.clear()
-        pi_done.wait(15)
-        raise RuntimeError("Pi took too long, so the turn was stopped (ASK_PI_TIMEOUT).")
-    if pi_box.get("error"):
-        raise RuntimeError(pi_box["error"])
-    return {"stopReason": pi_box.get("stop", "end_turn")}
-
 def compose(cmd):
     """The question with everything the mode and toggles put around it."""
     mode = extras.mode_of(cmd.get("mode", "general")) or {"id": "general", "body": "", "sources": [], "rules": "none"}
@@ -268,7 +194,7 @@ def compose(cmd):
     if captured[0]:
         parts.append(extras.page_block(captured[0])); captured[0] = None
     if cmd.get("context"):
-        ctx = context()
+        ctx = extras.context()
         if ctx:
             parts.append(f"<context>\n{ctx}\n</context>")
     return "\n\n".join(p for p in parts if p) + f"\n\n<question>\n{cmd.get('text', '').strip()}\n</question>"
@@ -298,6 +224,12 @@ def roll():
 
 busy = threading.Lock()
 
+# What Pi's half and the bridge share: the agent, the senders, the turn
+# being answered, and the approvals waiting for an answer.
+pi_ctx = {"agent": agent, "send": send, "emit": emit, "turn": turn,
+          "auto_ok": auto_ok, "pending": pending, "waiting": waiting,
+          "next_id": next_id, "state": PI_STATE, "act_mode": act_mode}
+
 def ask(cmd):
     # One question at a time: a follow-up waits its turn.
     with busy:
@@ -325,7 +257,7 @@ def answer_one(cmd):
     failure = ""
     try:
         if BACKEND == "pi":
-            result = pi_prompt(text, [dict(b) for b in blocks])
+            result = pi.prompt(text, [dict(b) for b in blocks], pi_ctx)
         elif BACKEND == "box":
             box.ask(text, lambda line: emit(type="chunk", text=line + "\n"))
             result = {"stopReason": "end_turn"}
@@ -366,9 +298,9 @@ def capture():
 if BACKEND == "box":
     emit(type="ready", backend="box")
 elif BACKEND == "pi":
-    threading.Thread(target=pi_reader, daemon=True).start()
+    threading.Thread(target=pi.reader, args=(pi_ctx,), daemon=True).start()
     try:
-        pi_request({"type": "get_state"})
+        pi.request({"type": "get_state"}, pi_ctx)
         emit(type="ready", backend="pi")
     except RuntimeError as error:
         emit(type="error", text=str(error))
@@ -394,7 +326,15 @@ for line in sys.stdin:
     if op == "ask" and "--once" in sys.argv:
         ask(cmd)
     elif op == "ask":
-        threading.Thread(target=ask, args=(cmd,), daemon=True).start()
+        def answer_in_the_background(cmd=cmd):
+            # A question that dies must say so: a silent thread leaves the
+            # island on "Thinking…" forever, with nothing coming back.
+            try:
+                ask(cmd)
+            except Exception as error:
+                emit(type="error", text=f"the bridge could not answer: {error}")
+                extras.settle(False)
+        threading.Thread(target=answer_in_the_background, daemon=True).start()
     elif op == "capture":
         threading.Thread(target=capture, daemon=True).start()
     elif op == "cancel" and BACKEND == "pi":

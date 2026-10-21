@@ -35,6 +35,11 @@ Singleton {
     property var continueShelf: []
     // Remote work, from the boards that publish it without a key.
     property var jobs: []
+    // The AI training platforms: a table, not a feed, because each one
+    // wants an account.
+    property var platforms: []
+    // What the table has to say about who can sign up.
+    property string platformNote: ""
     // Everything the catalogue shows: what was watched, then the shelves.
     readonly property var shelves: continueShelf.concat(rows)
 
@@ -45,6 +50,8 @@ Singleton {
         // The work, too: it is the other half of what the assistant is for.
         jobsProcess.running = false
         jobsProcess.running = true
+        platformsProcess.running = false
+        platformsProcess.running = true
     }
 
     function search(text: string): void {
@@ -107,21 +114,58 @@ Singleton {
         }
     }
 
-    // Ask about a posting: the assistant gets the whole thing.
+    // The AI training platforms, and the list of things to have ready
+    // before a sign-up: the requirements are the same for most of them.
+    readonly property Process platformsProcess: Process {
+        command: ["python3", Quickshell.shellPath("scripts/stream.py"),
+                  "platforms"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const found = JSON.parse(text)
+                    root.platforms = found.platforms || []
+                    root.platformNote = found.note || ""
+                } catch (error) {
+                    root.platforms = []
+                }
+            }
+        }
+    }
+
+    // Ask about a posting: the assistant gets the whole thing, in the
+    // mode for looking for work, with the profile in hand.
     function askAboutJob(job: var): void {
         if (!job)
             return
-        const posting = "A posting:\n" + job.title +
+        const posting = "A posting: " + job.title +
             (job.company ? " at " + job.company : "") +
             (job.location ? " (" + job.location + ")" : "") +
             (job.salary ? " — " + job.salary : "") +
             "\n" + job.url +
-            "\n\nWhat does this job want, and could I do it?"
-        Quickshell.execDetached(["qs", "ipc", "call", "ask", "open"])
-        root.askText = posting
+            "\n\nWhat does this job want, how well do I fit, and what would you write for me?"
+        askAboutWork(posting)
     }
 
-    property string askText: ""
+    // Ask about a platform: what it pays, what it wants, and what to
+    // bring to the sign-up.
+    function askAboutPlatform(platform: var): void {
+        if (!platform)
+            return
+        const asks = platform.requirements.join("; ")
+        const question = "I want to sign up for " + platform.name +
+            " (" + platform.rate + "), for " + platform.work + ".\n" +
+            "What it wants: " + asks + ".\n" +
+            (root.platformNote ? root.platformNote + "\n" : "") +
+            "\nWhat do I need to do first, what can you write for me from my " +
+            "profile, and what am I missing?"
+        askAboutWork(question)
+    }
+
+    // The question goes to the assistant through the island, in the mode
+    // for looking for work.
+    function askAboutWork(question: string): void {
+        Quickshell.execDetached(["qs", "ipc", "call", "ask", "work", question])
+    }
 
     readonly property Process watchProcess: Process {
         stdout: StdioCollector {

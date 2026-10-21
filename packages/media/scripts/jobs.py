@@ -19,6 +19,87 @@ UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chr
 # no key: the assistant can look for work without an account anywhere.
 JOB_SOURCES = ("mercor", "remotive", "remoteok", "wwr")
 
+# The AI training platforms: where the work is writing, rating and
+# checking for the models. None of them publish a feed — each one wants
+# an account — so they are a table instead: where to sign up, what it
+# pays, and what they want to see before they let you work.
+PLATFORMS = (
+    {
+        "name": "Outlier",
+        "rate": "$15-40/hr",
+        "url": "https://outlier.ai/",
+        "work": "expert annotation: code, maths, law, medicine",
+        "requirements": [
+            "a phone number in the US, Canada or the UK",
+            "a driving licence or passport, for the identity check",
+            "a resume, in English",
+            "a PayPal, airtm or Wise account, for the money",
+            "a laptop, for the tasks that need a keyboard",
+        ],
+    },
+    {
+        "name": "Mercor",
+        "rate": "$20-60/hr",
+        "url": "https://www.mercor.com/",
+        "work": "AI training and evaluation, paid by the project",
+        "requirements": [
+            "the same phone, licence, resume and payout account",
+            "often a degree, or years in a field: engineering, law, medicine",
+            "a short introduction, and an interview for the bigger projects",
+        ],
+    },
+    {
+        "name": "Handshake AI",
+        "rate": "$20-50/hr",
+        "url": "https://joinhandshake.com/",
+        "work": "AI training tasks: writing, rating and checking answers",
+        "requirements": [
+            "the same phone, licence, resume and payout account",
+            "an onboarding assessment, before any task",
+            "a university degree, for many of the roles",
+        ],
+    },
+    {
+        "name": "Mindrift",
+        "rate": "$15-35/hr",
+        "url": "https://mindrift.ai/",
+        "work": "expert training work, 20-40 hours a week, many fields",
+        "requirements": [
+            "the same phone, licence, resume and payout account",
+            "a field you actually know, at a professional level",
+        ],
+    },
+    {
+        "name": "Appen",
+        "rate": "$8-25/hr",
+        "url": "https://crowdgen.com/appen-mobile/",
+        "work": "search evaluation, data annotation, language tasks",
+        "requirements": [
+            "the same phone, licence, resume and payout account",
+            "a short phone assessment, for some projects",
+        ],
+    },
+    {
+        "name": "TELUS Digital",
+        "rate": "$10-30/hr",
+        "url": "https://www.telusdigital.com/",
+        "work": "AI data annotation, through the AI Community",
+        "requirements": [
+            "the same phone, licence, resume and payout account",
+            "a profile questionnaire, and a webcam for some tasks",
+        ],
+    },
+)
+
+# The truth about the table: several of them will not open an account
+# outside the US, Canada and the UK, because the phone and the bank have
+# to be local. That is their rule, not the notch's to work around — so
+# the notch says it plainly and does not pretend otherwise.
+GEO_NOTE = ("Several of these want a US, Canadian or UK phone number and a "
+            "local payout account, and will not open an account elsewhere. "
+            "That is their rule; the notch states it rather than working "
+            "around it.")
+
 
 def _read(url, headers=None, timeout=30):
     request = urllib.request.Request(url, headers=headers or {"User-Agent": UA})
@@ -153,3 +234,18 @@ def jobs(limit=24, query=""):
         seen.add(key)
         out.append(job)
     return out[:limit]
+
+
+def platforms():
+    """The AI training platforms, and what they want before they let you work.
+
+    These are not postings: each one wants an account, so the honest thing
+    to offer is the way in, the rate, and the list of things to have ready
+    before the sign-up.
+    """
+    return {
+        "note": GEO_NOTE,
+        "platforms": [{"name": p["name"], "rate": p["rate"], "url": p["url"],
+                       "work": p["work"], "requirements": p["requirements"]}
+                      for p in PLATFORMS],
+    }

@@ -13,6 +13,10 @@ browser under the notch; for anime it is hianime, through ani-cli.
                                   or anime; id is the TMDB id, or the
                                   AniList id for anime
   stream.py token                 where the TMDB token goes
+  stream.py jobs [--limit N]      remote work, from the boards that publish
+                                  it without a key
+  stream.py platforms             the AI training platforms, and what they
+                                  want before they let you work
 """
 
 import base64
@@ -513,6 +517,8 @@ def main():
         if "--query" in args:
             query = args[args.index("--query") + 1]
         print(json.dumps(jobs.jobs(limit, query)))
+    elif args[0] == "platforms":
+        print(json.dumps(jobs.platforms()))
     elif args[0] == "sources":
         print(json.dumps({"sources": SOURCES, "state": source_state()}))
     elif args[0] == "seasons" and len(args) > 1:
