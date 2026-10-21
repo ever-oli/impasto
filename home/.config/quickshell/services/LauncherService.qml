@@ -385,7 +385,7 @@ QtObject {
                 MenuService.tree.slice(1).map(MenuService.row), root.rank(term)))
         }
         const top = root.calculate(raw).concat(root.quicklinkRows(raw))
-        const extras = root.snippetRows(term).concat(root.windows(term).slice(0, 3))
+        const extras = root.snippetRows(term).concat(root.sshRows(term), root.windows(term).slice(0, 3), root.bindRows(term))
         const commands = MenuService.filter(MenuService.leaves, term).map(MenuService.row).map(root.mark)
         const lead = commands.filter(c => c.name.toLowerCase().startsWith(term))
         const rest = commands.filter(c => !c.name.toLowerCase().startsWith(term))
@@ -461,6 +461,52 @@ QtObject {
             .filter(x => x.score < 4).sort((a, b) => a.score - b.score).slice(0, 4)
             .map(x => ({ kind: "snippet", id: x.sn.name, icon: "󰅪", text: x.sn.text,
                          name: x.sn.name, subtitle: `${x.sn.keyword ? x.sn.keyword + "  ·  " : ""}Enter types: ${x.sn.text.replace(/\n/g, " ⏎ ").slice(0, 60)}` }))
+    }
+
+    // ── KEYBINDS (idea from k4ditano/k4, MIT) ──────────────────────────────
+    // Every niri bind as a row, found by what it does. Enter runs it unless the
+    // action is one that ends something (quit, close, power, session).
+    readonly property var unsafeBind: /^(quit|close-window|power-off-monitors|suspend)\b|"(systemctl|loginctl|poweroff|reboot)"|"session"/
+    function bindRows(term: string): var {
+        if (term.length < 2)
+            return []
+        return NiriService.binds
+            .map(b => ({ b: b, score: FinderService.fuzzy(b.description, term) }))
+            .filter(x => x.score >= 0 && x.score < 4).sort((a, b) => a.score - b.score).slice(0, 4)
+            .map(x => {
+                const safe = !!x.b.action && !root.unsafeBind.test(x.b.action)
+                return { kind: "bind", id: x.b.description, icon: "󰌌", action: x.b.action, safe: safe,
+                         name: x.b.description,
+                         subtitle: `${NiriService.spell(x.b)}  ·  ${safe ? "Enter runs it" : "shown only"}` }
+            })
+    }
+    function runBind(action: string): void {
+        const args = (action.match(/"[^"]*"|\S+/g) ?? []).map(a => a.replace(/^"|"$/g, ""))
+        if (args[0] === "spawn")
+            Quickshell.execDetached(args.slice(1))
+        else if (args[0] === "spawn-sh")
+            Quickshell.execDetached(["sh", "-c", args.slice(1).join(" ")])
+        else if (args.length)
+            Quickshell.execDetached(["niri", "msg", "action"].concat(args))
+    }
+
+    // ── SSH QUICK-CONNECT (idea from k4ditano/k4, MIT) ─────────────────────
+    // `Host` entries of ~/.ssh/config (and its Includes); Enter opens Ghostty on it.
+    property var sshHosts: []
+    readonly property Process sshProcess: Process {
+        running: true
+        command: ["sh", "-c", "cat ~/.ssh/config ~/.ssh/config.d/* 2>/dev/null | awk 'tolower($1)==\"host\"{for(i=2;i<=NF;i++) if($i !~ /[*?!]/) print $i}' | sort -u"]
+        stdout: StdioCollector { onStreamFinished: root.sshHosts = text.split("\n").filter(h => h) }
+    }
+    function sshRows(term: string): var {
+        if (term === "")
+            return []
+        if (term.length < 3 && !"ssh".startsWith(term))
+            return []
+        sshProcess.running = true
+        const bare = term.replace(/^ssh\s*/, "")
+        return root.sshHosts.filter(h => bare === "" || FinderService.fuzzy(h, bare) >= 0).slice(0, 5)
+            .map(h => ({ kind: "ssh", id: h, icon: "󰣀", name: `SSH: ${h}`, subtitle: "Enter opens Ghostty connected to it" }))
     }
 
     function fileRows(): var {
@@ -645,6 +691,10 @@ QtObject {
             FinderService.paste(entry.text)
         else if (entry.kind === "file")
             FinderService.open(entry.id)
+        else if (entry.kind === "bind" && entry.safe)
+            root.runBind(entry.action)
+        else if (entry.kind === "ssh")
+            Quickshell.execDetached(["ghostty", "--gtk-single-instance=false", "-e", "ssh", entry.id])
         else if (entry.kind === "web")
             Quickshell.execDetached(["helium-browser", entry.id])
         // `panel` and `mode` entries are handled by the launcher panel: the

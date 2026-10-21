@@ -2,7 +2,7 @@
 """Print niri's key binds as JSON for the keys sheet.
 
 niri has no IPC for binds, so this reads the config (following `include`s)
-and prints [{key, modmask, description}], with the modmask bits the sheet
+and prints [{key, modmask, description, action}], with the modmask bits the sheet
 already speaks (Super 64, Ctrl 4, Alt 8, Shift 1). A bind's
 `hotkey-overlay-title="Group · Action"` names its row; otherwise the action
 itself does, under "Niri".
@@ -75,5 +75,5 @@ for block in binds_blocks(strip_comments(read(CONFIG, set()))):
         mask = sum(BITS.get(p.lower(), 0) for p in mods)
         title = re.search(r'hotkey-overlay-title="([^"]*)"', props or "")
         desc = title.group(1) if title else " · ".join(describe(action))
-        out.append({"key": key, "modmask": mask, "description": desc})
+        out.append({"key": key, "modmask": mask, "description": desc, "action": " ".join(action.split()).rstrip(";").strip()})
 json.dump(out, sys.stdout)
