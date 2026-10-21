@@ -58,29 +58,47 @@ def save(items):
         pass
 
 
-def propose(question, lesson):
-    """Keep a candidate lesson until it has proved itself."""
+def propose(question, lesson, scope="general", target=""):
+    """Keep a candidate lesson until it has proved itself.
+
+    A lesson has a scope. A general one ("when a capture is denied, ask
+    for it") belongs to every question; a specific one belongs to the
+    question that earned it and to nothing else.
+    """
     lesson = (lesson or "").strip()
     if not lesson:
         return ""
+    if scope not in ("general", "specific"):
+        scope = "general"
     ident = key(question)
     items = [item for item in proposals() if item.get("key") != ident]
     items.append({"id": f"{int(time.time() * 1000)}-{len(items)}",
                   "key": ident, "question": (question or "")[:300],
-                  "lesson": lesson[:1200], "t": time.time(), "tries": 0})
+                  "lesson": lesson[:1200], "scope": scope,
+                  "target": target or "lessons", "t": time.time(), "tries": 0})
     save(items)
     return lesson
 
 
 def candidate(question):
-    """The lesson this attempt should try, if there is one."""
+    """The lesson this attempt should try, if there is one.
+
+    A general lesson rides every question; a specific one only the
+    question that earned it.
+    """
+    wanted = key(question)
+    chosen = None
     for item in proposals():
-        if item.get("key") == key(question):
-            item["tries"] = int(item.get("tries", 0)) + 1
-            save(proposals())
-            APPLIED["id"] = item.get("id")
-            return item.get("lesson", "")
-    return ""
+        if item.get("key") == wanted:
+            chosen = item
+        elif item.get("scope") == "general" and chosen is None:
+            chosen = item
+    if chosen is None:
+        return ""
+    chosen["tries"] = int(chosen.get("tries", 0)) + 1
+    save(proposals())
+    APPLIED["id"] = chosen.get("id")
+    return chosen.get("lesson", "")
 
 
 def settle(worked):
@@ -100,11 +118,12 @@ def settle(worked):
     return lesson
 
 
-def keep(lesson):
+def keep(lesson, scope="general"):
     """Put a lesson that worked into lessons.md, and keep that file short."""
     stamp = time.strftime("%Y-%m-%d")
+    where = "every question" if scope == "general" else "this question"
     entry = ("\n## A lesson from a failed turn\n"
-             f"<!-- Ever: {stamp} — kept because it worked -->\n\n"
+             f"<!-- Ever: {stamp} — kept because it worked, for {where} -->\n\n"
              f"{lesson.strip()}\n")
     try:
         os.makedirs(os.path.dirname(LESSONS), exist_ok=True)

@@ -46,12 +46,23 @@ check("it is not in lessons.md yet", not os.path.exists(lessons.LESSONS))
 check("the same question gets it",
       lessons.candidate("how do I OPEN a file!") ==
       "Ask for the path before reading it.")
-check("another question does not", lessons.candidate("what is the weather") == "")
+check("a general lesson rides every question",
+      lessons.candidate("what is the weather") == "Ask for the path before reading it.")
 
 # The attempt works: the lesson moves into lessons.md.
 lessons.settle(True)
 check("the lesson was kept", "Ask for the path" in open(lessons.LESSONS).read())
 check("the proposal is gone", lessons.proposals() == [])
+
+# A lesson for one question only stays with that question.
+lessons.propose("One question only", "A specific lesson", scope="specific")
+check("a specific lesson rides its own question",
+      lessons.candidate("one question only") == "A specific lesson")
+check("a specific lesson stays off the others",
+      lessons.candidate("what is the weather") == "")
+lessons.settle(True)
+check("the specific lesson was kept",
+      "A specific lesson" in open(lessons.LESSONS).read())
 
 # The attempt fails again: the lesson is dropped, not kept.
 lessons.propose("Second question", "This lesson is wrong.")

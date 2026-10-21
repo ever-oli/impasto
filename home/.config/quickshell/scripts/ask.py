@@ -36,7 +36,7 @@ def _backend():
         return os.environ.get("ASK_BACKEND", "cua")
 BACKEND = _backend()
 PI = os.environ.get("ASK_PI", f"{HOME}/.local/share/mise/installs/node/latest/bin/pi")
-# ASK_PI_STATE / ASK_PI_SESSION: tests use their own chat, never the live one.
+# ASK_PI_STATE / ASK_PI_SESSION: tests use their own chat.
 PI_STATE = os.environ.get("ASK_PI_STATE", f"{STATE}/pi")
 PI_SESSION = os.environ.get("ASK_PI_SESSION", "notch")
 AGENT = os.environ.get("ASK_AGENT", f"{HOME}/.local/share/mise/installs/opencode/latest/node_modules/.bin/opencode")
@@ -299,7 +299,7 @@ def roll():
 busy = threading.Lock()
 
 def ask(cmd):
-    # One question at a time: a follow-up sent mid-answer waits its turn.
+    # One question at a time: a follow-up waits its turn.
     with busy:
         answer_one(cmd)
 
@@ -321,6 +321,8 @@ def answer_one(cmd):
             if seen:
                 text += f"\n\n<screen_text source=\"OCR of the attached screenshot\">\n{seen[:6000]}\n</screen_text>"
     turn.update(q=cmd.get("text", ""), a="")
+    worked = True
+    failure = ""
     try:
         if BACKEND == "pi":
             result = pi_prompt(text, [dict(b) for b in blocks])
@@ -333,6 +335,8 @@ def answer_one(cmd):
             emit(type="visual", kind=kind, path=png or "", source=source)
         emit(type="done", stop=result.get("stopReason", "end_turn"))
     except RuntimeError as error:
+        worked = False
+        failure = str(error)
         emit(type="error", text=str(error))
         extras.settle(False)
         # Harness2's reflector: a failed turn may teach the harness a lesson.
@@ -343,7 +347,10 @@ def answer_one(cmd):
         extras.settle(True)
     os.makedirs(STATE, exist_ok=True)
     with open(HISTORY, "a") as f:
-        f.write(json.dumps({"t": time.time(), "s": conversation[0], "mode": cmd.get("mode", "general"), "q": turn["q"], "a": turn["a"]}) + "\n")
+        f.write(json.dumps({"t": time.time(), "s": conversation[0],
+                            "mode": cmd.get("mode", "general"),
+                            "q": turn["q"], "a": turn["a"],
+                            "ok": worked, "error": failure[:400]}) + "\n")
     turns.append({"q": turn["q"], "a": turn["a"]})
     # Pi's memory never forgets, so only the other backends roll.
     if BACKEND != "pi" and len(turns) >= int(os.environ.get("ASK_ROLL", ROLL)):

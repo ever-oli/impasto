@@ -1,0 +1,9 @@
+[Unit]
+Description=notch: look at the failed turns every hour
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

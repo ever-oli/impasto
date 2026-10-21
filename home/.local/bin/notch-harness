@@ -1,0 +1,241 @@
+#!/usr/bin/env python3
+"""notch-harness — the shell's harness, improved by the shell.
+
+Harness2, in the notch's own shape. A harness is the things around an
+agent that decide how well it does: the prompt, the rules, the tools,
+the memory. When a turn fails, that is a signal that the harness, not
+the model, is what needs work.
+
+So the loop is four steps, and they are the paper's:
+
+  propose   a free model reads the failed turn and writes ONE change to
+            the harness: a lesson, and how widely it applies (a general
+            one rides every question, a specific one only its own)
+  compose   the change goes into a candidate harness, not the live one
+  probe     the same question is asked again with the candidate in
+            place, and the answer is compared with the failed one
+  keep      the candidate wins, the lesson is kept in lessons.md; the
+            candidate loses, it is dropped and the harness is as it was
+
+The candidate is the proposals file: the ask bridge reads it when it
+composes a question, so the probe is the real engine, not a rehearsal.
+
+  notch-harness run        the loop over the turns that failed
+  notch-harness status     what is waiting, what was kept
+"""
+import json
+import os
+import subprocess
+import sys
+import time
+
+sys.path.insert(0, os.path.join(os.path.expanduser("~"),
+                                ".config/quickshell/scripts"))
+import ask_lessons as lessons
+
+HOME = os.environ.get("HOME", os.path.expanduser("~"))
+STATE = os.path.join(os.environ.get("XDG_STATE_HOME",
+                                     os.path.expanduser("~/.local/state")),
+                     "notch")
+HISTORY = os.path.join(STATE, "ask-history.jsonl")
+LEDGER = os.path.join(STATE, "harness.json")
+MODEL = os.environ.get("ASK_REFLECT_MODEL", "opencode/glm-5.3-flash-free")
+RETRIES = int(os.environ.get("HARNESS_RETRIES", "2"))
+
+PROPOSE = """An agent's answer failed. You may change ONE thing in the harness
+around it, and nothing else: a rule, a tool, a memory, a way of
+working. Write the change as one sentence, in the harness's own terms,
+concrete enough to act on, with no praise and no apology.
+
+If the change should hold for every question, begin the line with
+GENERAL. If it only holds for this one, begin it with SPECIFIC.
+
+Question: %s
+Failure: %s
+Answer so far: %s
+
+The change (GENERAL or SPECIFIC, then the sentence):"""
+
+
+def history():
+    """The turns, newest last."""
+    out = []
+    try:
+        with open(HISTORY) as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    out.append(json.loads(line))
+                except ValueError:
+                    continue
+    except OSError:
+        return []
+    return out
+
+
+def ledger():
+    try:
+        with open(LEDGER) as handle:
+            return json.load(handle)
+    except (OSError, ValueError):
+        return {"kept": [], "dropped": [], "probes": []}
+
+
+def write_ledger(book):
+    try:
+        os.makedirs(os.path.dirname(LEDGER), exist_ok=True)
+        with open(LEDGER, "w") as handle:
+            json.dump(book, handle, indent=1)
+    except OSError:
+        pass
+
+
+def propose(question, answer, failure):
+    """Ask a free model for one change to the harness."""
+    prompt = PROPOSE % (question[:400], str(failure)[:400], (answer or "")[:800])
+    try:
+        run = subprocess.run(
+            ["opencode", "run", "--model", MODEL, prompt],
+            capture_output=True, timeout=240, text=True,
+            env=dict(os.environ,
+                     PATH=os.path.expanduser("~/.local/bin") + ":" + os.environ.get("PATH", "")))
+    except Exception:
+        return None
+    text = (run.stdout or "").strip()
+    if not text or text.lower().startswith("none"):
+        return None
+    if len(text) > 1200:
+        text = text[:1200].rsplit("\n", 1)[0]
+    scope = "general" if text.upper().startswith("GENERAL") else "specific"
+    for prefix in ("GENERAL", "SPECIFIC"):
+        if text.upper().startswith(prefix):
+            text = text[len(prefix):].lstrip(" :—-")
+            break
+    return {"lesson": text.strip(), "scope": scope}
+
+
+def ask(question, mode="general"):
+    """One question to the engine, and the answer."""
+    try:
+        run = subprocess.run(
+            [os.path.expanduser("~/.local/bin/notch-ask-cli"),
+             "--backend", "opencode", "--mode", mode, question],
+            capture_output=True, timeout=300, text=True)
+    except Exception as error:
+        return "", str(error)
+    return (run.stdout or "").strip(), ""
+
+
+def judge(before, after, question):
+    """Did the answer get better? A free model says."""
+    prompt = ("Two answers to the same question. Say BETTER, WORSE or THE "
+              "SAME, and nothing else.\n\nQuestion: %s\n\nFirst:\n%s\n\nSecond:\n%s"
+              % (question[:300], before[:1200], after[:1200]))
+    try:
+        run = subprocess.run(
+            ["opencode", "run", "--model", MODEL, prompt],
+            capture_output=True, timeout=180, text=True,
+            env=dict(os.environ,
+                     PATH=os.path.expanduser("~/.local/bin") + ":" + os.environ.get("PATH", "")))
+    except Exception:
+        return "same"
+    word = (run.stdout or "").strip().split()[0].upper() if run.stdout else ""
+    return "better" if word.startswith("BETTER") else (
+        "worse" if word.startswith("WORSE") else "same")
+
+
+def failed_turns():
+    """The turns that failed, newest last, without the ones already seen."""
+    book = ledger()
+    seen = {item.get("q") for item in book.get("probes", [])}
+    out = []
+    for turn in history():
+        if turn.get("error") and turn.get("q") and turn["q"] not in seen:
+            out.append(turn)
+    return out
+
+
+def run_turn(turn):
+    """One failed turn, through the whole loop."""
+    question = turn.get("q", "")
+    answer = turn.get("a", "")
+    book = ledger()
+    print(f"· a turn failed: {question[:70]}")
+
+    change = propose(question, answer, "the answer failed")
+    if not change:
+        print("  no change proposed")
+        return
+    print(f"  proposed ({change['scope']}): {change['lesson'][:90]}")
+
+    # Compose: the change waits in the proposals file, and the ask bridge
+    # picks it up when it composes the next question.
+    lessons.propose(question, change["lesson"], scope=change["scope"])
+
+    # Probe: the same question, with the candidate in place.
+    results = []
+    for attempt in range(RETRIES):
+        reply, error = ask(question, turn.get("mode", "general"))
+        if error:
+            print(f"  the probe did not run: {error}")
+            break
+        results.append(reply)
+    if not results:
+        lessons.settle(False)
+        book["probes"].append({"q": question, "t": time.time(), "verdict": "no answer"})
+        write_ledger(book)
+        return
+
+    verdict = judge(answer, results[0], question)
+    book["probes"].append({"q": question, "t": time.time(), "verdict": verdict,
+                            "change": change["lesson"]})
+    if verdict == "better":
+        # Keep it: the lesson goes into the memory the shell reads.
+        lessons.settle(True)
+        book["kept"].append({"q": question, "lesson": change["lesson"],
+                              "scope": change["scope"], "t": time.time()})
+        print("  kept: it answered better")
+    else:
+        lessons.settle(False)
+        book["dropped"].append({"q": question, "lesson": change["lesson"],
+                                 "t": time.time()})
+        print(f"  dropped: it was {verdict}")
+    write_ledger(book)
+
+
+def status():
+    book = ledger()
+    waiting = lessons.proposals()
+    print(json.dumps({
+        "waiting": [{"question": item.get("question", "")[:80],
+                     "scope": item.get("scope", ""),
+                     "lesson": item.get("lesson", "")[:120]} for item in waiting],
+        "kept": len(book.get("kept", [])),
+        "dropped": len(book.get("dropped", [])),
+        "probes": len(book.get("probes", [])),
+    }, indent=1))
+
+
+def main():
+    verb = sys.argv[1] if len(sys.argv) > 1 else "run"
+    if verb == "status":
+        status()
+        return
+    if verb != "run":
+        print(__doc__)
+        return
+    turns = failed_turns()
+    if not turns:
+        print("nothing has failed that has not been looked at")
+        return
+    for turn in turns[-3:]:
+        try:
+            run_turn(turn)
+        except Exception as error:
+            print(f"· the loop stopped: {error}")
+
+
+if __name__ == "__main__":
+    main()
