@@ -1,0 +1,7 @@
+[Unit]
+Description=notch: check that the catalogue's sources answer
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/notch-sources --quiet

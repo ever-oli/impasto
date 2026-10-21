@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+"""notch-sources — are the sources answering today?
+
+The catalogue leans on other people's servers: hianime for the anime,
+the player api for the films and the series. Those break, and they
+break quietly, so the notch checks them itself — one title from each
+source — and writes down what it found. The shell reads that file, and
+the check runs again every day.
+
+  notch-sources            check every source, write the result
+  notch-sources --quiet    the same, but say nothing
+"""
+import json
+import os
+import subprocess
+import sys
+import time
+
+HOME = os.environ.get("HOME", os.path.expanduser("~"))
+SCRIPT = os.path.join(HOME, ".config/quickshell/scripts/stream.py")
+RESOLVER = os.path.join(HOME, ".local/bin/notch-resolve.mjs")
+STATE = os.path.join(os.environ.get("XDG_STATE_HOME",
+                                     os.path.expanduser("~/.local/state")),
+                     "notch", "sources.json")
+
+# One title from each source: a known anime and a known film.
+PROBES = [
+    {"source": "hianime", "kind": "anime", "title": "cowboy bebop"},
+    {"source": "vidsrc", "kind": "movie", "id": "550", "title": "Fight Club",
+     "year": "1999"},
+]
+
+
+def check(probe):
+    """One source, one title: does it answer?"""
+    started = time.time()
+    try:
+        if probe["kind"] == "anime":
+            command = [sys.executable, SCRIPT, "resolve", probe["title"],
+                       "--episode", "1"]
+        else:
+            command = ["node", RESOLVER, "--tmdb", probe["id"],
+                       "--type", "movie", "--title", probe["title"],
+                       "--year", probe["year"], "--json"]
+        run = subprocess.run(command, capture_output=True, text=True, timeout=180)
+        ok = run.returncode == 0 and bool(run.stdout.strip())
+        detail = "" if ok else (run.stderr.strip()[-160:] or "no answer")
+    except Exception as error:
+        ok, detail = False, str(error)[:160]
+    return {"source": probe["source"], "ok": ok, "detail": detail,
+            "seconds": round(time.time() - started, 1)}
+
+
+def main():
+    quiet = "--quiet" in sys.argv
+    results = [check(probe) for probe in PROBES]
+    state = {"checked": time.time(),
+             "sources": {result["source"]: result for result in results}}
+    try:
+        os.makedirs(os.path.dirname(STATE), exist_ok=True)
+        with open(STATE, "w") as handle:
+            json.dump(state, handle, indent=1)
+    except OSError as error:
+        sys.exit(f"notch-sources: {error}")
+    if not quiet:
+        for result in results:
+            mark = "ok  " if result["ok"] else "FAIL"
+            print(f"{mark} {result['source']:10} {result['seconds']:5}s "
+                  f"{result['detail']}")
+    sys.exit(0 if all(result["ok"] for result in results) else 1)
+
+
+if __name__ == "__main__":
+    main()

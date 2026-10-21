@@ -14,3 +14,8 @@ jobs:
           bash -n setup home/.local/bin/notch
           python3 -m py_compile home/.local/bin/notch-theme home/.config/quickshell/scripts/*.py
           for f in home/.local/share/notch/themes/*/colors.toml; do python3 -c "import tomllib,sys; tomllib.load(open(sys.argv[1],'rb'))" "$f"; done
+          node --check home/.local/bin/notch-resolve.mjs
+      - name: The harness's memory
+        run: sh tests/lessons-cycle.sh
+      - name: The size ratchet
+        run: sh tests/size-ratchet.sh
