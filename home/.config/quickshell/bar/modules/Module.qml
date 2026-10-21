@@ -32,7 +32,8 @@ Item {
         notifications: notificationsModule,
         t3: t3Module,
         machine: cloudModule,
-        idle: cloudModule
+        idle: cloudModule,
+        battery: batteryModule
     })
 
     implicitWidth: holder.implicitWidth
@@ -52,4 +53,5 @@ Item {
     Component { id: notificationsModule; NotificationsModule {} }
     Component { id: t3Module;         T3Module {} }
     Component { id: cloudModule;      CloudModule {} }
+    Component { id: batteryModule;    BatteryModule {} }
 }

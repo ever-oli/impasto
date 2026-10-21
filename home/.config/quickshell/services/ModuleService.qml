@@ -42,6 +42,7 @@ Singleton {
         { id: "t3",            name: "T3 Code",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, Theme.cardRowGap + 40) },
         { id: "volume",        name: "Volume",        bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "machine",       name: "CPU · RAM",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
+        { id: "battery",       name: "Battery",       bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "idle",          name: "Auto-stop",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "network",       name: "Network",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "bluetooth",     name: "Bluetooth",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
@@ -128,6 +129,8 @@ Singleton {
             return NotificationService.doNotDisturb ? "󰂛" : "󰂚"
         case "t3":
             return "󰚩"
+        case "battery":
+            return BatteryService.glyph
         case "machine":
             return "󰍛"
         case "idle":
@@ -152,6 +155,8 @@ Singleton {
             return BluetoothService.summary
         case "t3":
             return T3Service.updateAvailable ? "Update" : (T3Service.running ? "T3" : "T3 off")
+        case "battery":
+            return BatteryService.has ? `${BatteryService.percent}%` : ""
         }
         return ""
     }
@@ -172,6 +177,8 @@ Singleton {
             if (T3Service.updateAvailable)
                 return Theme.indicatorWarn
         }
+        if (id === "battery" && BatteryService.bad)
+            return Theme.indicatorWarn
         if (id === "idle" && CloudService.idleLeft < 900)
             return Theme.indicatorWarn
         return Theme.text
@@ -295,6 +302,8 @@ Singleton {
         case "machine":
         case "idle":
             return true
+        case "battery":
+            return BatteryService.has
         case "volume":
             return AudioService.ready
         case "bluetooth":

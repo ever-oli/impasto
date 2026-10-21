@@ -181,7 +181,7 @@ Singleton {
     // a module. The tray is not drawn while it is empty.
     readonly property var barDefaults: ({
         left: ["workspaces"],
-        right: ["tray", "t3", "notifications", "network", "machine", "idle", "controls"]
+        right: ["notifications", "network", "machine", "idle", "controls", "battery"]
     })
 
     // An entry is a bare id, or `{ id, shape, figure, when }` when the piece
