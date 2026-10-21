@@ -37,10 +37,10 @@ Singleton {
     property string backend: ""
     function setBackend(name: string): void {
         root.cancel()
-        root.backend = name === "pi" ? "pi" : (name === "cua" ? "cua" : "opencode")
+        root.backend = ["pi", "cua", "box"].includes(name) ? name : "opencode"
         Quickshell.execDetached(["python3", Quickshell.shellPath("scripts/ask.py"), "backend", root.backend])
         root.bridge.running = false
-        root.messages = root.messages.concat([{ role: "tool", text: `󰒓 Backend: ${root.backend === "pi" ? "Pi · OptChat memory" : root.backend === "cua" ? "opencode · Cua Driver" : "opencode"}` }])
+        root.messages = root.messages.concat([{ role: "tool", text: `󰒓 Backend: ${root.backend === "pi" ? "Pi · OptChat memory" : root.backend === "cua" ? "opencode · Cua Driver" : root.backend === "box" ? "instabox · a box in the cloud" : "opencode"}` }])
         root.bridge.running = true
     }
 

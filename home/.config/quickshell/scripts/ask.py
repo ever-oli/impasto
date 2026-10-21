@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""ask.py — the notch assistant's bridge to its agent: Pi (the default and only visible engine) or `opencode acp` (hidden fallback,
-`notch ask backend opencode`) Pi with OptChat durable memory (`--backend pi`, or "pi" in
-~/.config/notch/ask-backend). Pi keeps one never-ending chat under
-~/.local/state/notch/pi; its tool calls go through notch-gate.ts.
+"""ask.py — the notch assistant's bridge to its engine, chosen in
+~/.config/notch/ask-backend: "cua" (opencode with the Cua Driver's computer,
+the default), "box" (an instabox machine in the cloud), "pi" (Pi with OptChat
+memory, whose tool calls go through notch-gate.ts) or "opencode" (ACP).
 
 Reads one JSON command per line on stdin:
   {"op":"ask","text":..,"screen":"none|screen|region","context":bool,"act":bool}
@@ -20,6 +20,7 @@ the question was asked in act mode, where the shell asks Ever first.
 import base64, json, os, subprocess, sys, threading, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import ask_box as box
 import ask_extras as extras
 
 HOME = os.path.expanduser("~")
@@ -334,8 +335,7 @@ def answer_one(cmd):
     act_mode[0] = bool(cmd.get("act")) or (extras.mode_of(cmd.get("mode", "general")) or {}).get("act") == "on"
     text = compose(cmd)
     blocks = []
-    # OCR reads the full-size PNG; the model gets a half-size JPEG, which vision
-    # models answer fast and which keeps Pi's durable chat small.
+    # OCR reads the full-size PNG; the model gets a half-size JPEG.
     shot = {"screen": "grim -o Virtual-1 -", "region": 'g=$(slurp) && grim -g "$g" -'}.get(cmd.get("screen"))
     if shot:
         png = sh(shot)
@@ -351,6 +351,9 @@ def answer_one(cmd):
     try:
         if BACKEND == "pi":
             result = pi_prompt(text, [dict(b) for b in blocks])
+        elif BACKEND == "box":
+            box.ask(text, lambda line: emit(type="chunk", text=line + "\n"))
+            result = {"stopReason": "end_turn"}
         else:
             result = prompt([{"type": "text", "text": text}] + blocks)
         for kind, png, source in extras.visuals(turn["a"]):
@@ -362,7 +365,7 @@ def answer_one(cmd):
     with open(HISTORY, "a") as f:
         f.write(json.dumps({"t": time.time(), "s": conversation[0], "mode": cmd.get("mode", "general"), "q": turn["q"], "a": turn["a"]}) + "\n")
     turns.append({"q": turn["q"], "a": turn["a"]})
-    # Pi's OptChat memory never forgets, so only the ACP backend rolls.
+    # Pi's memory never forgets, so only the other backends roll.
     if BACKEND != "pi" and len(turns) >= int(os.environ.get("ASK_ROLL", ROLL)):
         roll()
 
@@ -373,7 +376,9 @@ def capture():
     except Exception as error:
         emit(type="error", text=f"No browser page: start Helium (it listens on 127.0.0.1:9222). {error}")
 
-if BACKEND == "pi":
+if BACKEND == "box":
+    emit(type="ready", backend="box")
+elif BACKEND == "pi":
     threading.Thread(target=pi_reader, daemon=True).start()
     try:
         pi_request({"type": "get_state"})
