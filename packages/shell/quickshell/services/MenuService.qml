@@ -43,11 +43,11 @@ Singleton {
     ].concat(root.updates > 0 ? [
         { icon: "󰚰", name: `Updates available (${root.updates})`, subtitle: "pacman + AUR · Enter runs yay -Syu", term: "notch-updates run" }
     ] : []).concat([
-        { icon: "󰚩", name: "Assistant", subtitle: "History, profile, modes, reference files", items: [
+        { icon: "󰚩", name: "The agent", subtitle: "Profile, modes, reference files", items: [
             { icon: "󰑓", name: "Hand this to T3", subtitle: "The notch's context on the clipboard, T3 in front",
               sh: "qs ipc call context hand" },
             { icon: "󰀄", name: "Edit profile", subtitle: "Your CV, for the agent to read", sh: "ghostty -e helix ~/.config/notch/profile.md" },
-            { icon: "󰘦", name: "Modes folder", subtitle: "Drop a .md file to add a mode", sh: "ghostty --working-directory=$HOME/.config/notch/modes" },
+            { icon: "󰘦", name: "Modes folder", subtitle: "The agent's modes: drop a .md file to add one", sh: "ghostty --working-directory=$HOME/.config/opencode/skill/notch/modes" },
             { icon: "󰈙", name: "Reference files", subtitle: "files/<mode>/ — PDF, DOCX, text", sh: "mkdir -p ~/.config/notch/files && xdg-open ~/.config/notch/files" }
         ] },
         { icon: "󰋖", name: "Learn", subtitle: "Keys, wikis, cheat sheets", items: [

@@ -19,8 +19,7 @@ import "../theme"
 //
 // The first character selects the mode: plain text searches applications, and
 // a sigil switches to calculator, shell entries (`>`), windows, timer,
-// clipboard or emoji. Modes are explicit so `100` or `5:30` is never misread as a sum
-// or a duration.
+// clipboard or emoji.
 QtObject {
     id: root
 
@@ -374,8 +373,7 @@ QtObject {
             return root.rank(term)
         if (MenuService.top)
             return MenuService.results(term)
-        const ask = { kind: "panel", id: "ask", panel: "ask", icon: "󰚩", name: "Ask",
-                      subtitle: "The assistant, with your screen as context" }
+        const ask = { kind: "hand", icon: "󰚩", name: "Ask T3", subtitle: "The notch's context, to the agent" }
         const windowsFolder = { kind: "mode", id: "windows", icon: "󰖯", name: "Windows",
                                 subtitle: "Switch to an open window", sigil: SettingsService.launcherPrefix("windows") }
         if (term === "") {
@@ -697,6 +695,8 @@ QtObject {
             Quickshell.execDetached(["ghostty", "--gtk-single-instance=false", "-e", "ssh", entry.id])
         else if (entry.kind === "web")
             Quickshell.execDetached(["helium-browser", entry.id])
+        else if (entry.kind === "hand")
+            Quickshell.execDetached(["notch", "context", "hand"])
         // `panel` and `mode` entries are handled by the launcher panel: the
         // service does not know about the island, and a mode row keeps the
         // launcher open.

@@ -38,7 +38,7 @@ Scope {
     readonly property var defaults: [
         { label: "Apps", icon: "app", command: [notch, "toggle", "launcher"] },
         { label: "Theme", icon: "themes", command: [notch, "picker", "theme"] },
-        { label: "Ask", icon: "agents", command: [notch, "toggle", "ask"] },
+        { label: "Ask T3", icon: "agents", command: [notch, "context", "hand"] },
         { label: "T3", icon: "create", command: [notch, "toggle", "t3"] },
         { label: "Terminal", icon: "terminal", command: ["ghostty"] },
         { label: "Files", icon: "files", command: ["nautilus", "--new-window"] },
