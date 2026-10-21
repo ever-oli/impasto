@@ -145,12 +145,17 @@ def tmdb(path, query=None):
         return None
 
 
-def film_items(results):
+def film_items(results, kind=None):
+    """The films or series of one TMDB answer.
+
+    A series answer has no media_type of its own, so the kind it was asked
+    for is the kind it is.
+    """
     out = []
     for entry in results or []:
         date = entry.get("release_date") or entry.get("first_air_date") or ""
         out.append({
-            "kind": "movie" if entry.get("media_type", "movie") == "movie" else "tv",
+            "kind": entry.get("media_type") or kind or "movie",
             "id": entry.get("id"),
             "title": entry.get("title") or entry.get("name") or "—",
             "romaji": entry.get("original_title") or entry.get("original_name") or "",
@@ -177,7 +182,7 @@ def film_shelf(kind, sort):
     data = tmdb(path)
     if not data:
         return []
-    return film_items(data.get("results"))
+    return film_items(data.get("results"), kind)
 
 
 def film_search(text):
