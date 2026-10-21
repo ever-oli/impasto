@@ -44,6 +44,7 @@ if [ -z "${NOTCH_DOCTOR_FAST:-}" ] && [ -x "$pi" ]; then
     [ "$a" = PONG ] && ok "Pi answers" || no "Pi did not answer (got: ${a:0:40})"
 fi
 command -v opencode >/dev/null && ok "opencode hidden fallback (notch ask backend opencode)" || warn "no opencode fallback"
+ls "$HOME"/.cache/notch/chrome/chrome-headless-shell/*/*/chrome-headless-shell >/dev/null 2>&1 && ok "mermaid renderer (chrome-headless-shell)" || no "no chrome-headless-shell: ./setup fonts (Helium breaks mmdc)"
 echo "Dependencies"
 for d in qs niri qalc fd gh git wl-copy grim slurp tesseract helium-browser gtk-launch fuzzel ghostty helix notify-send python3; do
     command -v "$d" >/dev/null && ok "$d" || no "$d missing"

@@ -210,6 +210,12 @@ def pi_reader():
                 emit(type="tool", title=f"Auto-approved: {msg.get('title') or 'action'}", status="pending")
                 pick(True); continue
             pending[rid] = pick
+            # Unanswered approvals are denied after ASK_APPROVE_TIMEOUT so the turn can end.
+            def expire(rid=rid):
+                if pending.pop(rid, None):
+                    emit(type="tool", title="Approval timed out: denied", status="failed")
+                    send({"type": "extension_ui_response", "id": rid, "confirmed": False})
+            threading.Timer(float(os.environ.get("ASK_APPROVE_TIMEOUT", 180)), expire).start()
             emit(type="permission", id=rid, title=msg.get("title") or "Action", detail=msg.get("message") or "")
         elif kind == "extension_ui_request" and msg.get("method") in ("select", "input", "editor"):
             send({"type": "extension_ui_response", "id": msg["id"], "cancelled": True})
@@ -219,8 +225,14 @@ def pi_prompt(text, images):
     open(f"{PI_STATE}/act", "w").write("1" if act_mode[0] else "0")
     pi_done.clear(); pi_box.clear()
     data = pi_request({"type": "prompt", "message": text, "images": images})
-    if data.get("disposition") != "handled":
-        pi_done.wait()
+    # Timeout guard: a stuck turn is aborted rather than holding the notch forever.
+    if data.get("disposition") != "handled" and not pi_done.wait(float(os.environ.get("ASK_PI_TIMEOUT", 300))):
+        send({"type": "abort"})
+        for pick in list(pending.values()):
+            pick(False)
+        pending.clear()
+        pi_done.wait(15)
+        raise RuntimeError("Pi took too long, so the turn was stopped (ASK_PI_TIMEOUT).")
     if pi_box.get("error"):
         raise RuntimeError(pi_box["error"])
     return {"stopReason": pi_box.get("stop", "end_turn")}

@@ -45,6 +45,10 @@ fonts() {
         say "fonts: $f installed"
     done
     rm -rf "$tmp"
+    # Mermaid renders in chrome-headless-shell: Helium navigates on start and breaks mmdc.
+    local chrome="$HOME/.cache/notch/chrome"
+    if ls "$chrome"/chrome-headless-shell/*/*/chrome-headless-shell >/dev/null 2>&1; then say "fonts: headless shell present"
+    else npx -y @puppeteer/browsers install chrome-headless-shell@stable --path "$chrome" >/dev/null && say "fonts: chrome-headless-shell installed (mermaid)"; fi
     fc-cache -f "$dir" >/dev/null
 }
 

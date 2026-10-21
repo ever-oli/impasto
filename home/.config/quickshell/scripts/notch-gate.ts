@@ -11,11 +11,11 @@ export default function (pi: ExtensionAPI) {
 		if (SAFE.has(event.toolName)) return undefined;
 		let act = false;
 		try { act = readFileSync(process.env.NOTCH_PI_ACT ?? "", "utf8").trim() === "1"; } catch {}
-		if (!act) return { block: true, reason: `${event.toolName} is off: Ever did not turn on Act` };
+		if (!act) return { block: true, reason: `Skipped: Act is off, so ${event.toolName} did not run. Tell Ever in one line; do not retry.` };
 		const input = event.input as Record<string, unknown>;
 		const detail = String(input.command ?? input.path ?? JSON.stringify(input)).slice(0, 300);
 		if (!(await ctx.ui.confirm(event.toolName, detail))) {
-			return { block: true, reason: `${event.toolName} was not approved` };
+			return { block: true, reason: `Skipped: Ever denied ${event.toolName} (${detail.slice(0, 80)}). Say so in one line and stop; do not retry it.` };
 		}
 		return undefined;
 	});

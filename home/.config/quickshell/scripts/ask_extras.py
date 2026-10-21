@@ -179,7 +179,8 @@ def mermaid(source, out):
     src = out[:-4] + ".mmd"
     open(src, "w").write(source)
     puppet = f"{CACHE}/puppeteer.json"
-    # chrome-headless-shell, fetched once by @puppeteer/browsers (see setup).
+    # chrome-headless-shell, fetched once by @puppeteer/browsers (see setup). Helium is a last
+    # resort only: it navigates on start ("Execution context was destroyed") and mmdc fails.
     shell = sorted(glob.glob(f"{HOME}/.cache/notch/chrome/chrome-headless-shell/*/*/chrome-headless-shell"))
     json.dump({"executablePath": shell[-1] if shell else "/opt/helium-browser-bin/helium",
                "headless": True,
