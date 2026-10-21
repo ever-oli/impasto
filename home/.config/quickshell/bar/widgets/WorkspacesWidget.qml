@@ -96,6 +96,7 @@ Rectangle {
     // Each slot carries its own gap, so a collapsed one takes no space; the
     // spare gap is subtracted here.
     implicitWidth: layout.implicitWidth - root.slotSpacing
+        + 2 * (root.chromeless ? 0 : 16)          // room under the two steppers
         + (root.chromeless ? 0 : (root.written ? 12 : 20))
     radius: Theme.radiusPill
 
@@ -113,6 +114,49 @@ Rectangle {
         enabled: !root.preview
         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         onWheel: event => NiriService.action(event.angleDelta.y > 0 ? "focus-workspace-up" : "focus-workspace-down")
+    }
+
+    // The two ends name what the wheel does: ‹ steps a workspace back, ›
+    // forward. They light up like a focused slot under the pointer, and stay
+    // out of the settings preview.
+    MouseArea {
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        width: 16
+        height: parent.height
+        enabled: !root.preview
+        hoverEnabled: !root.preview
+        visible: !root.preview
+        cursorShape: Qt.PointingHandCursor
+        onClicked: NiriService.action("focus-workspace-up")
+
+        Text {
+            anchors.centerIn: parent
+            text: "󰅃"
+            font.family: Theme.fontMono
+            font.pixelSize: Theme.fontSizeLabel
+            color: parent.containsMouse ? Theme.accent : root.dim
+        }
+    }
+
+    MouseArea {
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        width: 16
+        height: parent.height
+        enabled: !root.preview
+        hoverEnabled: !root.preview
+        visible: !root.preview
+        cursorShape: Qt.PointingHandCursor
+        onClicked: NiriService.action("focus-workspace-down")
+
+        Text {
+            anchors.centerIn: parent
+            text: "󰅂"
+            font.family: Theme.fontMono
+            font.pixelSize: Theme.fontSizeLabel
+            color: parent.containsMouse ? Theme.accent : root.dim
+        }
     }
 
     // The written styles' focus: one pill that slides to the focused number
