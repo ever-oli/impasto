@@ -31,3 +31,7 @@ home/.config/quickshell/scripts/ask.py.bak*
 
 # The vendored mov-cli runs from a venv, not from the repository.
 home/.local/share/notch/mov-cli/.venv/
+
+# Build leftovers from the vendored plugin.
+home/.local/share/notch/mov-cli/plugins/build/
+home/.local/share/notch/mov-cli/plugins/*.egg-info/

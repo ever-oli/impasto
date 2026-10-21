@@ -113,6 +113,17 @@ window-rule {
     open-focused false
 }
 
+// A video (mpv, from ani-cli or mov-cli): drops under the notch too, the
+// way the theater does, so the shell keeps the top of the screen.
+window-rule {
+    match app-id=r#"^mpv$"#
+    open-floating true
+    open-focused true
+    default-floating-position x=0 y=44 relative-to="top"
+    default-window-width { proportion 0.62; }
+    default-window-height { proportion 0.62; }
+}
+
 screenshot-path "~/Pictures/Screenshots/%Y-%m-%d_%H-%M-%S.png"
 
 // ==== autostart.kdl ====
