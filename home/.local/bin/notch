@@ -4,6 +4,7 @@
 #
 #   notch open|toggle <panel>   launcher controls session keys t3 wifi
 #                                 bluetooth sound microphone clipboard emoji
+#                                 anime notchstorm
 #   notch close
 #   notch ask "<question>" [screen|region]  the notch assistant
 #   notch ask capture | mode <id>         grab the Helium tab · pick a mode
