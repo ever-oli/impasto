@@ -123,6 +123,10 @@ def main():
         print(__doc__)
         sys.exit(0)
     kind = args[0]
+    media_kind = ""
+    media_id = ""
+    title = ""
+    season = ""
     episode = 1
     if "--episode" in args:
         episode = int(args[args.index("--episode") + 1])
@@ -141,12 +145,12 @@ def main():
             raise
         url, referer = found["url"], found.get("referer")
         subtitle = found.get("subtitle", "")
+        title = found.get("title", title)
     elif kind == "film":
         media_kind = args[1]                       # movie or tv
         media_id = args[2]
         title = args[3] if len(args) > 3 else ""
         year = args[4] if len(args) > 4 else ""
-        season = ""
         if "--season" in args:
             season = args[args.index("--season") + 1]
         try:
@@ -156,6 +160,7 @@ def main():
             raise
         url, referer = found["url"], found["referer"]
         subtitle = found.get("subtitle", "")
+        title = found.get("title", title)
     elif kind == "url":
         url = args[1]
     else:
@@ -165,10 +170,20 @@ def main():
     command = f"notch-video '{url}'"
     if referer:
         command += f" --referer '{referer}'"
+    if title:
+        command += f" --title '{title}'"
     if subtitle:
         local = subtitle_file(subtitle, referer)
         if local:
             command += f" --sub '{local}'"
+    if media_kind:
+        command += f" --kind {media_kind}"
+    if media_id:
+        command += f" --media-id {media_id}"
+    if season:
+        command += f" --season {season}"
+    if episode:
+        command += f" --episode {episode}"
     in_terminal(command)
     print(json.dumps({"url": url, "referer": referer, "subtitle": subtitle,
                       "episode": episode}))

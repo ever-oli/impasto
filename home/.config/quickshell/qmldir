@@ -20,6 +20,7 @@ singleton ShortcutService    1.0 services/ShortcutService.qml
 singleton AccountService     1.0 services/AccountService.qml
 singleton ControlsService    1.0 services/ControlsService.qml
 singleton CaptureService     1.0 services/CaptureService.qml
+singleton PlayingService      1.0 services/PlayingService.qml
 singleton RecorderService    1.0 services/RecorderService.qml
 singleton ClipboardService   1.0 services/ClipboardService.qml
 singleton EmojiService       1.0 services/EmojiService.qml

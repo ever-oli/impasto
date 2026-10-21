@@ -6,14 +6,24 @@ colour characters, so a video plays where the text is, with no window and
 no GPU. That matters here: this machine's EGL is broken, so mpv's own
 video output can only open an X11 surface, which fights the shell.
 
-  notch-video <url-or-file>          play it here
-  notch-video <url> --referer <url>  for sources that ask for one
-  notch-video <url> --title "…"      the title the player shows
+The picture is the whole point, so nothing else is drawn over it: no
+controls, no status line, no text. A subtitle cannot be drawn either -
+the terminal output has no osd - so the caption is read here and handed
+to the shell, which shows it in the island above the terminal.
+
+  notch-video <url-or-file>            play it here
+  notch-video <url> --referer <url>   for sources that ask for one
+  notch-video <url> --title "…"       the title the player shows
+  notch-video <url> --sub <file.vtt>   with a caption, read beside it
+  notch-video <url> --kind tv --media-id 1396 --season 1 --episode 3
 """
 
+import json
 import os
 import subprocess
 import sys
+import tempfile
+import time
 
 
 def main():
@@ -25,17 +35,31 @@ def main():
     referer = None
     title = None
     subtitle = None
+    kind = ""
+    media_id = ""
+    season = ""
+    episode = ""
     i = 0
     while i < len(args):
-        if args[i] == "--referer":
+        if args[i] in ("--referer", "--title", "--sub", "--kind", "--media-id",
+                       "--season", "--episode"):
+            name = args[i][2:]
             i += 1
-            referer = args[i]
-        elif args[i] == "--title":
-            i += 1
-            title = args[i]
-        elif args[i] == "--sub":
-            i += 1
-            subtitle = args[i]
+            value = args[i]
+            if name == "referer":
+                referer = value
+            elif name == "title":
+                title = value
+            elif name == "sub":
+                subtitle = value
+            elif name == "kind":
+                kind = value
+            elif name == "media-id":
+                media_id = value
+            elif name == "season":
+                season = value
+            elif name == "episode":
+                episode = value
         elif args[i] in ("--url", "-u"):
             i += 1
             source = args[i]
@@ -51,9 +75,6 @@ def main():
     # The picture is redrawn as often as the film has frames; a terminal
     # cannot show more than a dozen, so the rest is dropped rather than
     # drawn (--framedrop=decoder).
-    # The osd stays on: it is where the subtitles are drawn. The noise
-    # that usually comes with it is off by other means (no osc, no
-    # stats overlay, no terminal status line, and only warnings speak).
     command = ["mpv", "--vo=tct", "--osc=no", "--load-stats-overlay=no",
                "--term-osd=no", "--no-ytdl",
                "--msg-level=all=warn", "--framedrop=decoder"]
@@ -62,18 +83,49 @@ def main():
     if title:
         command.append(f"--force-media-title={title}")
     if subtitle:
-        # The subtitle is a file on the web; mpv fetches it and burns it
-        # into the picture.
         command.append(f"--sub-file={subtitle}")
+
+    socket_path = None
+    helper = None
+    if subtitle and os.path.exists(subtitle):
+        # The player is asked where it is over its own socket, so the
+        # caption and the place in the film can be read beside it.
+        socket_path = os.path.join(tempfile.gettempdir(),
+                                   f"notch-mpv-{os.getpid()}.sock")
+        command.append(f"--input-ipc-server={socket_path}")
     command.append(source)
-    # The terminal's own mpv config asks for a window; the picture is the
-    # terminal here.
+
     env = dict(os.environ)
     env["MPV_HOME"] = env.get("MPV_HOME", os.path.expanduser("~/.config/mpv"))
     try:
-        os.execvp(command[0], command)
+        player = subprocess.Popen(command, env=env)
     except OSError as error:
         sys.exit(f"notch-video: {error}")
+
+    if socket_path:
+        # The socket is a moment late; the helper waits for it.
+        for _ in range(50):
+            if os.path.exists(socket_path):
+                break
+            time.sleep(0.1)
+        helper = subprocess.Popen([
+            os.path.expanduser("~/.local/bin/notch-subs"),
+            "--vtt", subtitle, "--socket", socket_path,
+            "--title", title or "", "--kind", kind,
+            "--media-id", media_id, "--season", season, "--episode", episode],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        code = player.wait()
+    finally:
+        if helper:
+            helper.terminate()
+            helper.wait(timeout=5)
+        if socket_path:
+            try:
+                os.unlink(socket_path)
+            except OSError:
+                pass
+    sys.exit(code)
 
 
 if __name__ == "__main__":

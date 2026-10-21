@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+"""notch-subs — what is playing, and what it says.
+
+mpv draws the picture into the terminal and nothing else: its terminal
+output has no osd, so a subtitle never appears in the frame. So the
+caption goes where the shell can show it - the island, right above the
+terminal - and this is what tells the shell.
+
+The helper sits next to the player, asks it where it is (over mpv's own
+ipc socket), finds the line that belongs to that moment in the subtitle
+file, and writes both the line and the place in the playing file, so
+the shell can show the caption and the progress, and so a title can be
+picked up where it was left.
+
+  notch-subs --vtt <file.vtt> --socket <path> [--state <file>]
+
+It ends with the player.
+"""
+import argparse
+import json
+import os
+import re
+import socket
+import subprocess
+import sys
+import time
+
+STATE = os.path.join(os.environ.get("XDG_STATE_HOME",
+                                     os.path.expanduser("~/.local/state")),
+                     "notch", "playing.json")
+HISTORY = os.path.join(os.environ.get("XDG_STATE_HOME",
+                                       os.path.expanduser("~/.local/state")),
+                        "notch", "watching.json")
+
+
+def parse_time(text):
+    """'00:02:18.780' or '01:02:18.780' in seconds."""
+    parts = text.strip().replace(",", ".").split(":")
+    try:
+        numbers = [float(part) for part in parts]
+    except ValueError:
+        return 0.0
+    seconds = 0.0
+    for number in numbers:
+        seconds = seconds * 60 + number
+    return seconds
+
+
+def read_cues(path):
+    """[(seconds, text)] for the subtitle file."""
+    out = []
+    start = None
+    words = []
+    try:
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                line = line.strip()
+                if "-->" in line:
+                    if start is not None:
+                        out.append((start, " ".join(words)))
+                    begin = line.partition("-->")[0]
+                    start = parse_time(begin)
+                    words = []
+                elif start is not None and line and not line.isdigit():
+                    words.append(line)
+    except OSError:
+        return []
+    if start is not None:
+        out.append((start, " ".join(words)))
+    return out
+
+
+class Player:
+    """mpv, over its own ipc socket."""
+
+    def __init__(self, path):
+        self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.socket.settimeout(2.0)
+        self.socket.connect(path)
+        self.next_id = 0
+        self.buffer = b""
+
+    def ask(self, command):
+        self.next_id += 1
+        wanted = self.next_id
+        self.socket.sendall((json.dumps({
+            "command": command, "request_id": wanted}) + "\n").encode())
+        while True:
+            if b"\n" not in self.buffer:
+                try:
+                    chunk = self.socket.recv(65536)
+                except socket.timeout:
+                    return None
+                if not chunk:
+                    return None
+                self.buffer += chunk
+                continue
+            line, self.buffer = self.buffer.split(b"\n", 1)
+            try:
+                message = json.loads(line.decode(errors="replace"))
+            except ValueError:
+                continue
+            if message.get("request_id") == wanted:
+                # mpv says "error": "success" when it worked.
+                if message.get("error") not in ("success", None):
+                    return None
+                return message.get("data")
+
+    def place(self):
+        """(seconds, duration) of the player."""
+        time_pos = self.ask(["get_property", "time-pos"])
+        duration = self.ask(["get_property", "duration"])
+        try:
+            return float(time_pos or 0), float(duration or 0)
+        except (TypeError, ValueError):
+            return 0.0, 0.0
+
+
+def say(caption):
+    """Put the line under the picture, in the terminal's own status line."""
+    if not caption:
+        return
+    try:
+        subprocess.run(["tmux", "set-option", "-t", "notch", "status-left",
+                        caption[:120]], capture_output=True, timeout=5)
+    except Exception:
+        pass
+
+
+def read_history(path):
+    try:
+        with open(path) as handle:
+            found = json.load(handle)
+        return found if isinstance(found, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def remember(path, entry):
+    """Keep where a title was left, so the catalogue can offer it again."""
+    items = [item for item in read_history(path)
+             if not (item.get("kind") == entry.get("kind")
+                     and str(item.get("mediaId")) == str(entry.get("mediaId"))
+                     and str(item.get("season")) == str(entry.get("season"))
+                     and str(item.get("episode")) == str(entry.get("episode")))]
+    items.insert(0, entry)
+    write_state(path, items[:24])
+
+
+def write_state(path, state):
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        temporary = path + ".new"
+        with open(temporary, "w") as handle:
+            json.dump(state, handle)
+        os.replace(temporary, path)
+    except OSError:
+        pass
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--vtt", required=True, help="the subtitle file")
+    parser.add_argument("--socket", required=True, help="the player's ipc socket")
+    parser.add_argument("--state", default=STATE, help="where to write what plays")
+    parser.add_argument("--history", default=HISTORY,
+                        help="where to keep what was watched")
+    parser.add_argument("--title", default="", help="what is playing")
+    parser.add_argument("--kind", default="", help="anime, movie or tv")
+    parser.add_argument("--media-id", default="", help="the id in the catalogue")
+    parser.add_argument("--season", default="", help="the season, for a series")
+    parser.add_argument("--episode", default="", help="the episode, for a series")
+    args = parser.parse_args()
+
+    cues = read_cues(args.vtt)
+    try:
+        player = Player(args.socket)
+    except OSError:
+        return
+
+    last = None
+    shown = None
+    while True:
+        try:
+            position, duration = player.place()
+        except Exception:
+            break
+        caption = ""
+        for start, text in cues:
+            if start <= position + 0.15:
+                caption = text
+            else:
+                break
+        # The subtitle file may carry markup; a terminal wants words.
+        caption = re.sub(r"<[^>]+>", "", caption).strip()
+        if caption != last:
+            last = caption
+        state = {
+            "title": args.title,
+            "kind": args.kind,
+            "mediaId": args.media_id,
+            "season": args.season,
+            "episode": args.episode,
+            "caption": caption,
+            "position": round(position, 1),
+            "duration": round(duration, 1),
+            "updated": time.time(),
+        }
+        write_state(args.state, state)
+        if args.media_id:
+            remember(args.history, state)
+        if caption != shown:
+            shown = caption
+            say(caption)
+        time.sleep(0.25)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass

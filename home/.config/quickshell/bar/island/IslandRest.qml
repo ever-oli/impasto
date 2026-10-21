@@ -26,7 +26,10 @@ import "../modules"
 Item {
     id: root
 
-    readonly property var activities: ModuleService.activities
+    // A film in the terminal is an activity of its own, beside the clock.
+    readonly property var activities: PlayingService.playing
+        ? ModuleService.activities.concat("playing")
+        : ModuleService.activities
     readonly property bool split: root.activities.length === 1
 
     // A side under the pointer holds the glance off, so a click on the dot

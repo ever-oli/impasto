@@ -40,6 +40,7 @@ Singleton {
     // desktop faces are listed per theme in `DesktopService.faces`.
     readonly property var catalogue: [
         { id: "t3",            name: "T3 Code",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, Theme.cardRowGap + 40) },
+        { id: "playing",       name: "Now playing",   bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "volume",        name: "Volume",        bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "machine",       name: "CPU · RAM",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "battery",       name: "Battery",       bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
@@ -174,6 +175,8 @@ Singleton {
             return NotificationService.doNotDisturb ? "󰂛" : "󰂚"
         case "t3":
             return "󰚩"
+        case "playing":
+            return "󰐊"
         case "battery":
             return BatteryService.glyph
         case "machine":
@@ -242,7 +245,20 @@ Singleton {
     }
 
     function shows(id: string, when: var): bool {
-        return root.has(id)
+        if (!root.has(id))
+            return false
+        if (when === "running")
+            return root.runningOf(id)
+        return true
+    }
+
+    // A piece that is only there while it has something to say.
+    function runningOf(id: string): bool {
+        if (id === "recorder")
+            return RecorderService.recording
+        if (id === "playing")
+            return PlayingService.playing !== null
+        return false
     }
 
     // Beside the time: only a recording, which nothing else shows or stops,
@@ -356,6 +372,9 @@ Singleton {
             return true
         case "battery":
             return BatteryService.has
+        case "playing":
+            // The bar shows it only while something plays.
+            return PlayingService.playing !== null
         case "volume":
             return AudioService.ready
         case "bluetooth":

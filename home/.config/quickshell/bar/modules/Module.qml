@@ -35,7 +35,8 @@ Item {
         machine: "CloudModule.qml",
         idle: "CloudModule.qml",
         battery: "BatteryModule.qml",
-        usage: "UsageModule.qml"
+        usage: "UsageModule.qml",
+        playing: "PlayingModule.qml"
     })
 
     implicitWidth: holder.item ? holder.implicitWidth : 0
