@@ -124,7 +124,9 @@ Singleton {
     property string askText: ""
 
     readonly property Process watchProcess: Process {
-        stdout: StdioDiscard {}
+        stdout: StdioCollector {
+            // The answer is not wanted; the failure is, and it is in stderr.
+        }
         stderr: StdioCollector {
             onStreamFinished: {
                 const text = (text || "").trim().split("\n").filter(Boolean).pop() || ""

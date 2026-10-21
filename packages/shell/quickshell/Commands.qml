@@ -221,6 +221,16 @@ Scope {
         }
     }
 
+    // What the work is right now, for anyone who asks.
+    IpcHandler {
+        target: "work"
+
+        function get(): string {
+            return JSON.stringify({ jobs: AnimeService.jobs.length,
+                                   first: AnimeService.jobs[0] || null })
+        }
+    }
+
     // `notch ask "question" [screen|region]` asks from a script or a bind.
     IpcHandler {
         target: "ask"
