@@ -101,13 +101,13 @@ Singleton {
             if (id === "anime") {
                 // The catalogue, the way a streaming service opens it: a
                 // film icon, and the shelves under the notch.
-                out[id] = { name: "Catalogue", glyph: "󰄿",
+                out[id] = { name: "Catalogue", glyph: "󰿎",
                             action: () => Quickshell.execDetached(["qs", "ipc", "call", "panel", "open", "anime"]) }
                 continue
             }
             if (id === "theater") {
                 // ASCII Theater dropped under the notch (notch-theater).
-                out[id] = { name: "ASCII Theater", glyph: "󰿎",
+                out[id] = { name: "ASCII Theater", glyph: "🎭",
                             action: () => Quickshell.execDetached(["notch-theater", "toggle"]) }
                 continue
             }
