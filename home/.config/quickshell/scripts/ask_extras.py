@@ -1,6 +1,6 @@
 """ask_extras — what ask.py adds around a question: modes, the profile,
 reference files, the browser page, and pictures rendered from the answer."""
-import glob, tempfile, hashlib, json, os, re, sqlite3, subprocess, urllib.request
+import glob, tempfile, hashlib, json, os, re, sqlite3, subprocess, time, urllib.request
 
 HOME = os.path.expanduser("~")
 CONF = os.environ.get("XDG_CONFIG_HOME", f"{HOME}/.config") + "/notch"
@@ -258,3 +258,74 @@ def history(which, index=None):
             print(f"{rows[n]['q'][:120]}\t{n}")
     else:
         print(rows[int(index)]["a"])
+
+
+# ── THE REFLECTOR ────────────────────────────────────────────────────────────
+#
+# Harness2's lesson: an agent's harness (prompts, tools, memory, skills) can
+# be edited by the agent itself, and the edit is kept when it earns its
+# place. The notch's harness is files — the modes, the skills, the visual
+# rules, and lessons.md, which holds what the shell has learned. This is
+# the smallest piece of that: a turn that failed proposes a lesson, and a
+# free model writes it.
+
+LESSONS = os.path.join(CONF, "lessons.md")
+MODEL = os.environ.get("ASK_REFLECT_MODEL", "opencode/glm-5.3-flash-free")
+
+REFLECT = """An agent's answer failed. Write ONE lesson for the harness: what the agent
+should do differently next time, in the harness's own terms (a rule about
+tools, prompts, memory or the desktop). One sentence, concrete, no
+praise and no apology. If the failure needs no lesson, answer exactly:
+none
+
+Question: %s
+Failure: %s
+Answer so far: %s"""
+
+
+def reflect(question, answer, error):
+    """Ask a free model for a lesson, and keep it if it has one."""
+    prompt = REFLECT % (question[:400], str(error)[:400], (answer or "")[:800])
+    try:
+        run = subprocess.run(
+            ["opencode", "run", "--model", MODEL, prompt],
+            capture_output=True, timeout=180, text=True,
+            env=dict(os.environ, PATH=os.path.expanduser("~/.local/bin") + ":" + os.environ.get("PATH", "")))
+    except Exception:
+        return ""
+    lesson = (run.stdout or "").strip()
+    if not lesson or lesson.lower().startswith("none"):
+        return ""
+    if len(lesson) > 1200:
+        lesson = lesson[:1200].rsplit("\n", 1)[0]
+    stamp = time.strftime("%Y-%m-%d")
+    entry = ("\n## A lesson from a failed turn\n"
+             f"<!-- Ever: {stamp} — after a question that failed -->\n\n"
+             f"{lesson}\n")
+    try:
+        with open(LESSONS, "a") as handle:
+            handle.write(entry)
+    except OSError:
+        return ""
+    return lesson
+
+
+def sh(cmd):
+    try:
+        return subprocess.run(cmd, shell=True, capture_output=True, timeout=30).stdout
+    except subprocess.TimeoutExpired:
+        return b""
+
+def context():
+    win = sh("niri msg -j focused-window")
+    try:
+        w = json.loads(win or b"null") or {}
+        parts = [f"Focused window: {w.get('title')} ({w.get('app_id')})"]
+    except ValueError:
+        parts = []
+    for label, cmd in (("Clipboard", "wl-paste -n -t text"), ("Selected text", "wl-paste -p -n -t text")):
+        text = sh(cmd).decode(errors="replace").strip()
+        if text:
+            parts.append(f"{label}:\n{text[:2000]}")
+    return "\n\n".join(parts)
+

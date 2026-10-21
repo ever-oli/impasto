@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """ask.py — the notch assistant's bridge to its engine, chosen in
 ~/.config/notch/ask-backend: "cua" (opencode with the Cua Driver's computer,
-the default), "box" (an instabox machine in the cloud), "pi" (Pi with OptChat
-memory, whose tool calls go through notch-gate.ts) or "opencode" (ACP).
+the default), "box" (an instabox machine), "pi" (Pi with OptChat memory) or
+"opencode" (ACP).
 
 Reads one JSON command per line on stdin:
   {"op":"ask","text":..,"screen":"none|screen|region","context":bool,"act":bool}
@@ -242,25 +242,6 @@ def pi_prompt(text, images):
         raise RuntimeError(pi_box["error"])
     return {"stopReason": pi_box.get("stop", "end_turn")}
 
-def sh(cmd):
-    try:
-        return subprocess.run(cmd, shell=True, capture_output=True, timeout=30).stdout
-    except subprocess.TimeoutExpired:
-        return b""
-
-def context():
-    win = sh("niri msg -j focused-window")
-    try:
-        w = json.loads(win or b"null") or {}
-        parts = [f"Focused window: {w.get('title')} ({w.get('app_id')})"]
-    except ValueError:
-        parts = []
-    for label, cmd in (("Clipboard", "wl-paste -n -t text"), ("Selected text", "wl-paste -p -n -t text")):
-        text = sh(cmd).decode(errors="replace").strip()
-        if text:
-            parts.append(f"{label}:\n{text[:2000]}")
-    return "\n\n".join(parts)
-
 def compose(cmd):
     """The question with everything the mode and toggles put around it."""
     mode = extras.mode_of(cmd.get("mode", "general")) or {"id": "general", "body": "", "sources": [], "rules": "none"}
@@ -351,6 +332,10 @@ def answer_one(cmd):
         emit(type="done", stop=result.get("stopReason", "end_turn"))
     except RuntimeError as error:
         emit(type="error", text=str(error))
+        # Harness2's reflector: a failed turn may teach the harness a lesson.
+        threading.Thread(target=extras.reflect,
+                         args=(turn["q"], turn["a"], str(error)),
+                         daemon=True).start()
     os.makedirs(STATE, exist_ok=True)
     with open(HISTORY, "a") as f:
         f.write(json.dumps({"t": time.time(), "s": conversation[0], "mode": cmd.get("mode", "general"), "q": turn["q"], "a": turn["a"]}) + "\n")
@@ -375,6 +360,10 @@ elif BACKEND == "pi":
         emit(type="ready", backend="pi")
     except RuntimeError as error:
         emit(type="error", text=str(error))
+        # Harness2's reflector: a failed turn may teach the harness a lesson.
+        threading.Thread(target=extras.reflect,
+                         args=(turn["q"], turn["a"], str(error)),
+                         daemon=True).start()
 else:
   threading.Thread(target=reader, daemon=True).start()
   try:
