@@ -4,7 +4,6 @@
 38804	home/.config/quickshell/bar/Bar.qml
 28474	home/.config/quickshell/bar/island/LauncherPanel.qml
 22180	home/.config/quickshell/bar/widgets/DynamicIsland.qml
-24560	home/.config/quickshell/scripts/ask.py
 36006	home/.config/quickshell/services/ControlsService.qml
 29566	home/.config/quickshell/services/LauncherService.qml
 41289	home/.config/quickshell/services/SettingsService.qml
