@@ -94,7 +94,7 @@ Singleton {
             if (id === "anime") {
                 // ani-cli in the island terminal: the fzf browser, with mpv.
                 out[id] = { name: "Anime", glyph: "󰓤",
-                            action: () => Quickshell.execDetached(["notch-anime", "watch"]) }
+                            action: () => Quickshell.execDetached(["qs", "ipc", "call", "panel", "open", "anime"]) }
                 continue
             }
             if (id === "theater") {

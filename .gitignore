@@ -28,3 +28,6 @@ id_rsa
 id_ed25519
 home/.local/state/notch/theme.lock
 home/.config/quickshell/scripts/ask.py.bak*
+
+# The vendored mov-cli runs from a venv, not from the repository.
+home/.local/share/notch/mov-cli/.venv/

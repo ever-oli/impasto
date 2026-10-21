@@ -80,7 +80,6 @@ Rectangle {
     // before the panel inside it is loaded.
     readonly property var panelSizes: ({
         controls:   { width: ControlsService.panelWidth, height: ControlsService.panelHeight },
-        // Depends on the results when `launcherFits` is on.
         launcher:   { width: LauncherService.panelWidth,
                       height: LauncherService.panelHeight },
         // The control centre's volume, opened out.
@@ -93,10 +92,11 @@ Rectangle {
         // The key sheet's columns come from the compositor's bind list.
         keys:       { width: ShortcutService.sheetWidth, height: ShortcutService.sheetHeight },
         module:     root.moduleSize,
-        // A tray item's menu, a row per entry.
         tray:       { width: TrayService.menuWidth, height: TrayService.menuHeight },
         t3:         { width: T3Service.panelWidth, height: T3Service.panelHeight },
         picker:     { width: 900, height: 400 },
+        // Rows of posters, the big one at the top.
+        anime:      { width: 1040, height: 640 },
         ask:        { width: 760, height: AskService.messages.length ? 460 : 220 }
     })
 
@@ -119,7 +119,6 @@ Rectangle {
                         height: ModuleService.summaryHeight,
                         padding: 0 },
         osd:          { width: 260, height: Theme.capsuleHeight, padding: 10 },
-        // Taller when the notification brings buttons.
         notification: { width: NotificationService.toastWidth,
                         height: NotificationService.toastHeight,
                         padding: NotificationService.toastPadding },
@@ -155,6 +154,7 @@ Rectangle {
         t3: t3Panel,
         ask: askPanel,
         picker: pickerPanel,
+        anime: animePanel,
         module: moduleDetail,
         tray: trayMenu
     })
@@ -510,8 +510,7 @@ Rectangle {
         ControlsPanel {
             onClosed: root.close()
             onPanelRequested: panel => root.open(panel)
-            // Settings is a window, not a panel: close the island, then pass
-            // the request up.
+            // Settings is a window: close the island, then pass it up.
             onSettingsRequested: {
                 root.close()
                 root.settingsRequested()
@@ -526,6 +525,11 @@ Rectangle {
     }
 
     Component {
+        id: animePanel
+        AnimePanel { onClosed: root.close() }
+    }
+
+    Component {
         id: askPanel
         AskPanel { onClosed: root.close() }
     }
@@ -534,8 +538,7 @@ Rectangle {
         id: launcherPanel
         LauncherPanel {
             onClosed: root.close()
-            // `>` lists every panel, so the launcher hands the island over the
-            // same way the control centre does.
+            // `>` lists every panel, like the control centre.
             onPanelRequested: panel => root.open(panel)
             onSettingsRequested: {
                 root.close()
