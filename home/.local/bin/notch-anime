@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+"""notch-anime — an anime card for the bar, and ani-cli in the terminal.
+
+Two halves. The card is a free anime from AniList (no key, no account):
+its name, the year, its genres, a line of its story, the link. The other
+half is the watching: the island terminal opens and ani-cli runs in it —
+the fzf browser everyone knows, with mpv behind it.
+
+  notch-anime card           one anime, as a JSON line
+  notch-anime watch           open the terminal and browse with ani-cli
+  notch-anime search <text>  the anime whose name matches
+"""
+
+import json
+import os
+import random
+import subprocess
+import sys
+import time
+import urllib.request
+
+API = "https://graphql.anilist.co"
+UA = "notch/1.0 (the notch shell)"
+
+FIELDS = """
+title { romaji english }
+startDate { year }
+genres
+description
+siteUrl
+averageScore
+"""
+
+
+def ask(query, variables=None):
+    body = json.dumps({"query": query, "variables": variables or {}}).encode()
+    request = urllib.request.Request(API, data=body, headers={
+        "Content-Type": "application/json", "User-Agent": UA})
+    return json.load(urllib.request.urlopen(request, timeout=25))
+
+
+def pick(page, sort="POPULARITY_DESC", search=None):
+    """One anime: a page of the popular list, or a search."""
+    if search:
+        query = ("query($s:String){Page(perPage:5){media(type:ANIME,search:$s){"
+                 + FIELDS + "}}}")
+        media = ask(query, {"s": search})["data"]["Page"]["media"]
+        if not media:
+            raise RuntimeError(f"no anime called {search!r}")
+        return media[0]
+    query = ("query($p:Int){Page(page:$p,perPage:1){media(type:ANIME,sort:" + sort + "){"
+             + FIELDS + "}}}")
+    page = ask(query, {"p": page})["data"]["Page"]["media"]
+    if not page:
+        raise RuntimeError("no anime found")
+    return page[0]
+
+
+def card(media):
+    """The card's facts, in the shell's language."""
+    name = media.get("title") or {}
+    story = (media.get("description") or "").strip()
+    return {
+        "title": name.get("english") or name.get("romaji") or "—",
+        "romaji": name.get("romaji") or "",
+        "year": (media.get("startDate") or {}).get("year") or 0,
+        "genres": media.get("genres") or [],
+        "score": media.get("averageScore") or 0,
+        "description": story,
+        "url": media.get("siteUrl") or "",
+    }
+
+
+def terminal_open():
+    """Is the island terminal up?
+
+    The tmux session outlives the window, so the session's presence says
+    nothing; notch-term knows whether a window is really there.
+    """
+    try:
+        out = subprocess.run(["notch-term", "status"], capture_output=True,
+                             timeout=10).stdout
+        return bool(json.loads(out or "{}").get("open"))
+    except Exception:
+        return False
+
+
+def watch():
+    """Open the island terminal and browse with ani-cli in it."""
+    if not terminal_open():
+        subprocess.run(["notch-term", "toggle"], stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+        time.sleep(2.0)
+    # If ani-cli is already asking, typing again would search for the
+    # word "ani-cli" instead of opening the list.
+    try:
+        pane = subprocess.run(["tmux", "capture-pane", "-p", "-t", "notch"],
+                              capture_output=True, timeout=10).stdout
+        # Only the live lines: the history still holds the old prompt.
+        if any(b"Search anime" in line for line in pane.splitlines()[-3:]):
+            return
+    except Exception:
+        pass
+    subprocess.run(["tmux", "send-keys", "-t", "notch", "ani-cli", "Enter"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def main():
+    args = sys.argv[1:]
+    if not args or args[0] in ("help", "--help", "-h"):
+        sys.exit(__doc__)
+    if args[0] == "watch":
+        watch()
+        return
+    if args[0] == "search":
+        if len(args) < 2:
+            sys.exit("notch-anime search <text>")
+        print(json.dumps(card(pick(1, search=" ".join(args[1:])))))
+        return
+    # card: a page of the popular list, so the bar shows something new.
+    page = random.randint(1, 12)
+    print(json.dumps(card(pick(page))))
+
+
+if __name__ == "__main__":
+    main()
