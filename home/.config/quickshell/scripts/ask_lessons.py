@@ -107,6 +107,7 @@ def keep(lesson):
              f"<!-- Ever: {stamp} — kept because it worked -->\n\n"
              f"{lesson.strip()}\n")
     try:
+        os.makedirs(os.path.dirname(LESSONS), exist_ok=True)
         with open(LESSONS, "a") as handle:
             handle.write(entry)
     except OSError:

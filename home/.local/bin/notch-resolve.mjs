@@ -89,7 +89,7 @@ function keystream(seed, mediaId, length) {
     acc = checksum(seed);
   } else {
     schedule = Array(61);
-    let state = mix(digest(seed) ^ mix((checksum(mediaId) >>> 0) ^ 2654435769)) >>> 0;
+    let state = mix(digest(seed) ^ mix((Number(mediaId) >>> 0) ^ 2654435769)) >>> 0;
     for (let i = 0; i < 8; i++) {
       if (even(i)) {
         const slot = state % 61;
@@ -134,7 +134,7 @@ function unbase64(text) {
 
 function decrypt(text, seed, mediaId) {
   const payload = unbase64(text);
-  const key = keystream(seed, mediaId, payload.length);
+  const key = keystream(seed, Number(mediaId), payload.length);
   for (let i = 0; i < payload.length; i++) payload[i] ^= key[i];
   for (let i = 0; i < MAGIC.length; i++) {
     if (payload[i] !== MAGIC[i]) throw new Error("the answer did not open");
@@ -161,6 +161,9 @@ async function get(path, params) {
   return text;
 }
 
+export { keystream, decrypt, unbase64 };
+
+async function main() {
 const tmdb = argument("tmdb", "");
 const title = argument("title", "");
 const year = argument("year", "");
@@ -212,4 +215,9 @@ try {
 } catch (error) {
   console.error("notch-resolve: " + error.message);
   process.exit(1);
+}
+}
+
+if (process.argv[1] && process.argv[1].endsWith("notch-resolve.mjs")) {
+  await main();
 }
