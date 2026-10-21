@@ -33,6 +33,8 @@ Singleton {
     property int season: 1
     // The titles that were watched, so the catalogue can offer them again.
     property var continueShelf: []
+    // Remote work, from the boards that publish it without a key.
+    property var jobs: []
     // Everything the catalogue shows: what was watched, then the shelves.
     readonly property var shelves: continueShelf.concat(rows)
 
@@ -40,6 +42,9 @@ Singleton {
         root.busy = true
         rowsProcess.running = false
         rowsProcess.running = true
+        // The work, too: it is the other half of what the assistant is for.
+        jobsProcess.running = false
+        jobsProcess.running = true
     }
 
     function search(text: string): void {
@@ -86,6 +91,37 @@ Singleton {
         watchProcess.running = false
         watchProcess.running = true
     }
+
+    // The work worth doing: the job boards, mixed.
+    readonly property Process jobsProcess: Process {
+        command: ["python3", Quickshell.shellPath("scripts/stream.py"),
+                  "jobs", "--limit", "12"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    root.jobs = JSON.parse(text)
+                } catch (error) {
+                    root.jobs = []
+                }
+            }
+        }
+    }
+
+    // Ask about a posting: the assistant gets the whole thing.
+    function askAboutJob(job: var): void {
+        if (!job)
+            return
+        const posting = "A posting:\n" + job.title +
+            (job.company ? " at " + job.company : "") +
+            (job.location ? " (" + job.location + ")" : "") +
+            (job.salary ? " — " + job.salary : "") +
+            "\n" + job.url +
+            "\n\nWhat does this job want, and could I do it?"
+        Quickshell.execDetached(["qs", "ipc", "call", "ask", "open"])
+        root.askText = posting
+    }
+
+    property string askText: ""
 
     readonly property Process watchProcess: Process {
         stdout: StdioDiscard {}

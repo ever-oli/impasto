@@ -233,12 +233,55 @@ Item {
 
     // ── THE SHELVES ─────────────────────────────────────────────────────────
 
+    // The work: remote postings, from the boards that publish them
+    // without a key. One press asks the assistant about it.
+    ListView {
+        id: work
+
+        visible: AnimeService.jobs.length > 0
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: hero.bottom
+        anchors.topMargin: 10
+        height: 58
+        orientation: ListView.Horizontal
+        spacing: 8
+        clip: true
+        model: AnimeService.jobs
+
+        delegate: Rectangle {
+            required property var modelData
+
+            width: Math.min(320, work.width / 3)
+            height: 44
+            radius: 8
+            color: Theme.surface
+
+            Text {
+                anchors.left: parent.left
+                anchors.leftMargin: 10
+                anchors.right: parent.right
+                anchors.rightMargin: 10
+                anchors.verticalCenter: parent.verticalCenter
+                elide: Text.ElideRight
+                font.family: Theme.fontBar
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.text
+                text: modelData.title + (modelData.company ? " · " + modelData.company : "")
+            }
+
+            TapHandler {
+                onTapped: AnimeService.askAboutJob(modelData)
+            }
+        }
+    }
+
     ListView {
         id: shelves
 
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.top: hero.bottom
+        anchors.top: work.visible ? work.bottom : hero.bottom
         anchors.topMargin: 10
         anchors.bottom: parent.bottom
         clip: true

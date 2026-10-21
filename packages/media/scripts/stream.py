@@ -18,12 +18,16 @@ browser under the notch; for anime it is hianime, through ani-cli.
 import base64
 import json
 import os
+import sys
 import re
 import subprocess
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import jobs
 from pathlib import Path
 
 HOME = os.environ.get("HOME", os.path.expanduser("~"))
@@ -501,6 +505,14 @@ def main():
             episode = int(args[args.index("--episode") + 1])
         print(json.dumps(resolve_anime(" ".join(a for a in args[1:] if not a.isdigit()),
                                       episode)))
+    elif args[0] == "jobs":
+        limit = 24
+        query = ""
+        if "--limit" in args:
+            limit = int(args[args.index("--limit") + 1])
+        if "--query" in args:
+            query = args[args.index("--query") + 1]
+        print(json.dumps(jobs.jobs(limit, query)))
     elif args[0] == "sources":
         print(json.dumps({"sources": SOURCES, "state": source_state()}))
     elif args[0] == "seasons" and len(args) > 1:

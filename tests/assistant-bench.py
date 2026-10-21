@@ -100,6 +100,32 @@ def ask(question, timeout=900):
     return (run.stdout or "").strip()
 
 
+LONG = int(os.environ.get("BENCH_LONG", "30000"))
+
+
+def summarise(transcript, question):
+    """The long way round: cut, summarise each piece, reduce."""
+    tool = os.path.join(ROOT, "packages/tools/bin/notch-summarise")
+    work = os.path.join(os.environ.get("TMPDIR", "/tmp"), "notch-bench.txt")
+    try:
+        with open(work, "w") as handle:
+            handle.write(transcript)
+        run = subprocess.run(
+            [tool, work, "--instruct",
+             "Write the notes of this talk: an overview, the points that "
+             "matter, the decisions, the actions and their owners, the open "
+             "questions, and anything corrected later."],
+            capture_output=True, text=True, timeout=2400)
+        return (run.stdout or "").strip()
+    except subprocess.TimeoutExpired:
+        return ""
+    finally:
+        try:
+            os.unlink(work)
+        except OSError:
+            pass
+
+
 def judge(transcript, reference, notes):
     """The rubric, applied to our notes."""
     facts = [{"id": fact["id"], "statement": fact["statement"],
@@ -145,7 +171,12 @@ def run_task(reference_path, transcript_path, verbose=False):
         f"Context: {reference.get('context', '')}\n\n"
         f"--- the talk ---\n{transcript}\n--- end of the talk ---"
     )
-    notes = ask(question)
+    # A long talk is summarised in pieces, the way a long talk has to be:
+    # one pass over ninety minutes loses things.
+    if len(transcript) > LONG:
+        notes = summarise(transcript, question)
+    else:
+        notes = ask(question)
     if not notes:
         return {"id": reference.get("id"), "error": "the assistant did not answer"}
     if verbose:

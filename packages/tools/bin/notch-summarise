@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+"""notch-summarise — a long input, summarised the way a long input should be.
+
+One pass over 8,500 words loses things. The way round it is to cut the
+input into pieces, summarise each piece, and reduce the summaries into
+one — which is what Natively's pipeline does, and what our own bench
+showed we need at ninety minutes.
+
+    notch-summarise <file>            summarise a file
+    notch-summarise --text "..."       summarise a string
+    notch-summarise --instruct "..."   say what the summary is for
+
+The pieces are cut on a line boundary near the size, so a sentence is
+not split in half, and each piece is asked for the same thing: the facts
+that matter, and nothing invented.
+"""
+import argparse
+import os
+import subprocess
+import sys
+
+HOME = os.environ.get("HOME", os.path.expanduser("~"))
+MODEL = os.environ.get("ASK_REFLECT_MODEL", "opencode/glm-5.3-flash-free")
+PIECE = int(os.environ.get("SUMMARISE_PIECE", "12000"))
+ASK = os.path.join(HOME, ".local/bin/notch-ask-cli")
+
+HEAD = ("These are notes from part of a long talk. Write down what matters in "
+        "this part: the facts, the numbers, the decisions, the actions and "
+        "who owns them, and anything that was said to be corrected later. "
+        "Keep every qualifier (a number, an owner, a date, a condition). "
+        "Do not invent anything, and do not leave anything out.\n\n")
+
+
+def ask(prompt, text, timeout=600):
+    """One question to the engine."""
+    try:
+        run = subprocess.run(
+            [ASK, "--backend", os.environ.get("ASK_BACKEND", "opencode"),
+             prompt + "\n\n" + text],
+            capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return ""
+    return (run.stdout or "").strip()
+
+
+def pieces(text, size=PIECE):
+    """The text in pieces, cut near a line boundary."""
+    if len(text) <= size:
+        return [text]
+    out = []
+    at = 0
+    while at < len(text):
+        end = min(at + size, len(text))
+        if end < len(text):
+            cut = text.rfind("\n", at + size // 2, end)
+            if cut > at:
+                end = cut
+        out.append(text[at:end])
+        at = end
+    return out
+
+
+def reduce_(summaries, instruct=""):
+    """The summaries, made one."""
+    joined = "\n\n---\n\n".join(summaries)
+    prompt = ("These are summaries of the parts of one long talk. Write the "
+              "notes of the whole thing: a short overview, then the points "
+              "that matter, the decisions and actions and who owns them, the "
+              "open questions, and anything that was corrected later. Keep "
+              "every qualifier. Do not invent anything, and do not repeat "
+              "the same point twice.")
+    if instruct:
+        prompt += " " + instruct
+    return ask(prompt, joined)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("file", nargs="?", help="the file to summarise")
+    parser.add_argument("--text", help="the text to summarise")
+    parser.add_argument("--instruct", default="", help="what the summary is for")
+    args = parser.parse_args()
+
+    if args.text:
+        text = args.text
+    elif args.file:
+        try:
+            with open(args.file, encoding="utf-8", errors="replace") as handle:
+                text = handle.read()
+        except OSError as error:
+            sys.exit(f"notch-summarise: {error}")
+    else:
+        text = sys.stdin.read()
+    if not text.strip():
+        sys.exit("notch-summarise: nothing to summarise")
+
+    parts = pieces(text)
+    if len(parts) == 1:
+        print(ask(args.instruct or "Write the notes of this talk.", text))
+        return
+    summaries = []
+    for number, part in enumerate(parts, 1):
+        print(f"part {number} of {len(parts)}...", file=sys.stderr)
+        summary = ask(HEAD, part)
+        if summary:
+            summaries.append(summary)
+    if not summaries:
+        sys.exit("notch-summarise: the engine did not answer")
+    print(reduce_(summaries, args.instruct))
+
+
+if __name__ == "__main__":
+    main()
