@@ -7,6 +7,12 @@ CONF = os.environ.get("XDG_CONFIG_HOME", f"{HOME}/.config") + "/notch"
 CACHE = os.environ.get("XDG_CACHE_HOME", f"{HOME}/.cache") + "/notch/ask"
 PROFILE_CAP, FILES_BUDGET = 8000, 20000
 
+ACT = """You can operate Ever's Linux desktop (niri, Wayland) with shell commands:
+`notch-act` (run with no arguments for usage) types, presses keys, clicks and moves the
+mouse, focuses windows and takes a screenshot to observe. Work in small steps: observe,
+act, observe again. To see a screenshot, read the PNG file `notch-act look` prints. Screen
+pixels are logical (scale 1). Every command is shown to Ever for approval, so explain each one briefly."""
+
 VISUAL_RULES = """<visual_rules>
 When a diagram or chart makes the answer clearer, include ONE fenced block:
 ```mermaid  for flows, sequences, ER and state diagrams (valid mermaid syntax), or
@@ -232,3 +238,23 @@ def visuals(answer):
         except Exception as error:  # a broken block falls back to its source
             found.append((kind, None, f"{source}\n(could not render: {error})"))
     return found
+
+
+# ── HISTORY ──────────────────────────────────────────────────────────────────
+def history(which, index=None):
+    """`ask.py history` lists past questions (newest first, "question<TAB>n");
+    `ask.py answer n` prints that answer. The palette's Ask history uses both."""
+    path = os.path.join(os.environ.get("XDG_STATE_HOME", f"{HOME}/.local/state"),
+                         "notch", "ask-history.jsonl")
+    rows = []
+    if os.path.exists(path):
+        for line in open(path):
+            try:
+                rows.append(json.loads(line))
+            except ValueError:
+                pass
+    if which == "history":
+        for n in range(len(rows) - 1, -1, -1):
+            print(f"{rows[n]['q'][:120]}\t{n}")
+    else:
+        print(rows[int(index)]["a"])

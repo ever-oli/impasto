@@ -41,11 +41,6 @@ PI_STATE = os.environ.get("ASK_PI_STATE", f"{STATE}/pi")
 PI_SESSION = os.environ.get("ASK_PI_SESSION", "notch")
 AGENT = os.environ.get("ASK_AGENT", f"{HOME}/.local/share/mise/installs/opencode/latest/node_modules/.bin/opencode")
 SAFE = {"read", "search", "fetch", "think"}
-ACT = f"""You can operate Ever's Linux desktop (niri, Wayland) with shell commands:
-`notch-act` (run with no arguments for usage) types, presses keys, clicks and moves the
-mouse, focuses windows and takes a screenshot to observe. Work in small steps: observe,
-act, observe again. To see a screenshot, read the PNG file `notch-act look` prints. Screen
-pixels are logical (scale 1). Every command is shown to Ever for approval, so explain each one briefly."""
 
 # `ask.py history` lists past questions (newest first, "question<TAB>n");
 # `ask.py answer n` prints that answer. The palette's Ask history uses both.
@@ -57,12 +52,7 @@ if sys.argv[1:2] == ["modes"]:
     print(json.dumps([{k: m[k] for k in ("id", "name", "icon", "sources")} for m in extras.modes()]))
     sys.exit()
 if sys.argv[1:2] in (["history"], ["answer"]):
-    rows = [json.loads(l) for l in open(HISTORY)] if os.path.exists(HISTORY) else []
-    if sys.argv[1] == "history":
-        for n in range(len(rows) - 1, -1, -1):
-            print(f"{rows[n]['q'][:120]}\t{n}")
-    else:
-        print(rows[int(sys.argv[2])]["a"])
+    extras.history(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)
     sys.exit()
 
 out_lock = threading.Lock()
@@ -282,7 +272,7 @@ def compose(cmd):
     if "files" in mode["sources"]:
         parts.append(extras.files_block(mode["id"], cmd.get("text", "")))
     if act_mode[0]:
-        parts.append(ACT)
+        parts.append(extras.ACT)
     lessons = f"{CONF}/lessons.md"
     if mode.get("act") == "on" and os.path.exists(lessons):
         parts.append(f"<lessons source=\"Ever's past corrections\">\n{open(lessons).read()[-6000:]}\n</lessons>")
