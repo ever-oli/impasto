@@ -172,16 +172,16 @@ Singleton {
 
     // ── BAR LAYOUT ──────────────────────────────────────────────────────────
     //
-    // One style (Spread, island notched into the top edge); the layout is what is on it, as two
-    // lists either side of the island.
+    // One style (Spread, island notched into the top edge); the layout is
+    // what is on it, as two lists either side of the island.
     readonly property bool notched: true
 
-    // Used while `barLeft`/`barRight` are null. `workspaces` is the strip,
-    // `tray` the applications' icons and `split` starts a new capsule; none is
-    // a module. The tray is not drawn while it is empty.
+    // Used while `barLeft`/`barRight` are null: `workspaces` is the strip,
+    // `tray` the applications' icons, `split` starts a new capsule.
+    // The tray is not drawn while it is empty.
     readonly property var barDefaults: ({
         left: ["workspaces", "terminal", "theater"],
-        right: ["notifications", "network", "machine", "usage", "idle", "controls", "battery"]
+        right: ["notifications", "network", "machine", "idle", "controls", "battery"]
     })
 
     // An entry is a bare id, or `{ id, shape, figure, when }` when the piece
