@@ -182,7 +182,9 @@ def mermaid(source, out):
     # chrome-headless-shell, fetched once by @puppeteer/browsers (see setup).
     shell = sorted(glob.glob(f"{HOME}/.cache/notch/chrome/chrome-headless-shell/*/*/chrome-headless-shell"))
     json.dump({"executablePath": shell[-1] if shell else "/opt/helium-browser-bin/helium",
-               "headless": "shell", "args": ["--no-sandbox"]}, open(puppet, "w"))
+               "headless": True,
+               # Its own profile: the user's running Helium holds the default one and mmdc would hang.
+               "args": ["--no-sandbox", f"--user-data-dir={CACHE}/mmdc-profile", "--ozone-platform=headless"]}, open(puppet, "w"))
     conf = f"{CACHE}/mermaid.json"
     json.dump({"theme": "base", "themeVariables": {"background": paper, "primaryColor": paper, "primaryTextColor": ink,
                "primaryBorderColor": ink, "lineColor": ink, "fontFamily": "Tinos Nerd Font, serif"}}, open(conf, "w"))

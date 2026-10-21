@@ -393,12 +393,15 @@ def answer_one(cmd):
     act_mode[0] = bool(cmd.get("act")) or (extras.mode_of(cmd.get("mode", "general")) or {}).get("act") == "on"
     text = compose(cmd)
     blocks = []
-    # JPEG, not PNG: Pi keeps every image in the durable chat, so keep it small.
-    shot = {"screen": "grim -o Virtual-1 -t jpeg -q 70 -", "region": 'g=$(slurp) && grim -g "$g" -t jpeg -q 70 -'}.get(cmd.get("screen"))
+    # OCR reads the full-size PNG; the model gets a half-size JPEG, which vision
+    # models answer fast and which keeps Pi's durable chat small.
+    shot = {"screen": "grim -o Virtual-1 -", "region": 'g=$(slurp) && grim -g "$g" -'}.get(cmd.get("screen"))
     if shot:
         png = sh(shot)
         if png:
-            blocks.append({"type": "image", "mimeType": "image/jpeg", "data": base64.b64encode(png).decode()})
+            small = sh("grim -o Virtual-1 -s 0.5 -t jpeg -q 70 -") if cmd.get("screen") == "screen" else b""
+            img, mime = (small, "image/jpeg") if small else (png, "image/png")
+            blocks.append({"type": "image", "mimeType": mime, "data": base64.b64encode(img).decode()})
             # The text on it too, so a model without vision still sees the screen.
             seen = subprocess.run(["tesseract", "stdin", "-"], input=png, capture_output=True).stdout.decode(errors="replace").strip()
             if seen:
