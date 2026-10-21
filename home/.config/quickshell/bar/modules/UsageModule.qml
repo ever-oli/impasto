@@ -18,7 +18,7 @@ Item {
         id: card
         anchors.fill: parent
         title: "OpenRouter"
-        subtitle: UsageService.ok ? (UsageService.isLow ? "Credit is low: top up at openrouter.ai/credits" : "Pi's model credit")
+        subtitle: UsageService.ok ? (UsageService.isLow ? "Credit is low: top up at openrouter.ai/credits" : "OpenRouter credit (Pi uses :free models)")
                                   : `Unavailable (${UsageService.error || "loading"})`
 
         CardFact { name: "Credit left"; value: UsageService.money(UsageService.remaining) }

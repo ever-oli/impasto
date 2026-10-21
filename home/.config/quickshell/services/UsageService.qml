@@ -22,7 +22,10 @@ Singleton {
     property real today: 0
     property real month: 0
     readonly property real low: 1.0
-    readonly property bool isLow: root.ok && root.remaining >= 0 && root.remaining < root.low
+    // Pi runs on OpenRouter :free models, so low credit is not a problem: no
+    // warning, the meter stays. Set true again if Pi goes back to a paid model.
+    readonly property bool paid: false
+    readonly property bool isLow: root.paid && root.ok && root.remaining >= 0 && root.remaining < root.low
     property bool warned: false
 
     function money(v: real): string { return v < 0 ? "?" : "$" + v.toFixed(2) }
