@@ -55,7 +55,7 @@ Singleton {
 
     // The grid when nothing is chosen, which the default layout fills.
     readonly property int defaultColumns: 6
-    readonly property int defaultRows: 8
+    readonly property int defaultRows: 5
 
     // Not `Array.isArray`: lists read back from the settings file are wrapped
     // sequences that behave like arrays but fail that check.
@@ -96,10 +96,8 @@ Singleton {
             .filter(id => root.topEntry(id) !== null)
         if (kept && root.stored(kept.left) && root.stored(kept.right))
             return { left: clean(kept.left), right: clean(kept.right) }
-        return {
-            left: SessionService.actions.map(action => action.id),
-            right: clean(root.buttons)
-        }
+        // Default: no top row at all; the panel starts at the text size slider.
+        return { left: [], right: [] }
     }
 
     readonly property var topLeft: root.topSides.left.map(id => root.topEntry(id))
@@ -391,12 +389,11 @@ Singleton {
     // weather, calendar and the shortcuts in the middle; notifications on the
     // right.
     readonly property var defaultBlocks: [
-        { id: "toggles",       col: 0, row: 0, size: "2x3" },
-        { id: "textsize",      col: 0, row: 3, size: "2x1" },
-        { id: "clock",         col: 0, row: 4, size: "2x2" },
-        { id: "session",       col: 0, row: 6, size: "2x1" },
-        { id: "shortcuts",     col: 0, row: 7, size: "2x1" },
-        { id: "notifications", col: 2, row: 0, size: "2x8" }
+        { id: "textsize",      col: 0, row: 0, size: "2x1" },
+        { id: "clock",         col: 0, row: 1, size: "2x2" },
+        { id: "session",       col: 0, row: 3, size: "2x1" },
+        { id: "shortcuts",     col: 0, row: 4, size: "2x1" },
+        { id: "notifications", col: 2, row: 0, size: "2x4" }
     ]
 
     function entry(id: string): var {
