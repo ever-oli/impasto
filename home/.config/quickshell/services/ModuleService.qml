@@ -61,7 +61,7 @@ Singleton {
         const out = {}
         for (const id of root.buttonIds) {
             if (id === "controls") {
-                out[id] = { name: "Control centre", glyph: "󰄛", panel: "controls" }
+                out[id] = { name: "Control centre", glyph: "󰊠", panel: "controls" }
                 continue
             }
             if (id === "capture") {
