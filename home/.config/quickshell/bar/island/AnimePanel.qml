@@ -178,6 +178,25 @@ Item {
                 }
             }
 
+            // The seasons of a series, then the episodes of the one that
+            // is picked: the way a streaming service shows them.
+            Flow {
+                visible: hero.show && hero.show.kind === "tv" && AnimeService.seasons.length > 0
+                spacing: 6
+                width: parent.width
+
+                Repeater {
+                    model: AnimeService.seasons
+
+                    PillButton {
+                        text: "S" + modelData.season
+                        horizontalPadding: 8
+                        active: AnimeService.season === modelData.season
+                        onClicked: AnimeService.pickSeason(modelData.season)
+                    }
+                }
+            }
+
             // The episodes of a series, the way a streaming service shows
             // them: pick one, then watch it.
             Flow {
@@ -211,7 +230,7 @@ Item {
         anchors.bottom: parent.bottom
         clip: true
         spacing: 14
-        model: AnimeService.rows
+        model: AnimeService.shelves
         boundsBehavior: Flickable.StopAtBounds
 
         delegate: Item {

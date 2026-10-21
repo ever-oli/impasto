@@ -62,6 +62,28 @@ FILM_SHELVES = [
 ]
 
 
+# Where a title comes from. The registry is small on purpose: a source
+# that breaks should be one line to remove, and the self-check says which
+# ones answer today.
+SOURCES = {
+    "anime": ["hianime"],
+    "film": ["vidsrc"],
+    "tv": ["vidsrc"],
+}
+
+
+def source_state():
+    """How the sources are doing, as the last check left it."""
+    path = os.path.join(os.environ.get("XDG_STATE_HOME",
+                                       os.path.expanduser("~/.local/state")),
+                         "notch", "sources.json")
+    try:
+        with open(path) as handle:
+            return json.load(handle)
+    except (OSError, ValueError):
+        return {}
+
+
 def token():
     """The TMDB read token, if the user has given the notch one."""
     if os.environ.get("TMDB_TOKEN"):
@@ -145,6 +167,19 @@ def tmdb(path, query=None):
         return get_json(url, {"Authorization": f"Bearer {key}"})
     except (urllib.error.URLError, OSError, ValueError):
         return None
+
+
+def seasons(media_id):
+    """The seasons of a series, so the panel can offer more than the first."""
+    found = tmdb(f"/tv/{media_id}") or {}
+    out = []
+    for entry in found.get("seasons", []):
+        number = entry.get("season_number")
+        if number is None or number == 0:
+            continue
+        out.append({"season": number, "name": entry.get("name") or "",
+                    "episodes": entry.get("episode_count") or 0})
+    return out
 
 
 def episodes(media_id, season=1):
@@ -376,7 +411,8 @@ def resolve_anime(text, episode=1, mode="sub"):
     if marks:
         subtitle = marks[0]
     return {"url": source.group(1).replace("\\/", "/"), "referer": referer,
-            "subtitle": subtitle, "title": title, "episode": episode}
+            "subtitle": subtitle, "title": title, "episode": episode,
+            "source": "hianime"}
 
 
 def open_in_browser(url):
@@ -465,6 +501,10 @@ def main():
             episode = int(args[args.index("--episode") + 1])
         print(json.dumps(resolve_anime(" ".join(a for a in args[1:] if not a.isdigit()),
                                       episode)))
+    elif args[0] == "sources":
+        print(json.dumps({"sources": SOURCES, "state": source_state()}))
+    elif args[0] == "seasons" and len(args) > 1:
+        print(json.dumps(seasons(args[1])))
     elif args[0] == "episodes" and len(args) > 1:
         season = 1
         if "--season" in args:

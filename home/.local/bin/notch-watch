@@ -128,16 +128,39 @@ def main():
     title = ""
     season = ""
     episode = 1
-    if "--episode" in args:
-        episode = int(args[args.index("--episode") + 1])
     referer = None
     subtitle = ""
-    if "--referer" in args:
-        referer = args[args.index("--referer") + 1]
+    start = ""
+
+    # The flags, taken out of the way; what is left is the title.
+    flags = {}
+    words = []
+    index = 1
+    while index < len(args):
+        word = args[index]
+        if word.startswith("--"):
+            name = word[2:]
+            if index + 1 < len(args) and not args[index + 1].startswith("--"):
+                flags[name] = args[index + 1]
+                index += 2
+                continue
+            flags[name] = "1"
+        else:
+            words.append(word)
+        index += 1
+    if "episode" in flags:
+        episode = int(flags["episode"])
+    if "referer" in flags:
+        referer = flags["referer"]
+    if "start" in flags:
+        start = flags["start"]
+    if "media-id" in flags:
+        media_id = flags["media-id"]
+    if "kind" in flags:
+        media_kind = flags["kind"]
 
     if kind == "anime":
-        title = " ".join(a for a in args[1:]
-                         if not a.isdigit() and a != "--episode")
+        title = " ".join(words)
         try:
             found = resolve(title, episode)
         except Exception as error:
@@ -147,12 +170,13 @@ def main():
         subtitle = found.get("subtitle", "")
         title = found.get("title", title)
     elif kind == "film":
-        media_kind = args[1]                       # movie or tv
-        media_id = args[2]
-        title = args[3] if len(args) > 3 else ""
-        year = args[4] if len(args) > 4 else ""
-        if "--season" in args:
-            season = args[args.index("--season") + 1]
+        # notch-watch film <movie|tv> <id> "<title>" <year> [flags]
+        media_kind = words[0] if words else "movie"
+        media_id = words[1] if len(words) > 1 else media_id
+        title = words[2] if len(words) > 2 else ""
+        year = words[3] if len(words) > 3 else ""
+        if "season" in flags:
+            season = flags["season"]
         try:
             found = resolve_film(media_kind, media_id, title, year, season, episode)
         except Exception as error:
@@ -162,7 +186,7 @@ def main():
         subtitle = found.get("subtitle", "")
         title = found.get("title", title)
     elif kind == "url":
-        url = args[1]
+        url = words[0] if words else ""
     else:
         print(__doc__)
         sys.exit(0)
@@ -184,6 +208,8 @@ def main():
         command += f" --season {season}"
     if episode:
         command += f" --episode {episode}"
+    if start:
+        command += f" --start {start}"
     in_terminal(command)
     print(json.dumps({"url": url, "referer": referer, "subtitle": subtitle,
                       "episode": episode}))

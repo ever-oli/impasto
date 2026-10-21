@@ -39,10 +39,11 @@ def main():
     media_id = ""
     season = ""
     episode = ""
+    start = ""
     i = 0
     while i < len(args):
         if args[i] in ("--referer", "--title", "--sub", "--kind", "--media-id",
-                       "--season", "--episode"):
+                       "--season", "--episode", "--start"):
             name = args[i][2:]
             i += 1
             value = args[i]
@@ -60,6 +61,8 @@ def main():
                 season = value
             elif name == "episode":
                 episode = value
+            elif name == "start":
+                start = value
         elif args[i] in ("--url", "-u"):
             i += 1
             source = args[i]
@@ -84,6 +87,9 @@ def main():
         command.append(f"--force-media-title={title}")
     if subtitle:
         command.append(f"--sub-file={subtitle}")
+    if start:
+        # Where the film was left: the picture picks up from there.
+        command.append(f"--start={start}")
 
     socket_path = None
     helper = None
