@@ -173,7 +173,8 @@ Item {
                 PillButton {
                     text: "trailer"
                     icon: "󰜕"
-                    onClicked: {}
+                    enabled: hero.show && hero.show.kind !== "anime"
+                    onClicked: AnimeService.trailer(hero.show)
                 }
             }
         }

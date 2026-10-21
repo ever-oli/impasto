@@ -58,6 +58,15 @@ Singleton {
                                 "play", kind, String(item.id)])
     }
 
+    // A trailer for one title, from TMDB's videos, opened in the browser.
+    function trailer(item: var): void {
+        if (!item || item.kind === "anime")
+            return
+        Quickshell.execDetached(["python3", Quickshell.shellPath("scripts/stream.py"),
+                                "trailer", item.kind === "tv" ? "tv" : "movie",
+                                String(item.id)])
+    }
+
     readonly property Process rowsProcess: Process {
         command: ["python3", Quickshell.shellPath("scripts/stream.py"), "rows"]
         stdout: StdioCollector {

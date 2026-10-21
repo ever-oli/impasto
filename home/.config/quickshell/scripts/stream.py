@@ -237,6 +237,42 @@ def search(text):
     print(json.dumps({"items": found}))
 
 
+def open_in_browser(url):
+    """Put a page in the browser, which is the player here.
+
+    Chromium keeps its own wayland app id, so niri cannot place the window
+    by rule; it opens where the browser puts it.
+    """
+    browser = os.environ.get("NOTCH_BROWSER", "helium-browser")
+    try:
+        subprocess.Popen([browser, "--new-window", "--class=notch-player", url],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        pass
+
+
+def trailer(kind, media_id):
+    """A trailer for one title, from TMDB's videos."""
+    if kind not in ("movie", "tv"):
+        sys.exit(f"stream.py: unknown kind {kind!r}")
+    data = tmdb(f"/{kind}/{media_id}/videos")
+    clips = [v for v in (data or {}).get("results", []) if v.get("site") == "YouTube"]
+    if not clips:
+        sys.exit("stream.py: no trailer for that title")
+    best = None
+    for wanted in ("Trailer", "Teaser"):
+        for clip in clips:
+            if clip.get("type") == wanted:
+                best = clip
+                break
+        if best:
+            break
+    best = best or clips[0]
+    url = f"https://www.youtube.com/watch?v={best.get('key')}"
+    open_in_browser(url)
+    print(url)
+
+
 def play(kind, media_id, season=None, episode=None):
     """The page to open for one title.
 
@@ -254,14 +290,8 @@ def play(kind, media_id, season=None, episode=None):
             url = {"videasy": f"https://player.videasy.to/tv/{media_id}/{season or 1}/{episode or 1}",
                    "vidking": f"https://www.vidking.net/embed/tv/{media_id}/{season or 1}/{episode or 1}",
                    "vidsrc": f"https://vsembed.su/embed/tv/{media_id}/{season or 1}/{episode or 1}"}[source]
-        # The browser is the player: the embed brings its own player, and
-        # the notch-player class is what drops it under the notch.
-        browser = os.environ.get("NOTCH_BROWSER", "helium-browser")
-        try:
-            subprocess.Popen([browser, "--new-window", "--class=notch-player", url],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except OSError:
-            pass
+        # The browser is the player: the embed brings its own player.
+        open_in_browser(url)
         print(url)
         return
     if kind == "anime":
@@ -287,6 +317,8 @@ def main():
     elif args[0] == "play" and len(args) > 2:
         play(args[1], args[2], args[3] if len(args) > 3 else None,
              args[4] if len(args) > 4 else None)
+    elif args[0] == "trailer" and len(args) > 2:
+        trailer(args[1], args[2])
     elif args[0] == "token":
         TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
         if len(args) > 1:
