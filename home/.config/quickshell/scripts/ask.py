@@ -75,8 +75,7 @@ OPENCODE = {"permission": {"edit": "ask", "bash": "ask", "webfetch": "allow"},
             "model": FREE_MODEL}
 env = dict(os.environ, OPENCODE_CONFIG_CONTENT=json.dumps(OPENCODE))
 if BACKEND == "cua":
-    # The Cua Driver (MIT, cua.ai) hands the agent a computer: the desktop,
-    # its windows, and the browser over CDP. Free, no account.
+    # The Cua Driver (MIT, cua.ai): the desktop, its windows, the browser.
     OPENCODE["mcp"] = {"servers": {"cua": {
         "type": "local",
         "command": [os.path.join(HOME, ".local/bin/cua-driver"), "mcp"],
@@ -92,10 +91,11 @@ if BACKEND == "pi":
                PATH=os.path.dirname(PI) + ":" + os.environ.get("PATH", ""))
     agent = subprocess.Popen([PI, "--mode", "rpc", "--session-dir", PI_STATE, "--session-id", PI_SESSION,
                               "--optchat-channel", "notch", "--no-context-files",
-                              # Low thinking keeps notch answers fast; ASK_PI_THINKING=medium for more.
                               "--thinking", os.environ.get("ASK_PI_THINKING", "low"),
-                              "-e", os.path.join(os.path.dirname(os.path.abspath(__file__)), "notch-gate.ts")]
-                             + (["--model", os.environ["ASK_PI_MODEL"]] if os.environ.get("ASK_PI_MODEL") else []),
+                              "-e", os.path.join(os.path.dirname(os.path.abspath(__file__)), "notch-gate.ts"),
+                              # A free model, or the one asked for.
+                              "--provider", "openrouter", "--model",
+                              os.environ.get("ASK_PI_MODEL", "minimax/minimax-m3.1-flash:free")],
                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                              env=env, cwd=HOME)
 else:
@@ -105,8 +105,7 @@ next_id, waiting, pending = [0], {}, {}
 session, act_mode, turn = [None], [False], {"q": "", "a": ""}
 # {"op":"answer","allow":true,"session":true} approves the rest of this session.
 auto_ok = [False]
-# Rolling context: after ROLL turns the session is summarised and replaced by
-# a fresh one seeded with the summary and the last KEEP turns.
+# Rolling context: summarised every ROLL turns, replaced by a fresh session.
 ROLL, KEEP = 12, 4
 turns, seed, captured = [], [""], [None]
 quiet = [False]
