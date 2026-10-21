@@ -179,7 +179,7 @@ Singleton {
     // Used while `barLeft`/`barRight` are null: `workspaces` is the strip,
     // `tray` the applications' icons, `split` starts a new capsule.
     readonly property var barDefaults: ({
-        left: ["workspaces", "terminal", "theater", "anime", { id: "playing", when: "running" }],
+        left: ["workspaces", "theater", "anime"],
         right: ["notifications", "network", "machine", "idle", "controls", "battery"]
     })
 
