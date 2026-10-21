@@ -42,3 +42,6 @@ home/.local/share/notch/mov-cli/plugins/*.egg-info/
 
 # A secret: the TMDB read token the user gave the notch.
 home/.config/notch/*.key
+
+# The state is the machine's, not the repository's.
+home/.local/state/

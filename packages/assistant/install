@@ -1,3 +1,4 @@
 scripts .config/quickshell/scripts
 notch .config/notch
 bin .local/bin
+pi/notch .pi/agent/skills/notch
