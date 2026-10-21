@@ -380,6 +380,7 @@ Singleton {
     readonly property var catalogue: [
         { id: "toggles",       name: "Toggles",       icon: "󰨚", sizes: ["2x2", "2x3", "2x4", "3x2", "3x3", "4x2", "4x3"] },
         { id: "volume",        name: "Volume",        icon: "󰕾", sizes: ["2x1", "3x1", "4x1"] },
+        { id: "textsize",      name: "Text size",     icon: "󰛂", sizes: ["2x1", "3x1", "4x1"] },
         { id: "notifications", name: "Notifications", icon: "󰂚", sizes: ["3x2", "3x3", "2x4", "3x4", "2x6", "2x8", "3x8"] },
         { id: "clock",         name: "Clock",         icon: "󰥔", sizes: ["1x2", "2x2", "2x4"] },
         { id: "session",       name: "Session",       icon: "󰐥", sizes: ["1x1", "2x1", "3x1", "1x2", "2x2", "4x1"] },
@@ -391,7 +392,7 @@ Singleton {
     // right.
     readonly property var defaultBlocks: [
         { id: "toggles",       col: 0, row: 0, size: "2x3" },
-        { id: "volume",        col: 0, row: 3, size: "2x1" },
+        { id: "textsize",      col: 0, row: 3, size: "2x1" },
         { id: "clock",         col: 0, row: 4, size: "2x2" },
         { id: "session",       col: 0, row: 6, size: "2x1" },
         { id: "shortcuts",     col: 0, row: 7, size: "2x1" },

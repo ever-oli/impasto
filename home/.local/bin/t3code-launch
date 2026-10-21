@@ -1,0 +1,4 @@
+#!/bin/bash
+# Launch T3 Code. The app runs its own server; the old t3code-web user service
+# stays disabled (it crash-looped beside the app), so nothing is stopped or started.
+exec t3code-nightly "$@"

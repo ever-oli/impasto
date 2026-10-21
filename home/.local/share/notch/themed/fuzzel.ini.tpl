@@ -1,6 +1,6 @@
 # written by notch-theme
 [main]
-font=AnnotationM Nerd Font:size=12
+font=AnnotationM Nerd Font:size={{ font_size_menu }}
 terminal=ghostty -e
 [colors]
 background={{ background_strip }}f2

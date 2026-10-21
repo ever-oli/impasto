@@ -17,7 +17,7 @@ switches from interleaving.
 Reads ~/.local/share/notch/themes/<name>/colors.toml; the shell (bar and
 notifications) watches ~/.local/state/notch/theme.json. Templates go to
 ghostty (USR2), helix theme "notch" (USR1), niri include, fuzzel, btop (USR2), fastfetch,
-fzf (sourced by .bashrc), gtk 3/4 css, qt6ct (if installed) and T3 Code;
+fzf (sourced by .bashrc), starship, lazygit (bat uses the ansi theme, so it follows Ghostty), gtk 3/4 css, qt6ct (if installed) and T3 Code;
 gsettings handles libadwaita light/dark and icons; Helium gets a Chromium
 color policy through the notch-browser-color helper.
 The wallpaper runs under swaybg as a user service so it survives this script.
@@ -124,6 +124,13 @@ def pairs(c):
         out += [("bar", f"{fg} on {g}", bar[fg], colour, 4.5) for g, colour in isl]
     out += [("bar", "workspace dim dot on island", bar["indicatorDim"], bar["island"], 3),
             ("bar", "accentText on accent", bar["accentText"], bar["accent"], 4.5)]
+    # The orb: labels on the wheel and its hub, the chosen slot's accent icon
+    # and ring on the selected row, idle icons and hint on the island.
+    out += [("orb", "label on wheel", bar["text"], bar["island"], 4.5),
+            ("orb", "label on hub", bar["text"], bar["islandSurface"], 4.5),
+            ("orb", "hint on wheel", bar["textMuted"], bar["island"], 4.5),
+            ("orb", "chosen icon on selected slot", bar["accent"], bar["islandSurfaceHover"], 3),
+            ("orb", "chosen label on selected slot", bar["text"], bar["islandSurfaceHover"], 4.5)]
     for i in list(range(1, 16)):
         out.append(("ghostty", f"color{i} on background", c[f"color{i}"], bg, 4.5))
     out += [("ghostty", "foreground on background", c["foreground"], bg, 4.5),
@@ -189,6 +196,8 @@ TARGETS = {
     "gtk.css.tpl": [f"{CFG}/gtk-3.0/gtk.css", f"{CFG}/gtk-4.0/gtk.css"],
     "qt6ct.conf.tpl": f"{CFG}/qt6ct/colors/notch.conf",
     "t3code.json.tpl": f"{HOME}/.t3/userdata/themes/notch.json",
+    "starship.toml.tpl": f"{CFG}/starship.toml",
+    "lazygit.yml.tpl": f"{CFG}/lazygit/config.yml",
 }
 
 
@@ -234,8 +243,45 @@ def hooks(c, name):
             if subprocess.run(["pgrep", "-x", "helium"], stdout=subprocess.DEVNULL).returncode == 0:
                 subprocess.Popen(["helium-browser", "--refresh-platform-policy", "--no-startup-window"],
                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    return {"ghostty": ghostty, "helix": helix, "niri": niri, "btop": btop, "fzf": fzf,
-            "gtk": gtk, "icons": icons, "qt": qt, "browser": browser}
+    def fonts():
+        n = c["font_size"]
+        run("gsettings", "set", "org.gnome.desktop.interface", "font-name", f"Adwaita Sans {n}")
+        run("gsettings", "set", "org.gnome.desktop.interface", "monospace-font-name", f"Adwaita Mono {n}")
+        run("gsettings", "set", "org.gnome.desktop.interface", "document-font-name", f"Adwaita Sans {n}")
+        q = f"{CFG}/qt6ct/qt6ct.conf"
+        if shutil.which("qt6ct") or os.path.exists(q):
+            text = open(q).read() if os.path.exists(q) else ""
+            if "[Fonts]" not in text:
+                text = text.rstrip("\n") + "\n[Fonts]\n"
+            text = re.sub(r"^(general|fixed)=.*\n", "", text, flags=re.M)
+            text = text.replace("[Fonts]\n", f'[Fonts]\ngeneral="Adwaita Sans,{n},-1,5,400,0,0,0,0,0,0,0,0,0,0,1"\n'
+                                f'fixed="Adwaita Mono,{n},-1,5,400,0,0,0,0,0,0,0,0,0,0,1"\n', 1)
+            write(q, text)
+        m = f"{CFG}/mako/config"
+        if os.path.exists(m):
+            ensure_line(m, f"font=AnnotationM Nerd Font {n}", r"^font=.*$")
+            run("makoctl", "reload")
+    def opencode():
+        # Omarchy's trick (omacom/omarchy bin/omarchy-restart-opencode): the
+        # opencode TUI runs "theme": "system" and derives its colors from the
+        # terminal's ANSI palette — which ghostty already renders from
+        # colors.toml — so no custom theme file is maintained. Deep-merge the
+        # claim into opencode.json (every other key survives), then SIGUSR2
+        # every running opencode: the TUI re-discovers config and re-derives
+        # light/dark + palette live, no restart needed.
+        path = f"{CFG}/opencode/opencode.json"
+        try:
+            config = json.load(open(path)) if os.path.exists(path) else {}
+        except Exception:
+            config = {}
+        claimed = config.get("theme") == "system"
+        if not claimed:
+            config["theme"] = "system"
+            write(path, json.dumps(config, indent=2) + "\n")
+        subprocess.Popen(["killall", "-USR2", "opencode"], stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL)
+    return {"fonts": fonts, "ghostty": ghostty, "helix": helix, "niri": niri, "btop": btop, "fzf": fzf,
+            "gtk": gtk, "icons": icons, "qt": qt, "browser": browser, "opencode": opencode}
 
 
 def wallpapers(name):
@@ -257,6 +303,14 @@ def set_wallpaper(path, colour):
                     "--unit", "notch-wallpaper", "-p", "Restart=on-failure", *args])
 
 
+def font_size():
+    """One text size for every app (`notch-font size <n>`); 11 is stock."""
+    try:
+        return max(6, min(32, int(open(f"{CFG}/notch/font-size").read().strip())))
+    except Exception:
+        return 11
+
+
 def current():
     try:
         return json.load(open(f"{STATE}/theme.json"))
@@ -269,6 +323,8 @@ def apply(name, wallpaper=None):
         sys.exit(f"no theme {name!r} (have: {', '.join(names())})")
     with open(f"{THEMES}/{name}/colors.toml", "rb") as f:
         c = tomllib.load(f)
+    n = font_size()
+    c.update(font_size=n, font_size_term=n + 2, font_size_menu=n + 1)
     walls = wallpapers(name)
     if wallpaper is None:
         before = current()
@@ -277,7 +333,7 @@ def apply(name, wallpaper=None):
             or next((w for w in walls if w.endswith("wrinkled-paper.jpg")), walls[0] if walls else "")
     title = name.replace("-", " ").title()
     write(f"{STATE}/theme.json", json.dumps({"id": name, "name": title, "mode": c.get("mode", "light"),
-                                              "wallpaper": wallpaper, "shell": shell(c, name)}, indent=1))
+                                              "wallpaper": wallpaper, "fontSize": n, "shell": shell(c, name)}, indent=1))
 
     for tpl, dest in TARGETS.items():
         try:

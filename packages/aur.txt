@@ -1,1 +1,2 @@
-# notch lean-niri · nothing from the AUR is needed.
+# notch · nothing from the AUR is needed.
+aether

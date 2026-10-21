@@ -226,6 +226,12 @@ Scope {
             return root.ok({ mode: id })
         }
 
+        // `notch ask backend pi|opencode`: which agent answers.
+        function backend(name: string): string {
+            AskService.setBackend(name)
+            return root.ok({ backend: AskService.backend })
+        }
+
         // Start over: a fresh session with the same durable memory.
         function reset(): string {
             AskService.reset()

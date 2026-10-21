@@ -1,8 +1,8 @@
 // ╭──────────────────────────────────────────────────────────────────────────╮
-// │   S H E L L   (notch, lean niri fork)                                  │
+// │   S H E L L   (notch)                                  │
 // │   quickshell entry point · windows and top-level wiring                  │
 // │                                                                          │
-// │   github.com/ever-oli/notch  (branch lean-niri)                        │
+// │   github.com/ever-oli/notch  (branch main)                        │
 // │   upstream: github.com/andreumassanet/impasto                            │
 // ╰──────────────────────────────────────────────────────────────────────────╯
 
@@ -17,6 +17,8 @@ import Quickshell
 
 import "./bar"
 import "./capture"
+import "./orb"
+import "./fontsize"
 import "./services"
 
 // The bar (with its island: launcher, control centre, notifications, OSD,
@@ -128,4 +130,10 @@ ShellRoot {
     Commands {
         island: root.island
     }
+
+    // The radial menu (Super+Alt+O, `qs ipc call orb toggle`).
+    Orb {}
+
+    // Text size slider (Style › Text size, `qs ipc call fontsize open`).
+    FontSlider {}
 }

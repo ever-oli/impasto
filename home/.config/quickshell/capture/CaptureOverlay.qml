@@ -49,6 +49,7 @@ PanelWindow {
     WlrLayershell.namespace: "notch-capture"
     // Exclusive, or hovering another window takes the keyboard back and Escape
     // stops working.
+    // focus-exclusive-ok: short-lived region drag, Escape must always cancel.
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
     anchors {

@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Ratchet: no staged file may exceed 5,000 tokens (est. bytes/4 — the bare
+# WC-count of UTF-8 overestimates multibyte, which is fine for a gate).
+# Old offenders aren't forced into a same-day refactor: their current size is
+# recorded in .size-ratchet and the ratchet only tightens — touching the file
+# must not grow it, until a commit brings it under the cap and drops the entry.
+# Not agent-authored / not text: images, video, audio, fonts, archives, SVG,
+# lockfiles, LICENSE/THIRD_PARTY/CREDITS/CHANGELOG, and the manifest itself.
+
+CAP_BYTES=20000
+MANIFEST=.size-ratchet
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+token_of() { echo $((($1 + 3) / 4)); }
+
+shrink_help() {
+  cat <<'HELP'
+
+Splitting guidance (same shapes the repo already uses):
+- a QML service that grew: split families of properties + functions into their
+  own component/service file, or inline literal tables (palettes, phrase lists
+  of themes) into the theme data they belong to;
+- a Python bridge: one op, one part — split each op stream into its own module
+  imported by the wrapper; shared tail helpers become a small lib module.
+A file twice the cap is twice as hard for every agent, reviewer and tool that
+opens it, so the bound compounds at every commit.
+HELP
+}
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+while IFS= read -r f; do
+  case "$f" in
+    *.png|*.jpg|*.jpeg|*.webp|*.gif|*.svg|*.mp4|*.webm|*.wav|*.flac|*.ogg|*.woff*|*.ttf|*.otf|*.asar|*.lock|*package-lock.json|LICENSE*|THIRD_PARTY*|CREDITS*|CHANGELOG*|MAINTAINING.md|"$MANIFEST") continue ;;
+    .githooks/*|.github/*) ;;                      # keep checking tool code too
+    .*) continue ;;
+    tests/*|packages/*) ;;                         # test fixtures may be long
+  esac
+  size=$(git cat-file -s ":$f" 2>/dev/null) || continue
+  allowed=$(awk -F'\t' -v p="$f" '$2 == p { print $1; exit }' "$MANIFEST" 2>/dev/null)
+
+  if [ "$size" -le "$CAP_BYTES" ]; then
+    [ -n "$allowed" ] && echo "ratchet: $f is under the cap now — drop its line from $MANIFEST."
+    continue
+  fi
+  if [ -z "$allowed" ]; then
+    printf '%s\n' "$f is $(token_of "$size") tokens ($size bytes) — over the 5,000-token cap." "$(
+      )" "Either split it under the cap this commit, or ratchet it: add to $MANIFEST"
+    printf '  %s\t%s\n' "$size" "$f"
+    printf '%s\n' "then 'git add $MANIFEST $f' and take care to shrink it in a later commit." 
+    shrink_help
+    exit 1
+  fi
+  if [ "$size" -gt "$allowed" ]; then
+    printf '%s\n' "$f is ratcheted at $allowed bytes but staged at $size — it only tightens." 
+    printf '%s\n' "Bring it to at most $allowed bytes (target: under the cap entirely)."
+    shrink_help
+    exit 1
+  fi
+done <<EOF
+$staged
+EOF
+exit 0

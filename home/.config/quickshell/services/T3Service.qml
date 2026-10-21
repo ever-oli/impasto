@@ -36,6 +36,11 @@ Singleton {
     function subscribe(): void { root.watchers++; root.refresh(false) }
     function release(): void { root.watchers = Math.max(0, root.watchers - 1) }
 
+    // The bar pill only subscribes once at login; this slow heartbeat keeps it
+    // honest for the whole session — a nightly released mid-session shows up,
+    // and it wants force=false so the cached release (30 min TTL) keeps it cheap.
+    readonly property Timer pollTimer: Timer { interval: 900000; repeat: true; running: true; onTriggered: root.refresh(false) }
+
     function refresh(force: bool): void {
         if (statusProcess.running)
             return

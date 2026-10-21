@@ -18,8 +18,34 @@ else no "no $kdl"; fi
 echo "Shell"
 pgrep -u "$(id -u)" -x qs >/dev/null || pgrep -u "$(id -u)" -x quickshell >/dev/null && ok "quickshell running" || no "quickshell not running"
 qs ipc call palette rows >/dev/null 2>&1 && ok "palette IPC answers" || warn "palette IPC did not answer (no session env?)"
+echo "Orb"
+[ -f "$cfg/quickshell/orb/Orb.qml" ] && ok "orb installed" || no "orb missing from $cfg/quickshell/orb"
+grep -q '"orb" "toggle"' "$kdl" 2>/dev/null && ok "orb bound ($(grep '"orb" "toggle"' "$kdl" | awk '{print $1}' | head -1))" || no "orb not bound in $kdl"
+qs ipc call orb status 2>/dev/null | grep -q '"opened"' && ok "orb IPC answers" || warn "orb IPC did not answer (no session env?)"
+x=$(grep -rn --include='*.qml' -B3 'WlrKeyboardFocus.Exclusive' "$cfg/quickshell" 2>/dev/null | grep -E 'WlrKeyboardFocus.Exclusive' | while IFS= read -r m; do f=${m%%:*}; n=${m#*:}; n=${n%%:*}; sed -n "$((n>3?n-3:1)),$((n-1))p" "$f" | grep -q focus-exclusive-ok: || echo "$f:$n"; done)
+[ -z "$x" ] && ok "no overlay grabs the keyboard without a reason" || no "Exclusive keyboard focus without focus-exclusive-ok: $x"
+echo "Text size"
+fsz=$(cat "$cfg/notch/font-size" 2>/dev/null || echo 11)
+case $fsz in ''|*[!0-9]*) no "font-size is not a number: $fsz";; *) [ "$fsz" -ge 6 ] && [ "$fsz" -le 32 ] && ok "text size $fsz" || no "text size $fsz out of 6-32";; esac
+st=${XDG_STATE_HOME:-$HOME/.local/state}/notch/theme.json
+grep -q "\"fontSize\": $fsz" "$st" 2>/dev/null && ok "shell follows it" || no "theme.json not at size $fsz (run: notch-theme restore)"
+grep -q "font-size = $((fsz+2))" "$cfg/ghostty/notch-theme" 2>/dev/null && ok "ghostty follows it" || no "ghostty not at $((fsz+2))"
+grep -q "size=$((fsz+1))" "$cfg/fuzzel/fuzzel.ini" 2>/dev/null && ok "fuzzel follows it" || no "fuzzel not at $((fsz+1))"
+gsettings get org.gnome.desktop.interface font-name 2>/dev/null | grep -q " $fsz'" && ok "GTK follows it" || warn "GTK font not at $fsz"
+echo "Engine (Pi)"
+pi=$HOME/.local/share/mise/installs/node/latest/bin/pi
+be=$(cat "$cfg/notch/ask-backend" 2>/dev/null || echo pi)
+[ "$be" = pi ] && ok "Pi drives the notch" || warn "fallback engine active: $be (notch ask backend pi to switch back)"
+[ -x "$pi" ] && ok "pi installed" || no "pi missing ($pi)"
+m=$(python3 -c 'import json,os;d=json.load(open(os.path.expanduser("~/.pi/agent/settings.json")));print(d.get("defaultProvider","")+"/"+d.get("defaultModel",""))' 2>/dev/null)
+[ -n "${m#/}" ] && ok "Pi model $m" || no "Pi has no default model (run pi, /login, /model)"
+if [ -z "${NOTCH_DOCTOR_FAST:-}" ] && [ -x "$pi" ]; then
+    a=$(cd /tmp && PATH=$(dirname "$pi"):$PATH timeout 90 "$pi" -p --no-session --no-context-files "Reply with exactly: PONG" </dev/null 2>/dev/null | tr -d '[:space:]')
+    [ "$a" = PONG ] && ok "Pi answers" || no "Pi did not answer (got: ${a:0:40})"
+fi
+command -v opencode >/dev/null && ok "opencode hidden fallback (notch ask backend opencode)" || warn "no opencode fallback"
 echo "Dependencies"
-for d in qs niri qalc fd opencode wl-copy grim slurp tesseract helium-browser gtk-launch fuzzel ghostty helix notify-send python3; do
+for d in qs niri qalc fd gh git wl-copy grim slurp tesseract helium-browser gtk-launch fuzzel ghostty helix notify-send python3; do
     command -v "$d" >/dev/null && ok "$d" || no "$d missing"
 done
 echo

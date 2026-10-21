@@ -118,7 +118,7 @@ Item {
                     visible: !photo.visible && !mark.visible
                     text: root.critical ? "󰀪" : "󰂚"
                     font.family: Theme.fontMono
-                    font.pixelSize: 17
+                    font.pixelSize: Theme.fs(17)
                     color: root.critical ? Theme.indicatorBad : Theme.accent
                 }
             }

@@ -177,7 +177,7 @@ ColumnLayout {
                 return PickerService.filter !== "" ? `${name}   ·   “${PickerService.filter}”` : name
             }
             font.family: Theme.fontBar
-            font.pixelSize: 16
+            font.pixelSize: Theme.fs(16)
             color: Theme.text
         }
     }

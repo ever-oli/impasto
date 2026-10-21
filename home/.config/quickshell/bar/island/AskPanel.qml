@@ -29,10 +29,17 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: 6
 
+        // Step back out to wherever the ask came from — the menu that opened
+        // it, or the bar. Escape already closes; this names it for the pointer.
+        IconButton {
+            icon: "󰅃"
+            onClicked: root.closed()
+        }
+
         Text {
             text: "󰚩"
             font.family: Theme.fontMono
-            font.pixelSize: 17
+            font.pixelSize: Theme.fs(17)
             color: Theme.accent
         }
         Text {
@@ -44,7 +51,10 @@ ColumnLayout {
             font.italic: AskService.busy
             color: AskService.busy ? Theme.textMuted : Theme.text
         }
-        PillButton { icon: AskService.modeInfo.icon; text: AskService.modeInfo.name; active: AskService.mode !== "general"
+        // The mode, not an agent: General reads as plain "Mode: General"; other modes get the pill.
+        PillButton { icon: AskService.mode === "general" ? "" : AskService.modeInfo.icon
+            text: AskService.mode === "general" ? "Mode: General" : AskService.modeInfo.name
+            active: AskService.mode !== "general"
             onClicked: AskService.stepMode() }
         PillButton { icon: "󰖟"; text: AskService.captured !== "" ? `Captured: ${AskService.captured.slice(0, 24)}` : "Page"
             active: AskService.captured !== ""
@@ -159,7 +169,7 @@ ColumnLayout {
         Layout.preferredHeight: 28
         verticalAlignment: TextInput.AlignVCenter
         font.family: Theme.fontBar
-        font.pixelSize: 16
+        font.pixelSize: Theme.fs(16)
         color: Theme.text
         clip: true
         selectByMouse: true

@@ -45,7 +45,7 @@ Item {
                 anchors.centerIn: parent
                 text: "󰚩"
                 font.family: Theme.fontMono
-                font.pixelSize: 18
+                font.pixelSize: Theme.fs(18)
                 color: T3Service.running ? Theme.indicator : Theme.textMuted
             }
         }

@@ -1,0 +1,59 @@
+#!/bin/bash
+# notch install — bootstrap Notch on a fresh Arch machine. Idempotent: every
+# step checks first and skips what is already there.
+#   ./install            do it        ./install --dry-run   only print what it would do
+# Also `notch install [--dry-run]` once Notch is on PATH. See INSTALL.md.
+set -euo pipefail
+DRY=0; [ "${1:-}" = --dry-run ] && DRY=1
+say()  { printf '\033[1m::\033[0m %s\n' "$*"; }
+skip() { printf '   ✓ %s\n' "$*"; }
+run()  { if ((DRY)); then printf '   would run: %s\n' "$*"; else "$@"; fi; }
+has()  { command -v "$1" >/dev/null 2>&1; }
+SRC=${NOTCH_SRC:-$HOME/.local/src/notch}
+NODE=$HOME/.local/share/mise/installs/node/latest/bin
+
+say "1/8 base tools (git, chezmoi, base-devel, gh, mise)"
+need=(); for p in git chezmoi base-devel github-cli mise; do pacman -Qq "$p" >/dev/null 2>&1 || need+=("$p"); done
+((${#need[@]})) && run sudo pacman -S --needed --noconfirm "${need[@]}" || skip "present"
+
+say "2/8 yay (AUR)"
+if has yay; then skip "yay present"; else
+    run bash -c 'd=$(mktemp -d) && git clone -q https://aur.archlinux.org/yay-bin.git "$d" && cd "$d" && makepkg -si --noconfirm'
+fi
+
+say "3/8 dotfiles (chezmoi; also clones Notch to $SRC and runs its setup)"
+if [ -d "$HOME/.local/share/chezmoi/.git" ]; then skip "chezmoi source present"; run chezmoi update --apply
+else run chezmoi init --apply --branch notch-desktop ever-oli/dotfiles; fi
+
+say "4/8 packages"
+for list in pacman aur; do
+    f=$SRC/packages/$list.txt; [ -f "$f" ] || { skip "no $f yet"; continue; }
+    mapfile -t miss < <(sed 's/#.*//' "$f" | awk 'NF{print $1}' | while read -r p; do pacman -Qq "$p" >/dev/null 2>&1 || echo "$p"; done)
+    if ((${#miss[@]}==0)); then skip "$list: all present"
+    elif [ $list = pacman ]; then run sudo pacman -S --needed --noconfirm "${miss[@]}"
+    else run yay -S --needed --noconfirm "${miss[@]}"; fi
+done
+
+say "5/8 Notch files, fonts, theme"
+if [ -x "$SRC/setup" ]; then run "$SRC/setup" fonts; run "$SRC/setup" files; run "$SRC/setup" theme
+else skip "Notch not cloned yet (step 3 does it)"; fi
+
+say "6/8 greetd autologin into niri"
+if grep -qs 'niri-session' /etc/greetd/config.toml; then skip "greetd → niri-session"
+else run sudo install -Dm644 "$HOME/.local/share/chezmoi/system/etc/greetd/config.toml" /etc/greetd/config.toml
+     run sudo systemctl enable greetd; fi
+
+say "7/8 Pi engine + OptChat durable memory"
+[ -x "$NODE/node" ] && skip "node (mise)" || run mise use -g node@latest
+[ -x "$NODE/pi" ] && skip "pi" || run "$NODE/npm" i -g @earendil-works/pi-coding-agent @mermaid-js/mermaid-cli
+if grep -qs optchat-durable "$HOME/.pi/agent/settings.json"; then skip "optchat-durable"
+else run env PATH="$NODE:$PATH" "$NODE/pi" install git:github.com/kevinqz/optchat-durable@v0.5.0; fi
+mkdir -p "$HOME/.config/notch" 2>/dev/null || true
+[ -f "$HOME/.config/notch/ask-backend" ] && skip "engine: $(cat "$HOME/.config/notch/ask-backend")" || run sh -c "echo pi > $HOME/.config/notch/ask-backend"
+
+say "8/8 things only you can add (never in a repo)"
+grep -qs defaultModel "$HOME/.pi/agent/settings.json" && skip "Pi model set" || echo "   ! run: pi, then /login and /model"
+gh auth status >/dev/null 2>&1 && skip "gh logged in" || echo "   ! run: gh auth login"
+[ -s "$HOME/.config/notch/profile.md" ] && skip "profile.md" || echo "   ! optional: ~/.config/notch/profile.md (for interview modes)"
+echo "   ! RustDesk password, SSH keys, API keys: add by hand"
+((DRY)) && say "dry run: nothing changed" || say "done — log in to niri, then run: notch doctor"

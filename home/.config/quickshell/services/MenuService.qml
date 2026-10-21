@@ -28,13 +28,27 @@ Singleton {
     readonly property string done: '; echo; read -rsn1 -p "Done. Press a key to close."'
 
     // ── TREE ────────────────────────────────────────────────────────────────
+    // Pending pacman + AUR updates (notch-updates), checked at start and hourly.
+    property int updates: 0
+    readonly property Process updateCheck: Process {
+        command: ["sh", "-c", `PATH="$HOME/.local/bin:$PATH"; notch-updates count`]
+        running: true
+        stdout: StdioCollector { onStreamFinished: root.updates = parseInt(text) || 0 }
+    }
+    readonly property Timer updateTimer: Timer { interval: 3600000; repeat: true; running: true; onTriggered: root.updateCheck.running = true }
+
     readonly property var tree: [
         // Listed by LauncherService (`apps`), which owns the application index.
         { icon: "󰀻", name: "Apps", subtitle: "Every installed application", apps: true, items: [] },
+    ].concat(root.updates > 0 ? [
+        { icon: "󰚰", name: `Updates available (${root.updates})`, subtitle: "pacman + AUR · Enter runs yay -Syu", term: "notch-updates run" }
+    ] : []).concat([
         { icon: "󰚩", name: "Assistant", subtitle: "History, profile, modes, reference files", items: [
             { icon: "󰋚", name: "Ask history", subtitle: "Past questions; Enter copies the answer", itemIcon: "󰚩",
               source: `python3 ${Quickshell.shellPath("scripts/ask.py")} history`,
               each: `python3 ${Quickshell.shellPath("scripts/ask.py")} answer {} | wl-copy && notify-send "Answer copied"` },
+            { icon: "󰑓", name: "Ask Notch to change itself", subtitle: "Build mode: edits the repo, tests, opens a PR; every write asks first",
+              sh: `qs ipc call ask mode notch && qs ipc call panel open ask` },
             { icon: "󰀄", name: "Edit profile", subtitle: "Sent to interview modes, 8000 characters", sh: "ghostty -e helix ~/.config/notch/profile.md" },
             { icon: "󰘦", name: "Modes folder", subtitle: "Drop a .md file to add a mode", sh: "ghostty --working-directory=$HOME/.config/notch/modes" },
             { icon: "󰈙", name: "Reference files", subtitle: "files/<mode>/ — PDF, DOCX, text", sh: "mkdir -p ~/.config/notch/files && xdg-open ~/.config/notch/files" }
@@ -85,6 +99,7 @@ Singleton {
             { icon: "󰛖", name: "Font", subtitle: "Terminal", itemIcon: "󰛖",
               source: "fc-list : family | grep 'Nerd Font Mono' | cut -d, -f1 | sort -u",
               each: "notch-font {}" },
+            { icon: "󰛂", name: "Font size", subtitle: "Slider: drag to preview, applies to every app", sh: "qs ipc call fontsize open" },
             { icon: "󰸉", name: "Wallpaper", subtitle: "Carousel of this theme's backgrounds", sh: "notch picker wallpaper" },
             { icon: "󰢡", name: "Corners", items: [
                 { icon: "󰝤", name: "Sharp windows", sh: "sed -i 's/geometry-corner-radius [0-9]*/geometry-corner-radius 0/' ~/.config/niri/config.kdl" },
@@ -129,7 +144,10 @@ Singleton {
             { icon: "󰜉", name: "Restart", confirm: true, sh: "systemctl reboot" },
             { icon: "󰐥", name: "Shut down", confirm: true, sh: "systemctl poweroff" }
         ] }
-    ]
+    ])
+
+    // Recount a few minutes after an update was started from the palette.
+    readonly property Timer refreshAfterUpdate: Timer { interval: 300000; onTriggered: root.updateCheck.running = true }
 
     // ── NAVIGATION ──────────────────────────────────────────────────────────
     property var stack: []
@@ -260,6 +278,8 @@ Singleton {
             Quickshell.execDetached(["xdg-open", node.url])
         else if (node.term)
             Quickshell.execDetached(["ghostty", "-e", "bash", "-c", `PATH="$HOME/.local/bin:$PATH"; ${node.term}${root.done}`])
+        if (node.term && node.term.indexOf("notch-updates run") >= 0)
+            root.refreshAfterUpdate.restart()
         else if (node.sh)
             Quickshell.execDetached(["sh", "-c", `PATH="$HOME/.local/bin:$PATH"; ${node.sh}`])
         else

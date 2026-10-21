@@ -1,7 +1,7 @@
-# notch · lean niri fork
+# notch — a lean, niri-native shell
 
-A cut-down, **niri-native** fork of [andreumassanet/impasto](https://github.com/andreumassanet/impasto)
-(branch `lean-niri`). It started as a Quickshell shell for Hyprland and is now a small one for niri,
+A cut-down, **niri-native** fork of [andreumassanet/impasto](https://github.com/andreumassanet/impasto).
+It started as a Quickshell shell for Hyprland and is now a small one for niri,
 built for a cloud VM that you reach over RustDesk from an iPad.
 
 ## What is kept
@@ -67,3 +67,4 @@ helix, niri's focus ring and border, mako and fuzzel, and runs swaybg as the `no
 | Alt+Shift+Y / W | Next theme / next wallpaper |
 
 GPL-3.0, like upstream.
+- [INSTALL.md](INSTALL.md): fresh Arch setup. Build mode: `notch evolve`.

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Google Photos
+Comment=Google Photos web app (Helium)
+Exec=/home/ever/.local/bin/notch-webapp https://photos.google.com
+Icon=notch-web-google-photos
+Categories=Network;WebApp;
+StartupNotify=true

@@ -161,7 +161,7 @@ Card {
                             visible: !image.visible && !mark.visible
                             text: entry.critical ? "󰀪" : "󰂚"
                             font.family: Theme.fontMono
-                            font.pixelSize: 13
+                            font.pixelSize: Theme.fs(13)
                             color: entry.critical ? Theme.accentText : Theme.accent
                         }
                     }
@@ -198,7 +198,7 @@ Card {
                             text: entry.modelData.appName
                             elide: Text.ElideRight
                             font.family: Theme.fontBar
-                            font.pixelSize: 9
+                            font.pixelSize: Theme.fs(9)
                             color: Theme.textMuted
                             opacity: 0.7
                         }

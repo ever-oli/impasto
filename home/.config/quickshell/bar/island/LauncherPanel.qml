@@ -15,6 +15,7 @@ import Quickshell.Widgets
 import "../../theme"
 import "../../services"
 import "../../components"
+import "../../components"
 
 // Application launcher. The first character picks the mode: arithmetic, open
 // windows, a countdown, the clipboard history, emoji, or the shell's own
@@ -235,11 +236,23 @@ ColumnLayout {
         Layout.preferredHeight: LauncherService.fieldHeight
         spacing: LauncherService.gap
 
+        // Back one level: the small ‹ beside the trail — the pointer's answer
+        // to Esc and Backspace. Hidden at the root, where there is nothing to
+        // step out of.
+        IconButton {
+            visible: MenuService.top !== null
+            icon: "󰅃"
+            onClicked: {
+                MenuService.pop()
+                LauncherService.query = ""
+            }
+        }
+
         // The current mode's glyph rather than a magnifier.
         Text {
             text: MenuService.top ? MenuService.top.icon : root.mode.icon
             font.family: Theme.fontMono
-            font.pixelSize: 17
+            font.pixelSize: Theme.fs(17)
             color: Theme.accent
 
             Behavior on text { enabled: false }
@@ -250,7 +263,7 @@ ColumnLayout {
             visible: MenuService.top !== null
             text: MenuService.trail
             font.family: Theme.fontBar
-            font.pixelSize: 16
+            font.pixelSize: Theme.fs(16)
             font.weight: Font.DemiBold
             color: Theme.accent
         }
@@ -261,7 +274,7 @@ ColumnLayout {
             Layout.fillWidth: true
             text: LauncherService.query
             font.family: Theme.fontBar
-            font.pixelSize: 16
+            font.pixelSize: Theme.fs(16)
             color: Theme.text
             clip: true
             selectByMouse: true
@@ -284,11 +297,20 @@ ColumnLayout {
             }
             Keys.onDownPressed: root.move(root.grid ? LauncherService.emojiColumns : 1)
             // In the grid the arrows move along a line; the field is a search
-            // term, rarely edited in the middle.
+            // term, rarely edited in the middle. Inside a submenu an empty
+            // field steps back out: the left arrow is the Backspace walk-back
+            // without reaching for that key.
             Keys.onLeftPressed: event => {
-                event.accepted = root.grid
-                if (root.grid)
+                if (root.grid) {
+                    event.accepted = true
                     root.move(-1)
+                    return
+                }
+                event.accepted = text === "" && MenuService.top !== null
+                if (event.accepted) {
+                    MenuService.pop()
+                    LauncherService.query = ""
+                }
             }
             Keys.onRightPressed: event => {
                 event.accepted = root.grid
@@ -383,7 +405,7 @@ ColumnLayout {
             visible: root.mode.id === "emoji"
             text: EmojiService.toneMarks[EmojiService.tone]
             font.family: Theme.fontBar
-            font.pixelSize: 18
+            font.pixelSize: Theme.fs(18)
 
             MouseArea {
                 anchors.fill: parent
@@ -394,55 +416,12 @@ ColumnLayout {
         }
     }
 
-    // ── GROUPS ──────────────────────────────────────────────────────────────
-    //
-    // The emoji mode's nine groups and the recent picks, each marked by an
-    // emoji and nothing else. Tab steps through them.
-    RowLayout {
+    // The emoji mode's nine groups and the recent picks (EmojiStrip.qml).
+    EmojiStrip {
         Layout.fillWidth: true
         Layout.preferredHeight: LauncherService.stripHeight
         visible: LauncherService.showsStrip
-        spacing: 2
-
-        Repeater {
-            model: EmojiService.groups
-
-            delegate: Rectangle {
-                id: chip
-
-                required property var modelData
-                readonly property bool chosen: EmojiService.group === chip.modelData.id
-
-                Layout.preferredWidth: LauncherService.stripHeight + 2
-                Layout.preferredHeight: LauncherService.stripHeight
-                radius: Theme.radiusSmall
-                color: chip.chosen || chipMouse.containsMouse
-                    ? Theme.surfaceHoverIn(QsWindow.window) : "transparent"
-
-                Behavior on color { ColorAnimation { duration: Theme.durationFast } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: chip.modelData.mark
-                    font.family: Theme.fontBar
-                    font.pixelSize: 16
-                    opacity: chip.chosen ? 1 : 0.6
-                }
-
-                MouseArea {
-                    id: chipMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        EmojiService.group = chip.modelData.id
-                        searchField.forceActiveFocus()
-                    }
-                }
-            }
-        }
-
-        Item { Layout.fillWidth: true }
+        onChosen: searchField.forceActiveFocus()
     }
 
     Rectangle {
@@ -504,7 +483,7 @@ ColumnLayout {
                 anchors.centerIn: parent
                 text: cell.modelData.glyph ?? ""
                 font.family: Theme.fontBar
-                font.pixelSize: 28
+                font.pixelSize: Theme.fs(28)
             }
 
             MouseArea {
@@ -621,7 +600,7 @@ ColumnLayout {
                         visible: badge.glyph !== ""
                         text: badge.glyph
                         font.family: Theme.fontBar
-                        font.pixelSize: 22
+                        font.pixelSize: Theme.fs(22)
                     }
 
                     Rectangle {
@@ -634,7 +613,7 @@ ColumnLayout {
                             anchors.centerIn: parent
                             text: badge.isApp ? "󰀻" : row.modelData.icon
                             font.family: Theme.fontMono
-                            font.pixelSize: 14
+                            font.pixelSize: Theme.fs(14)
                             color: root.kindColour(row.modelData.kind)
                         }
                     }
@@ -675,7 +654,7 @@ ColumnLayout {
                         && LauncherService.favourites.indexOf(row.modelData.id) >= 0
                     text: "󱂩"
                     font.family: Theme.fontMono
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fs(12)
                     color: Theme.textMuted
                 }
 

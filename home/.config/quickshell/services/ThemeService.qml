@@ -43,6 +43,7 @@ Singleton {
                 const data = JSON.parse(text())
                 root.activeId = data.id ?? root.activeId
                 Theme.activeId = root.activeId
+                Theme.fontBase = data.fontSize ?? 11
                 Theme.apply(data.shell, data.name ?? root.activeId)
             } catch (error) {
                 console.warn("theme.json:", error)

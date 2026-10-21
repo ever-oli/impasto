@@ -1,6 +1,6 @@
 """ask_extras — what ask.py adds around a question: modes, the profile,
 reference files, the browser page, and pictures rendered from the answer."""
-import glob, hashlib, json, os, re, sqlite3, subprocess, urllib.request
+import glob, tempfile, hashlib, json, os, re, sqlite3, subprocess, urllib.request
 
 HOME = os.path.expanduser("~")
 CONF = os.environ.get("XDG_CONFIG_HOME", f"{HOME}/.config") + "/notch"
@@ -182,7 +182,10 @@ def mermaid(source, out):
     # chrome-headless-shell, fetched once by @puppeteer/browsers (see setup).
     shell = sorted(glob.glob(f"{HOME}/.cache/notch/chrome/chrome-headless-shell/*/*/chrome-headless-shell"))
     json.dump({"executablePath": shell[-1] if shell else "/opt/helium-browser-bin/helium",
-               "headless": "shell", "args": ["--no-sandbox"]}, open(puppet, "w"))
+               "headless": True,
+               # A fresh profile per render: the user's Helium holds the default one, and a
+               # leftover render's lock would make mmdc hang.
+               "args": ["--no-sandbox", f"--user-data-dir={tempfile.mkdtemp(prefix='notch-mmdc-')}", "--ozone-platform=headless"]}, open(puppet, "w"))
     conf = f"{CACHE}/mermaid.json"
     json.dump({"theme": "base", "themeVariables": {"background": paper, "primaryColor": paper, "primaryTextColor": ink,
                "primaryBorderColor": ink, "lineColor": ink, "fontFamily": "Tinos Nerd Font, serif"}}, open(conf, "w"))

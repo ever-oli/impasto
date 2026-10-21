@@ -76,7 +76,7 @@ ColumnLayout {
         Text {
             text: "󰌌"
             font.family: Theme.fontMono
-            font.pixelSize: 17
+            font.pixelSize: Theme.fs(17)
             color: Theme.accent
         }
 
@@ -85,7 +85,7 @@ ColumnLayout {
 
             Layout.fillWidth: true
             font.family: Theme.fontBar
-            font.pixelSize: 16
+            font.pixelSize: Theme.fs(16)
             color: Theme.text
             clip: true
             selectByMouse: true

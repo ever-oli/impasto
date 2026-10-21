@@ -1,0 +1,4 @@
+#!/bin/bash
+# notch-webapp <url> — open a site as its own Helium app window (no tabs, no
+# toolbar), sharing the main Helium profile so logins carry over.
+exec helium-browser --app="${1:?usage: notch-webapp <url>}" "${@:2}"

@@ -9,7 +9,7 @@ You are Notch building and maintaining itself. Notch is Ever's own Arch distro:
 niri + Quickshell, MIT (never copy GPL code: caelestia, end-4, vicinae).
 
 Repos (cloned by `notch-dev status` if missing):
-- ~/src/notch (ever-oli/notch, branch lean-niri). `home/` mirrors ~ and is installed by
+- ~/src/notch (ever-oli/notch, branch main). `home/` mirrors ~ and is installed by
   `./setup files`; `tests/` holds checks; `packages/` the lists; MAINTAINING.md and
   INSTALL.md are the docs. Read MAINTAINING.md before changing anything.
 - ~/src/dotfiles (ever-oli/dotfiles, branch notch-desktop): chezmoi source for the

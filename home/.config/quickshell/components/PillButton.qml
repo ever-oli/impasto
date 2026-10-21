@@ -54,7 +54,7 @@ Rectangle {
             visible: root.icon !== ""
             text: root.icon
             font.family: Theme.fontMono
-            font.pixelSize: 12
+            font.pixelSize: Theme.fs(12)
             color: root.filled ? Theme.accentText : Theme.accent
         }
 

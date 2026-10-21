@@ -69,7 +69,7 @@ ColumnLayout {
                 anchors.centerIn: parent
                 text: BluetoothService.icon
                 font.family: Theme.fontMono
-                font.pixelSize: 18
+                font.pixelSize: Theme.fs(18)
                 color: BluetoothService.enabled ? Theme.indicator : Theme.textMuted
             }
         }
@@ -157,7 +157,7 @@ ColumnLayout {
                 Text {
                     text: BluetoothService.deviceIcon(entry.modelData)
                     font.family: Theme.fontMono
-                    font.pixelSize: 15
+                    font.pixelSize: Theme.fs(15)
                     color: entry.modelData.connected ? Theme.accent : Theme.textMuted
                 }
 
@@ -191,7 +191,7 @@ ColumnLayout {
                         }
                         elide: Text.ElideRight
                         font.family: Theme.fontBar
-                        font.pixelSize: 9
+                        font.pixelSize: Theme.fs(9)
                         color: Theme.textMuted
                     }
                 }
@@ -200,7 +200,7 @@ ColumnLayout {
                     visible: entry.modelData.connected
                     text: "󰄬"
                     font.family: Theme.fontMono
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fs(13)
                     color: Theme.accent
                 }
             }

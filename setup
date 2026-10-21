@@ -1,7 +1,7 @@
 #!/bin/bash
 # ╭──────────────────────────────────────────────────────────────────────────╮
-# │   notch · lean niri fork · setup                                       │
-# │   github.com/ever-oli/notch  (branch lean-niri)                        │
+# │   notch · setup                                       │
+# │   github.com/ever-oli/notch  (branch main)                        │
 # ╰──────────────────────────────────────────────────────────────────────────╯
 #
 #   ./setup                 packages, then files, then the theme
@@ -68,7 +68,7 @@ files() {
         cp -a "$REPO/home/$rel" "$dest"
         echo "$rel" >> "$MANIFEST"
     done
-    chmod +x "$HOME/.local/bin/notch" "$HOME/.local/bin/notch-theme" "$HOME"/.config/quickshell/scripts/*.py
+    chmod +x "$HOME"/.local/bin/notch* "$HOME"/.config/quickshell/scripts/*.py
     [ -d "$BACKUP" ] && say "files: replaced files backed up to $BACKUP"
     say "files: $(wc -l < "$MANIFEST") installed"
 }
