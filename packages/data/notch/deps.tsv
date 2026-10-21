@@ -4,6 +4,7 @@ quickshell	pacman	required	qs	the shell
 python	pacman	required	python3	scripts/*.py and notch-theme
 gtk3	pacman	required	gtk-launch	gtk-launch, which the launcher opens applications with
 libnotify	pacman	required	notify-send	notify-send
+imagemagick	pacman	optional	magick	cropping a capture, for the annotation
 fontconfig	pacman	required	-	-
 pipewire	pacman	optional	-	the volume, through Quickshell's Pipewire service
 wireplumber	pacman	optional	-	-
