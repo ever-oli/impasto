@@ -134,7 +134,7 @@ Singleton {
         case "machine":
             return "󰍛"
         case "idle":
-            return "󰔟"
+            return "󰁹"
         }
         return ""
     }
