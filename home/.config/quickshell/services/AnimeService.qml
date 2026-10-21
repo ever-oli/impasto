@@ -25,6 +25,9 @@ Singleton {
     // A TMDB token turns the film and series shelves on; without one the
     // panel is anime only.
     property bool films: false
+    // The episodes of the series on show, and the one Ever picked.
+    property var episodes: []
+    property int episode: 1
 
     function load(): void {
         root.busy = true
@@ -55,8 +58,29 @@ Singleton {
             return
         }
         const kind = item.kind === "tv" ? "tv" : "movie"
-        Quickshell.execDetached(["notch-watch", "film", kind, String(item.id),
-                                item.title || "", String(item.year || "")])
+        const command = ["notch-watch", "film", kind, String(item.id),
+                         item.title || "", String(item.year || "")]
+        if (kind === "tv")
+            command.push("--season", "1", "--episode", String(root.episode))
+        Quickshell.execDetached(command)
+    }
+
+    // The title on show. When it changes, its episodes change with it.
+    function setHero(item: var): void {
+        root.hero = item
+        root.loadEpisodes(item)
+    }
+
+    // The episodes of the series on show, so Ever can pick one.
+    function loadEpisodes(item: var): void {
+        root.episodes = []
+        root.episode = 1
+        if (!item || item.kind !== "tv")
+            return
+        episodesProcess.command = ["python3", Quickshell.shellPath("scripts/stream.py"),
+                                    "episodes", String(item.id), "--season", "1"]
+        episodesProcess.running = false
+        episodesProcess.running = true
     }
 
     // A trailer for one title, from TMDB's videos, opened in the browser.
@@ -74,11 +98,23 @@ Singleton {
             onStreamFinished: {
                 try {
                     const found = JSON.parse(text)
-                    root.hero = found.hero
+                    root.setHero(found.hero)
                     root.rows = found.rows
                     root.films = found.token
                 } catch (error) {}
                 root.busy = false
+            }
+        }
+    }
+
+    readonly property Process episodesProcess: Process {
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    root.episodes = JSON.parse(text)
+                } catch (error) {
+                    root.episodes = []
+                }
             }
         }
     }

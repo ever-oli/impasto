@@ -177,6 +177,25 @@ Item {
                     onClicked: AnimeService.trailer(hero.show)
                 }
             }
+
+            // The episodes of a series, the way a streaming service shows
+            // them: pick one, then watch it.
+            Flow {
+                visible: hero.show && hero.show.kind === "tv" && AnimeService.episodes.length > 0
+                spacing: 6
+                width: parent.width
+
+                Repeater {
+                    model: AnimeService.episodes
+
+                    PillButton {
+                        text: "E" + modelData.episode
+                        horizontalPadding: 8
+                        active: AnimeService.episode === modelData.episode
+                        onClicked: AnimeService.episode = modelData.episode
+                    }
+                }
+            }
         }
     }
 
@@ -271,7 +290,7 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: AnimeService.hero = card.modelData
+                        onClicked: AnimeService.setHero(card.modelData)
                     }
                 }
             }

@@ -147,6 +147,25 @@ def tmdb(path, query=None):
         return None
 
 
+def episodes(media_id, season=1):
+    """The episodes of one season of a series.
+
+    The panel shows them as a row of buttons, the way a streaming service
+    does, so the notch can start on the episode Ever means.
+    """
+    found = tmdb(f"/tv/{media_id}/season/{season}") or {}
+    out = []
+    for entry in found.get("episodes", []):
+        out.append({
+            "season": entry.get("season_number", season),
+            "episode": entry.get("episode_number", 0),
+            "name": entry.get("name") or "",
+            "air": entry.get("air_date") or "",
+            "description": entry.get("overview") or "",
+        })
+    return out
+
+
 def film_items(results, kind=None):
     """The films or series of one TMDB answer.
 
@@ -446,6 +465,11 @@ def main():
             episode = int(args[args.index("--episode") + 1])
         print(json.dumps(resolve_anime(" ".join(a for a in args[1:] if not a.isdigit()),
                                       episode)))
+    elif args[0] == "episodes" and len(args) > 1:
+        season = 1
+        if "--season" in args:
+            season = int(args[args.index("--season") + 1])
+        print(json.dumps(episodes(args[1], season)))
     elif args[0] == "trailer" and len(args) > 2:
         trailer(args[1], args[2])
     elif args[0] == "token":

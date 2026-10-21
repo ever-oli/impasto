@@ -10,6 +10,10 @@ built for a cloud VM that you reach over RustDesk from an iPad.
 |---|---|
 | Bar: launcher button, niri workspaces, tray, T3 chip, notifications, network, volume, control centre | `bar/` |
 | The island: launcher (apps, `=` calculator, `>` desk and themes, windows, clipboard, emoji) | `bar/island/LauncherPanel.qml`, `services/LauncherService.qml` |
+| **Catalogue**: anime from AniList, films and series from TMDB, and the watching — the picture plays in the island terminal, not in a window | `bar/island/AnimePanel.qml`, `services/AnimeService.qml`, `scripts/stream.py`, `notch-watch`, `notch-resolve.mjs` |
+| **Assistant**: the ask panel, four engines (Cua Driver, an instabox box, opencode, Pi), a memory of its own mistakes, and QML and mermaid drawn in the answer | `bar/island/AskPanel.qml`, `services/AskService.qml`, `scripts/ask.py`, `scripts/ask_lessons.py`, `notch-qml` |
+| **Notchstorm**: the radar, live sweep and all | `bar/island/NotchstormPanel.qml`, `services/NotchstormService.qml`, `notchstorm` |
+| **Layouts**: per-desktop plans for the windows | `controls/LayoutsBlock.qml`, `notch-layout` |
 | Notifications (the shell is the server) and the OSD | `NotificationLayer`, `OsdLayer`, `NotificationService` |
 | Control centre: toggles, volume, clock, session, shortcuts, notification list | `bar/island/ControlsPanel.qml`, `controls/` |
 | Capture: region, window and screen, annotate (satty), OCR (tesseract), recording (wf-recorder) | `capture/`, `CaptureService`, `RecorderService` |
@@ -18,6 +22,20 @@ built for a cloud VM that you reach over RustDesk from an iPad.
 | **T3 Code card**: t3code-web state, the installed nightly against the latest release, Open / Start / Update | `T3Module`, `T3Service`, `scripts/t3.py` |
 | **Ink themes**: e-ink, e-ink-dark, red-ink, red-ink-dark | `home/.local/share/notch/themes`, `notch-theme` |
 | niri config with Alt as the main key | `home/.config/niri/config.kdl` |
+
+### The picture in the terminal
+
+A title plays where the text is: mpv's truecolour output draws the frame as
+characters, so there is no window, no GPU and no compositor rule to fight.
+Anime is resolved through hianime; a film or a series through the api the
+player itself asks, opened the way the player opens it (a small webassembly
+module the api names). The catalogue's watch button starts either.
+
+```sh
+notch-watch anime "cowboy bebop" --episode 2
+notch-watch film movie 550 "Fight Club" 1999
+notch-watch film tv 1396 "Breaking Bad" 2008 --season 1 --episode 3
+```
 
 Everything else was cut: Hyprland, the desktop widgets, dock, deck, settings window, lock, games, pets,
 weather, markets, GitHub, Claude/Codex meters, VMs, servers, camera effects, the palette engine,
@@ -41,8 +59,9 @@ niri msg action spawn -- qs -n     # or log in again; the niri config spawns it
 ## Commands
 
 ```
-notch open|toggle launcher|controls|t3|keys|session|clipboard|emoji
+notch open|toggle launcher|controls|t3|keys|session|clipboard|emoji|anime|notchstorm
 notch capture [region|window|screen] | capture text | record
+notch ask "<question>" [screen|region]
 notch t3 [get|refresh|update|open]
 notch volume <n> | volume mute     notch focus toggle
 notch-theme set e-ink|e-ink-dark|red-ink|red-ink-dark · next · next-wallpaper
