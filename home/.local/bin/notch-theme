@@ -280,8 +280,13 @@ def hooks(c, name):
             write(path, json.dumps(config, indent=2) + "\n")
         subprocess.Popen(["killall", "-USR2", "opencode"], stdout=subprocess.DEVNULL,
                          stderr=subprocess.DEVNULL)
+    def t3():
+        # The theme file themes/notch.json is only a published artifact;
+        # connected clients switch when the environment theme is (re)set.
+        if os.path.isdir(f"{HOME}/.t3/userdata") and shutil.which("t3"):
+            run("t3", "theme", "set", "notch")
     return {"fonts": fonts, "ghostty": ghostty, "helix": helix, "niri": niri, "btop": btop, "fzf": fzf,
-            "gtk": gtk, "icons": icons, "qt": qt, "browser": browser, "opencode": opencode}
+            "gtk": gtk, "icons": icons, "qt": qt, "browser": browser, "opencode": opencode, "t3": t3}
 
 
 def wallpapers(name):
