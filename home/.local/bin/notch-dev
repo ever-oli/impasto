@@ -7,7 +7,7 @@
 #   notch-dev restart-qs              stop the exact qs PID, respawn through niri
 #   notch-dev branch <name>           new evolve/<name> branch in ~/src/notch
 #   notch-dev pr "<title>" [body]     test, commit, push the branch, open a PR
-#   notch-dev ship "<title>"          like pr, then merge to lean-niri (only if auto-merge is on)
+#   notch-dev ship "<title>"          like pr, then merge to main (only if auto-merge is on)
 #   notch-dev sync-dots               copy live VM config into ~/src/dotfiles on a branch + PR
 #   notch-dev lesson "<text>"         append a correction to ~/.config/notch/lessons.md
 set -euo pipefail
@@ -15,7 +15,7 @@ export PATH="$HOME/.local/bin:$PATH"
 REPO=${NOTCH_REPO:-$HOME/src/notch}; DOTS=${NOTCH_DOTS:-$HOME/src/dotfiles}
 CONF=${XDG_CONFIG_HOME:-$HOME/.config}/notch
 ensure() {
-    [ -d "$REPO/.git" ] || gh repo clone ever-oli/notch "$REPO" -- -b lean-niri
+    [ -d "$REPO/.git" ] || gh repo clone ever-oli/notch "$REPO" -- -b main
     [ -d "$DOTS/.git" ] || gh repo clone ever-oli/dotfiles "$DOTS" -- -b notch-desktop
 }
 tests() {
@@ -50,11 +50,11 @@ case $verb in
         [ -n "$sock" ] || { echo "no niri socket"; exit 1; }
         [ -n "$pid" ] && { [ "$(wc -w <<<"$pid")" = 1 ] || { echo "several qs: $pid"; exit 1; }; kill "$pid"; while kill -0 "$pid" 2>/dev/null; do sleep .2; done; }
         NIRI_SOCKET=$sock niri msg action spawn -- qs -n ;;
-    branch)  ensure; git -C "$REPO" fetch -q origin lean-niri; git -C "$REPO" switch -c "evolve/${1:?name}" origin/lean-niri ;;
-    pr)      ensure; tests || { echo "tests fail: no PR"; exit 1; }; commit_pr "$REPO" lean-niri "${1:?title}" "${2:-}" ;;
+    branch)  ensure; git -C "$REPO" fetch -q origin main; git -C "$REPO" switch -c "evolve/${1:?name}" origin/main ;;
+    pr)      ensure; tests || { echo "tests fail: no PR"; exit 1; }; commit_pr "$REPO" main "${1:?title}" "${2:-}" ;;
     ship)    ensure; [ "$(cat "$CONF/auto-merge" 2>/dev/null)" = on ] || { echo "auto-merge is off (echo on > $CONF/auto-merge)"; exit 1; }
              tests || { echo "tests fail: not shipping"; exit 1; }
-             commit_pr "$REPO" lean-niri "${1:?title}"; cd "$REPO"; gh pr merge -R ever-oli/notch --squash --delete-branch; git switch -q lean-niri; git pull -q ;;
+             commit_pr "$REPO" main "${1:?title}"; cd "$REPO"; gh pr merge -R ever-oli/notch --squash --delete-branch; git switch -q main; git pull -q ;;
     sync-dots) ensure; cd "$DOTS"; git switch -q notch-desktop; git pull -q
              chezmoi --source "$DOTS" re-add 2>/dev/null || echo "(chezmoi re-add unavailable; copy by hand)"
              git diff --quiet && { echo "dotfiles already match the VM"; exit 0; }

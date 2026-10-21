@@ -1,4 +1,4 @@
-# notch lean-niri · packages from the official repositories
+# notch · packages from the official repositories
 # `./setup packages` installs whatever is missing with `pacman -S --needed`.
 # niri is not listed: install it however you like (the VM runs its own build).
 

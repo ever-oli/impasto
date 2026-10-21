@@ -2,7 +2,7 @@
 
 Notch is Ever's Arch distro: niri + Quickshell, with Pi as the notch's engine.
 Two repos: **ever-oli/dotfiles** (chezmoi, branch `notch-desktop`, machine bits) and
-**ever-oli/notch** (branch `lean-niri`, the shell). One script does it all:
+**ever-oli/notch** (branch `main`, the shell). One script does it all:
 
 ```sh
 sudo pacman -S --needed git chezmoi
@@ -36,7 +36,7 @@ chezmoi init --apply --branch notch-desktop ever-oli/dotfiles   # clones Notch t
 Palette → **Ask Notch to change itself**, or `notch evolve "<request>"`. It works in
 `~/src/notch` and `~/src/dotfiles` with `notch-dev` (branch, test, PR, deploy, restart-qs,
 sync-dots); every write asks first (`a` approves the rest of the run). Pushing straight to
-`lean-niri` only happens with `echo on > ~/.config/notch/auto-merge`. Corrections go to
+`main` directly only happens with `echo on > ~/.config/notch/auto-merge`. Corrections go to
 tests first, then `~/.config/notch/lessons.md`, which Build mode reads every time.
 
 ## Check

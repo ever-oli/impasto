@@ -1,8 +1,8 @@
 // ╭──────────────────────────────────────────────────────────────────────────╮
-// │   S H E L L   (notch, lean niri fork)                                  │
+// │   S H E L L   (notch)                                  │
 // │   quickshell entry point · windows and top-level wiring                  │
 // │                                                                          │
-// │   github.com/ever-oli/notch  (branch lean-niri)                        │
+// │   github.com/ever-oli/notch  (branch main)                        │
 // │   upstream: github.com/andreumassanet/impasto                            │
 // ╰──────────────────────────────────────────────────────────────────────────╯
 

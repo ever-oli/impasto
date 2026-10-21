@@ -1,5 +1,5 @@
 #!/bin/bash
-# notch — the lean niri fork's command line. Every verb is an IPC call into
+# notch — the notch shell's command line. Every verb is an IPC call into
 # the running shell (`qs ipc call <target> <function> <args>`).
 #
 #   notch open|toggle <panel>   launcher controls session keys t3 wifi

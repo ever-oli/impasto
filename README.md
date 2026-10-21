@@ -1,7 +1,7 @@
-# notch · lean niri fork
+# notch — a lean, niri-native shell
 
-A cut-down, **niri-native** fork of [andreumassanet/impasto](https://github.com/andreumassanet/impasto)
-(branch `lean-niri`). It started as a Quickshell shell for Hyprland and is now a small one for niri,
+A cut-down, **niri-native** fork of [andreumassanet/impasto](https://github.com/andreumassanet/impasto).
+It started as a Quickshell shell for Hyprland and is now a small one for niri,
 built for a cloud VM that you reach over RustDesk from an iPad.
 
 ## What is kept
