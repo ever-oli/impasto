@@ -30,12 +30,14 @@ tests() {
 }
 commit_pr() { # repo base title body
     local r=$1 base=$2 title=$3 body=${4:-"Made by Notch Build mode."}
+    # Always Ever's repo: ~/src/notch is a fork, and gh would default to its parent.
+    local gh_repo; gh_repo=$(git -C "$r" remote get-url origin | sed -E 's#.*github.com[:/]##; s#\.git$##')
     cd "$r"
     [ "$(git branch --show-current)" = "$base" ] && git switch -c "evolve/$(date +%Y%m%d-%H%M%S)"
     git add -A; git commit -qm "$title"
     git fetch -q origin "$base" && git rebase -q "origin/$base"
     git push -qu origin HEAD
-    gh pr create --base "$base" --title "$title" --body "$body" 2>/dev/null || gh pr view --json url -q .url
+    gh pr create -R "$gh_repo" --head "$(git branch --show-current)" --base "$base" --title "$title" --body "$body" || gh pr view -R "$gh_repo" --json url -q .url
 }
 verb=${1:-help}; shift || true
 case $verb in
@@ -52,7 +54,7 @@ case $verb in
     pr)      ensure; tests || { echo "tests fail: no PR"; exit 1; }; commit_pr "$REPO" lean-niri "${1:?title}" "${2:-}" ;;
     ship)    ensure; [ "$(cat "$CONF/auto-merge" 2>/dev/null)" = on ] || { echo "auto-merge is off (echo on > $CONF/auto-merge)"; exit 1; }
              tests || { echo "tests fail: not shipping"; exit 1; }
-             commit_pr "$REPO" lean-niri "${1:?title}"; cd "$REPO"; gh pr merge --squash --delete-branch; git switch -q lean-niri; git pull -q ;;
+             commit_pr "$REPO" lean-niri "${1:?title}"; cd "$REPO"; gh pr merge -R ever-oli/notch --squash --delete-branch; git switch -q lean-niri; git pull -q ;;
     sync-dots) ensure; cd "$DOTS"; git switch -q notch-desktop; git pull -q
              chezmoi --source "$DOTS" re-add 2>/dev/null || echo "(chezmoi re-add unavailable; copy by hand)"
              git diff --quiet && { echo "dotfiles already match the VM"; exit 0; }
