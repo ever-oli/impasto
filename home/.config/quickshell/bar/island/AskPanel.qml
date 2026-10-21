@@ -29,6 +29,13 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: 6
 
+        // Step back out to wherever the ask came from — the menu that opened
+        // it, or the bar. Escape already closes; this names it for the pointer.
+        IconButton {
+            icon: "󰅃"
+            onClicked: root.closed()
+        }
+
         Text {
             text: "󰚩"
             font.family: Theme.fontMono

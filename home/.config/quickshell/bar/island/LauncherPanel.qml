@@ -15,6 +15,7 @@ import Quickshell.Widgets
 import "../../theme"
 import "../../services"
 import "../../components"
+import "../../components"
 
 // Application launcher. The first character picks the mode: arithmetic, open
 // windows, a countdown, the clipboard history, emoji, or the shell's own
@@ -235,6 +236,18 @@ ColumnLayout {
         Layout.preferredHeight: LauncherService.fieldHeight
         spacing: LauncherService.gap
 
+        // Back one level: the small ‹ beside the trail — the pointer's answer
+        // to Esc and Backspace. Hidden at the root, where there is nothing to
+        // step out of.
+        IconButton {
+            visible: MenuService.top !== null
+            icon: "󰅃"
+            onClicked: {
+                MenuService.pop()
+                LauncherService.query = ""
+            }
+        }
+
         // The current mode's glyph rather than a magnifier.
         Text {
             text: MenuService.top ? MenuService.top.icon : root.mode.icon
@@ -284,11 +297,20 @@ ColumnLayout {
             }
             Keys.onDownPressed: root.move(root.grid ? LauncherService.emojiColumns : 1)
             // In the grid the arrows move along a line; the field is a search
-            // term, rarely edited in the middle.
+            // term, rarely edited in the middle. Inside a submenu an empty
+            // field steps back out: the left arrow is the Backspace walk-back
+            // without reaching for that key.
             Keys.onLeftPressed: event => {
-                event.accepted = root.grid
-                if (root.grid)
+                if (root.grid) {
+                    event.accepted = true
                     root.move(-1)
+                    return
+                }
+                event.accepted = text === "" && MenuService.top !== null
+                if (event.accepted) {
+                    MenuService.pop()
+                    LauncherService.query = ""
+                }
             }
             Keys.onRightPressed: event => {
                 event.accepted = root.grid
@@ -394,55 +416,12 @@ ColumnLayout {
         }
     }
 
-    // ── GROUPS ──────────────────────────────────────────────────────────────
-    //
-    // The emoji mode's nine groups and the recent picks, each marked by an
-    // emoji and nothing else. Tab steps through them.
-    RowLayout {
+    // The emoji mode's nine groups and the recent picks (EmojiStrip.qml).
+    EmojiStrip {
         Layout.fillWidth: true
         Layout.preferredHeight: LauncherService.stripHeight
         visible: LauncherService.showsStrip
-        spacing: 2
-
-        Repeater {
-            model: EmojiService.groups
-
-            delegate: Rectangle {
-                id: chip
-
-                required property var modelData
-                readonly property bool chosen: EmojiService.group === chip.modelData.id
-
-                Layout.preferredWidth: LauncherService.stripHeight + 2
-                Layout.preferredHeight: LauncherService.stripHeight
-                radius: Theme.radiusSmall
-                color: chip.chosen || chipMouse.containsMouse
-                    ? Theme.surfaceHoverIn(QsWindow.window) : "transparent"
-
-                Behavior on color { ColorAnimation { duration: Theme.durationFast } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: chip.modelData.mark
-                    font.family: Theme.fontBar
-                    font.pixelSize: Theme.fs(16)
-                    opacity: chip.chosen ? 1 : 0.6
-                }
-
-                MouseArea {
-                    id: chipMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        EmojiService.group = chip.modelData.id
-                        searchField.forceActiveFocus()
-                    }
-                }
-            }
-        }
-
-        Item { Layout.fillWidth: true }
+        onChosen: searchField.forceActiveFocus()
     }
 
     Rectangle {
