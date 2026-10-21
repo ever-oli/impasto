@@ -1,0 +1,387 @@
+#!/usr/bin/env python3
+"""notch-layout — per-desktop layout presets for niri.
+
+The omarchy-workspace-layout idea, notch-shaped. A preset is a file in
+~/.local/share/notch/layouts/<name>.kdl: a header of comments naming it
+(`label:`, `icon:`, `plan:`) and a body holding the innards of a niri
+`layout {}` block, so a preset can carry any option the wiki lists.
+
+`plan:` is the arrangement: how many windows each column holds, left to
+right, one number per column. `1,1` is half and half, `2,2` four
+quadrants, `1,2` one window beside two stacked. The columns share the
+width evenly. A preset without a plan only dresses the desktop.
+
+Applying finds the desktop (a niri workspace index, the focused one by
+default) and does two things. The body rides niri's per-workspace layout
+override, so the desktop keeps its look across a reboot: the desktop is
+named `notch-<n>` and the body is written for that name into
+~/.config/niri/notch-layout.kdl — an include wired at the end of
+config.kdl — which is then reloaded. The arrangement is made of niri
+actions, and a watcher re-makes it whenever the desktop's windows change,
+the way a workspace layout plugin does.
+
+  notch-layout list [--json]     presets, plus which desktop runs which
+  notch-layout <preset> [idx]    apply to the focused desktop (or idx)
+  notch-layout clear [idx]       lift a desktop's preset
+  notch-layout watch             re-make arrangements as windows change
+"""
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = os.environ.get("HOME", os.path.expanduser("~"))
+SHARE = Path(HOME) / ".local/share/notch/layouts"
+STATE = Path(HOME) / ".local/state/notch/layouts.json"
+KDL = Path(HOME) / ".config/niri/notch-layout.kdl"
+
+# The name a desktop carries so niri can find its override. Not a number:
+# niri reads a numeric `focus-workspace` as a name first, and the user's
+# Alt+1…5 binds mean the index.
+def desktop_name(idx):
+    return f"notch-{idx}"
+
+
+HELP = __doc__
+
+
+def niri(*args):
+    return subprocess.run(["niri", "msg", "action", *args],
+                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                          timeout=15).returncode
+
+
+def niri_json(*args):
+    try:
+        raw = subprocess.run(["niri", "msg", "--json", *args],
+                             capture_output=True, timeout=15)
+        return json.loads(raw.stdout)
+    except Exception:
+        return None
+
+
+# ── DESKTOPS ─────────────────────────────────────────────────────────────────
+
+def rooms():
+    return niri_json("workspaces") or []
+
+
+def desktops():
+    """{idx: {id, name}} for the output the pointer is on."""
+    found = rooms()
+    if not found:
+        return {}
+    output = next((w.get("output") for w in found if w.get("is_focused")),
+                  found[0].get("output"))
+    return {w.get("idx", 0): {"id": w.get("id"), "name": w.get("name") or "",
+                              "output": w.get("output")}
+            for w in found if w.get("output") == output}
+
+
+def focused():
+    return next((w.get("idx", 0) for w in rooms() if w.get("is_focused")), 0)
+
+
+def count(state=None):
+    """How many desktops to declare.
+
+    The ones that exist now, and any a preset was applied to: a desktop
+    that had a preset keeps it after a reboot, so its declaration has to
+    outlast the session that made it.
+    """
+    state = load() if state is None else state
+    highest = max((int(k) for k in state), default=0)
+    return max(len(desktops()), highest)
+
+
+# ── PRESETS ──────────────────────────────────────────────────────────────────
+
+def presets():
+    """name -> {label, icon, plan, body}, parsed from each file."""
+    out = {}
+    if not SHARE.is_dir():
+        return out
+    for path in sorted(SHARE.glob("*.kdl")):
+        meta = {"label": path.stem, "icon": "󰋙", "plan": []}
+        body = []
+        for line in path.read_text().splitlines():
+            if not body and (not line.strip() or line.lstrip().startswith("#")):
+                head = line.lstrip("# ").strip()
+                for key in ("label", "icon"):
+                    if head.startswith(key + ":"):
+                        meta[key] = head[len(key) + 1:].strip()
+                if head.startswith("plan:"):
+                    plan = []
+                    for part in head[len("plan:"):].split(","):
+                        part = part.strip()
+                        if part.isdigit():
+                            plan.append(int(part))
+                    meta["plan"] = plan
+                continue
+            body.append(line)
+        meta["body"] = "\n".join(body).strip()
+        out[path.stem] = meta
+    return out
+
+
+def indent(text):
+    return "\n".join(("    " + line) if line.strip() else line
+                     for line in text.splitlines())
+
+
+# ── STATE ────────────────────────────────────────────────────────────────────
+
+def load():
+    try:
+        return json.loads(STATE.read_text())
+    except Exception:
+        return {}
+
+
+def keep(state):
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    STATE.write_text(json.dumps(state, indent=1) + "\n")
+
+
+# ── THE INCLUDE ──────────────────────────────────────────────────────────────
+
+HEADER = ("// Per-desktop layout presets, written by `notch-layout`; empty until a\n"
+          "// preset is applied on the Control centre's Layouts block.\n")
+
+
+def include(state):
+    """The override for every desktop that runs a preset.
+
+    Only desktops with a preset are declared: a declared named workspace
+    that is not there yet is one niri opens, and a desktop the user never
+    made is not one to invent.
+    """
+    known = presets()
+    out = HEADER
+    for idx in range(1, count(state) + 1):
+        preset = known.get(state.get(str(idx), ""))
+        if not preset or not preset["body"]:
+            continue
+        out += "workspace \"%s\" {\n" % desktop_name(idx)
+        out += "    layout {\n" + indent(preset["body"]) + "\n    }\n"
+        out += "}\n"
+    return out
+
+
+def name_desktops(state):
+    """Name the desktops that carry a preset, so niri finds the override.
+
+    A desktop niri made on its own carries no name; a declared one has to
+    match, or niri opens a second workspace under that name and the
+    numbering shifts under the user's hands.
+    """
+    have = desktops()
+    was = focused()
+    for idx in sorted(have):
+        want = desktop_name(idx)
+        if state.get(str(idx)) is None:
+            continue
+        if have[idx]["name"] == want:
+            continue
+        niri("focus-workspace", str(idx))
+        niri("set-workspace-name", want)
+    if was and was in have:
+        niri("focus-workspace", str(was))
+
+
+# ── ARRANGEMENT ──────────────────────────────────────────────────────────────
+
+def windows_of(workspace_id):
+    """Tiling windows of a workspace, in the order they sit in it.
+
+    Each is {id, col, tile}: the column it is in and its place in that
+    column's stack.
+    """
+    found = niri_json("windows") or []
+    out = []
+    for win in found:
+        if win.get("workspace_id") != workspace_id or win.get("is_floating"):
+            continue
+        place = (win.get("layout") or {}).get("pos_in_scrolling_layout") or [0, 0]
+        out.append({"id": win.get("id"), "col": place[0], "tile": place[1]})
+    out.sort(key=lambda w: (w["col"], w["tile"]))
+    return out
+
+
+def flatten(workspace_id):
+    """Give every window a column of its own.
+
+    niri expels the bottom window of the focused column, so the bottom one
+    is the one to ask for. Repeating until every column holds one leaves
+    the plan free to decide the columns itself.
+    """
+    for _ in range(64):
+        found = windows_of(workspace_id)
+        if not found:
+            return
+        columns = {}
+        for win in found:
+            columns.setdefault(win["col"], []).append(win)
+        deep = [stack for stack in columns.values() if len(stack) > 1]
+        if not deep:
+            return
+        bottom = max(deep[0], key=lambda w: w["tile"])
+        niri("focus-window", "--id", str(bottom["id"]))
+        niri("expel-window-from-column")
+
+
+def arrange(idx, plan):
+    """Make the windows of a desktop sit as the plan says.
+
+    The plan counts the windows each column holds, left to right: `1,1` is
+    half and half, `2,2` four quadrants, `1,2` one window beside two
+    stacked. Columns share the width evenly.
+
+    niri's columns are horizontal and each holds a stack of windows, so a
+    column of two is a window consumed into the one beside it, and the
+    width of a column is set on the window that leads it. The windows are
+    taken in the order they sit, so the plan reads left to right.
+    """
+    desk = desktops().get(idx)
+    if not desk or not plan:
+        return
+    was = focused()
+    if was != idx:
+        niri("focus-workspace", str(idx))
+    if not windows_of(desk["id"]):
+        return
+    # Every window on its own first, so the plan decides the columns
+    # rather than inheriting whatever was there.
+    flatten(desk["id"])
+    ids = windows_of(desk["id"])
+    # Hand each column its share of the windows, in order. A desktop with
+    # fewer windows than the plan asks for gets what it has.
+    groups = []
+    at = 0
+    for count_here in plan:
+        group = ids[at:at + count_here]
+        at += count_here
+        if not group:
+            break
+        groups.append(group)
+        niri("focus-window", "--id", str(group[0]["id"]))
+        for _ in range(len(group) - 1):
+            niri("consume-window-into-column")
+    # Even shares: every column the same width.
+    share = 100.0 / max(1, len(groups))
+    for group in groups:
+        niri("focus-window", "--id", str(group[0]["id"]))
+        niri("set-column-width", f"{share:g}%")
+    if was and was != idx:
+        niri("focus-workspace", str(was))
+
+
+# ── COMMANDS ─────────────────────────────────────────────────────────────────
+
+def apply(name, idx=0):
+    known = presets()
+    if name not in known:
+        sys.exit(f"no preset {name!r} (have: {', '.join(known) or 'none'})")
+    target = idx or focused()
+    if not target:
+        sys.exit("no focused desktop")
+    state = load()
+    state[str(target)] = name
+    keep(state)
+    name_desktops(state)
+    KDL.parent.mkdir(parents=True, exist_ok=True)
+    KDL.write_text(include(state))
+    niri("load-config-file")
+    plan = known[name]["plan"]
+    if plan:
+        arrange(target, plan)
+    return target
+
+
+def clear(idx=0):
+    target = idx or focused()
+    state = load()
+    if str(target) not in state:
+        return
+    state.pop(str(target))
+    keep(state)
+    KDL.write_text(include(state))
+    niri("load-config-file")
+    # The name goes with the preset: a desktop that keeps it would still be
+    # the one niri finds by name, and the next preset would have to fight
+    # over it.
+    have = desktops()
+    if target in have and have[target]["name"] == desktop_name(target):
+        was = focused()
+        niri("focus-workspace", str(target))
+        niri("unset-workspace-name")
+        if was and was != target:
+            niri("focus-workspace", str(was))
+
+
+def watch():
+    """Re-make a desktop's arrangement when its windows change.
+
+    The stream is the same one the shell reads; every window opening or
+    closing on a desktop with a plan means the plan is one window out of
+    date, so it is made again.
+    """
+    known = presets()
+    stream = subprocess.Popen(["niri", "msg", "--json", "event-stream"],
+                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    for line in stream.stdout:
+        try:
+            event = json.loads(line)
+        except Exception:
+            continue
+        kind = next(iter(event), "")
+        if kind not in ("WindowOpened", "WindowClosed", "WorkspaceActivated"):
+            continue
+        state = load()
+        if not state:
+            continue
+        desk = focused()
+        plan = known.get(state.get(str(desk), ""), {}).get("plan")
+        if plan:
+            arrange(desk, plan)
+
+
+# ── CLI ──────────────────────────────────────────────────────────────────────
+
+def main():
+    args = sys.argv[1:]
+    as_json = "--json" in args
+    args = [arg for arg in args if arg != "--json"]
+    if not args or args[0] in ("help", "--help", "-h"):
+        sys.exit(HELP)
+    if args[0] == "list":
+        known = presets()
+        state = load()
+        if as_json:
+            print(json.dumps({"presets": [
+                {"name": name, "label": known[name]["label"],
+                 "icon": known[name]["icon"], "plan": known[name]["plan"]}
+                for name in known
+            ], "state": state, "focused": focused(),
+             "desktops": sorted(desktops())}, indent=1))
+            return
+        for name, meta in known.items():
+            runs = ", ".join(sorted((k for k, ran in state.items()
+                                     if ran == name), key=int))
+            plan = " ".join(str(p) for p in meta["plan"])
+            print(f"{meta['icon']}  {meta['label']:10} {plan:8} -> {runs or '—'}")
+        return
+    if args[0] == "clear":
+        clear(int(args[1]) if len(args) > 1 else 0)
+        return
+    if args[0] == "watch":
+        watch()
+        return
+    target = apply(args[0], int(args[1]) if len(args) > 1 else 0)
+    print(f"desktop {target} := {args[0]}")
+
+
+if __name__ == "__main__":
+    main()

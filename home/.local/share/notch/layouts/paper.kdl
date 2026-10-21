@@ -1,0 +1,14 @@
+# label: Paper
+# icon: ▤
+# Page margins, like a well-set book. Long text stays readable.
+gaps 8
+struts {
+    left 96
+    right 96
+    top 24
+    bottom 24
+}
+default-column-width {
+    proportion 0.4
+    fixed 640
+}

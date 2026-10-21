@@ -9,6 +9,7 @@ shell. MIT; keep GPL code (caelestia, end-4, vicinae) out.
 - **CLIs** (`home/.local/bin`): `notch` (palette, picker), `notch-theme`, `notch-font`, `notch-act`, `notch-doctor`; `impasto` is a compat symlink.
 - **Themes:** `home/.local/share/notch/themes/<name>/colors.toml` is the source of truth; `themed/*.tpl` render Ghostty, Helix, niri, fuzzel, btop, fastfetch, fzf, GTK, qt6ct, T3, Helium policy.
 - **Text size:** `notch-font size <n>` (default 11) → `~/.config/notch/font-size`; notch-theme renders it everywhere (shell `Theme.fs()`, Ghostty n+2, fuzzel n+1, GTK, qt6ct, mako).
+- **Layouts:** per-desktop presets — `notch-layout <preset> [idx]`; files in `home/.local/share/notch/layouts/*.kdl` are the source, state in `~/.local/state/notch/layouts.json`, applied through `~/.config/niri/notch-layout.kdl` (an include; desktops 1..N named by index on a Control-centre "Layouts" block tap).
 - **Packages:** `home/.local/share/notch/deps.tsv` (package, source, required/optional, command, purpose; read by install, setup and doctor). Machine-specific bits (bash, mako, mise, greetd, package snapshot) live in ever-oli/dotfiles.
 
 ## Layout

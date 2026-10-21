@@ -275,3 +275,8 @@ environment {
 // Focus ring and border colours, written by `notch-theme set <name>`.
 // Last, so it overrides the layout block above.
 include "notch-theme.kdl"
+
+// ==== layouts ====
+// Desktop layout presets, written by `notch-layout` and the Layouts block.
+// After notch-theme: neither writes the layout block above.
+include "notch-layout.kdl"

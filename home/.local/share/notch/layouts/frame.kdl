@@ -1,0 +1,14 @@
+# label: Frame
+# icon: ▣
+# A border around every window, and a stronger focus ring.
+gaps 10
+focus-ring {
+    width 3
+}
+border {
+    on
+    width 2
+}
+default-column-width {
+    proportion 0.5
+}

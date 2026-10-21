@@ -42,7 +42,8 @@ Item {
         notifications: notificationsBlock,
         clock: clockBlock,
         session: sessionBlock,
-        shortcuts: shortcutsBlock
+        shortcuts: shortcutsBlock,
+        layouts: layoutsBlock
     })
 
     Loader {
@@ -121,6 +122,14 @@ Item {
     Component {
         id: notificationsBlock
         NotificationList {}
+    }
+
+    Component {
+        id: layoutsBlock
+        LayoutsBlock {
+            cols: root.shape.cols
+            rows: root.shape.rows
+        }
     }
 
     Component {

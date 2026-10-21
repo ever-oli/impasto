@@ -1,0 +1,8 @@
+# label: Quarters
+# icon: ▦
+# plan: 2,2
+# Four windows in a grid: two columns of two.
+gaps 10
+default-column-width {
+    proportion 0.5
+}

@@ -1,0 +1,8 @@
+# label: Thirds
+# icon: ▤
+# plan: 1,1,1
+# Three columns, a third each.
+gaps 10
+default-column-width {
+    proportion 0.3333
+}

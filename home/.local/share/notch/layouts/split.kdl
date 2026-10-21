@@ -1,0 +1,8 @@
+# label: Split
+# icon: ▧
+# plan: 1,2
+# One window beside a stack of two.
+gaps 10
+default-column-width {
+    proportion 0.5
+}

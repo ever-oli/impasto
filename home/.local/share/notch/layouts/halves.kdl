@@ -1,0 +1,8 @@
+# label: Halves
+# icon: ▥
+# plan: 1,1
+# Two windows side by side, half the screen each.
+gaps 12
+default-column-width {
+    proportion 0.5
+}
