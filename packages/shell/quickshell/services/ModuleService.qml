@@ -99,8 +99,9 @@ Singleton {
                 continue
             }
             if (id === "anime") {
-                // ani-cli in the island terminal: the fzf browser, with mpv.
-                out[id] = { name: "Anime", glyph: "󰓤",
+                // The catalogue, the way a streaming service opens it: a
+                // film icon, and the shelves under the notch.
+                out[id] = { name: "Catalogue", glyph: "󰄿",
                             action: () => Quickshell.execDetached(["qs", "ipc", "call", "panel", "open", "anime"]) }
                 continue
             }
