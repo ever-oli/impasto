@@ -295,7 +295,7 @@ Scope {
                 nodes = node.items ?? []
             }
             LauncherService.query = ""
-            root.openLauncherOn("launcher")
+            root.island?.open("launcher")
             return root.ok({ path: path })
         }
 
@@ -305,7 +305,7 @@ Scope {
             LauncherService.actionTarget = null
             LauncherService.aliasTarget = null
             LauncherService.query = text
-            root.openLauncherOn("launcher")
+            root.island?.open("launcher")
             return root.ok({ query: text })
         }
 
