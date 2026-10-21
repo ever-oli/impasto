@@ -1,0 +1,63 @@
+#!/bin/bash
+# notch-theater — ASCII Theater (ssh watch.ascii.theater, mschf) dropped down
+# under the notch, like notch-term. A throwaway tmux socket draws the chrome:
+# accent marquee on top, framed 80x23 screen; colours from the Notch theme.
+#   notch-theater toggle   open it, focus it, or close it when it is focused
+# q in the stream quits; closing only kills the "notch-theater" tmux socket.
+# Placement is a niri window rule on app-id com.notch.theater (config.kdl).
+set -u
+ID=com.notch.theater SOCK=notch-theater
+win() { niri msg -j windows 2>/dev/null | python3 -c "import json,sys
+for w in json.load(sys.stdin):
+    if w.get('app_id')=='$ID': print(w['id'], int(w.get('is_focused',False))); break"; }
+colors() { python3 - <<'PY'
+import json, os, tomllib
+h = os.path.expanduser("~")
+c = {}
+try:
+    tid = json.load(open(f"{h}/.local/state/notch/theme.json"))["id"]
+    c = tomllib.load(open(f"{h}/.local/share/notch/themes/{tid}/colors.toml", "rb"))
+except Exception: pass
+bg, fg = c.get("background", "#000000"), c.get("foreground", "#c7f0c7")
+acc = c.get("accent", "#8a2312"); border = c.get("selection_background", c.get("color8", acc))
+lum = lambda x: sum(w * int(x[i:i+2], 16) / 255 for w, i in ((.2126, 1), (.7152, 3), (.0722, 5)))
+text = bg if abs(lum(acc) - lum(bg)) >= abs(lum(acc) - lum(fg)) else fg
+print(bg, fg, acc, border, text)
+PY
+}
+case ${1:-toggle} in
+    toggle)
+        read -r wid focused < <(win) || true
+        if [ -n "${wid:-}" ]; then
+            if [ "$focused" = 1 ]; then niri msg action close-window --id "$wid"; tmux -L $SOCK kill-server 2>/dev/null
+            else niri msg action focus-window --id "$wid"; fi
+            exit 0
+        fi
+        tmux -L $SOCK kill-server 2>/dev/null   # a stale server would ignore the fresh conf
+        read -r BG FG ACC BORDER TEXT < <(colors)
+        conf=${XDG_CACHE_HOME:-$HOME/.cache}/notch/theater.tmux.conf
+        mkdir -p "${conf%/*}"
+        cat > "$conf" <<CONF
+set -g status-position top
+set -g status-interval 30
+set -g status-style "bg=$ACC,fg=$TEXT"
+set -g status-left-length 60
+set -g status-left "#[bold] ✦ ASCII THEATER#[nobold] │ NOW SHOWING "
+set -g status-right " q quit │ #[bold]%H:%M "
+set -g window-status-format ""
+set -g window-status-current-format ""
+set -g pane-border-lines heavy
+set -g pane-border-style "fg=$BORDER"
+set -g pane-active-border-style "fg=$ACC"
+set -g default-terminal tmux-256color
+set -g escape-time 0
+set -g bell-action none
+set -g set-titles off
+CONF
+        exec setsid -f ghostty --class=$ID --gtk-single-instance=false --title="ASCII Theater" \
+            --window-decoration=none --font-size=14 --background="$BG" --foreground="$FG" \
+            --window-padding-x=16 --window-padding-y=8 --window-padding-balance=true \
+            -e tmux -L $SOCK -f "$conf" new-session -s theater \
+            'ssh -o StrictHostKeyChecking=accept-new -o LogLevel=ERROR watch.ascii.theater' >/dev/null 2>&1 ;;
+    *) sed -n '2,7p' "$0" ;;
+esac

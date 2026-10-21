@@ -18,6 +18,7 @@ shell. MIT; keep GPL code (caelestia, end-4, vicinae) out.
 - **Modules:** each bar/island module loads alone; `qs ipc call modules failed`, `… reload <id>`.
 - **OpenRouter meter:** `usage` on the bar; polls every 10 min, warns under $1. Key read from Pi at run time.
 - **Island terminal:** `notch-term toggle` (Alt+\`, or the  button): Ghostty `com.notch.island` on tmux `notch`.
+- **ASCII Theater:** `notch-theater toggle` (Alt+Shift+\`, the 󰿎 button, palette "ASCII Theater"): Ghostty `com.notch.theater`, own tmux socket `notch-theater`.
 - **Palette:** keybinds by what they do (Enter runs safe ones), `SSH: <host>` rows from `~/.ssh/config`.
 - **Agents:** `AGENTS.md` → `home/.pi/agent/skills/notch/SKILL.md`, loaded by Build mode.
 

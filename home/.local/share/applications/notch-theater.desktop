@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=ASCII Theater
+Comment=Free text-mode movies (ssh watch.ascii.theater), under the notch
+Exec=notch-theater toggle
+Icon=video-display
+Terminal=false
+Categories=AudioVideo;Video;
