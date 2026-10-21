@@ -13,7 +13,7 @@ SOCK=${NOTCH_THEATER_SOCK:-notch-theater}
 #   1 frame + 80 + 1 frame = 82 cols;  1 marquee + 1 frame + 23 + 1 frame = 26 rows
 # The popup opens when Ghostty attaches; when the stream ends, so does tmux.
 # Ghostty sizes itself in cells (window-width/height). At 14pt AnnotationM a
-# cell is 12x24 px: 82x26 cells + padding (8,4) = 1000x632 px (rendered).
+# cell is 12x24 px: 82x26 cells + padding (8,4) renders at 1008x648 px.
 W=82 H=26 PT=14 PADX=8 PADY=4
 stage() { # $1 conf, $2 stream command: detached session, size pinned, popup on attach
     tmux -L $SOCK -f "$1" new-session -d -s theater -x $W -y $H "exec '$0' marquee '$ACC' '$TEXT'"
