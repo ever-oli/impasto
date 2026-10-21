@@ -27,7 +27,7 @@ stage() { # $1 conf, $2 stream command: detached session, frame panes, size pinn
          split-window -t "$s" -h -l 1 'exec sleep infinity' \; \
          select-pane -t "$s"
 }
-win() { niri msg -j windows 2>/dev/null | python3 -c "import json,sys
+win() { niri msg -j windows 2>/dev/null | python3 2>/dev/null -c "import json,sys
 for w in json.load(sys.stdin):
     if w.get('app_id')=='$ID': print(w['id'], int(w.get('is_focused',False))); break"; }
 colors() { python3 - <<'PY'
@@ -39,10 +39,10 @@ try:
     c = tomllib.load(open(f"{h}/.local/share/notch/themes/{tid}/colors.toml", "rb"))
 except Exception: pass
 bg, fg = c.get("background", "#000000"), c.get("foreground", "#c7f0c7")
-acc = c.get("accent", "#8a2312"); border = c.get("selection_background", c.get("color8", acc))
+acc = c.get("accent", "#8a2312")
 lum = lambda x: sum(w * int(x[i:i+2], 16) / 255 for w, i in ((.2126, 1), (.7152, 3), (.0722, 5)))
 text = bg if abs(lum(acc) - lum(bg)) >= abs(lum(acc) - lum(fg)) else fg
-print(bg, fg, acc, border, text)
+print(bg, fg, acc, text)
 PY
 }
 case ${1:-toggle} in
@@ -54,7 +54,7 @@ case ${1:-toggle} in
             exit 0
         fi
         tmux -L $SOCK kill-server 2>/dev/null   # a stale server would ignore the fresh conf
-        read -r BG FG ACC BORDER TEXT < <(colors)
+        read -r BG FG ACC TEXT < <(colors)
         conf=${XDG_CACHE_HOME:-$HOME/.cache}/notch/theater.tmux.conf
         mkdir -p "${conf%/*}"
         cat > "$conf" <<CONF
@@ -67,7 +67,7 @@ set -g status-right " q quit │ #[bold]%H:%M "
 set -g window-status-format ""
 set -g window-status-current-format ""
 set -g pane-border-lines heavy
-set -g pane-border-style "fg=$BORDER"
+set -g pane-border-style "fg=$BG"   # velvet: only the frame around the stream shows
 set -g pane-active-border-style "fg=$ACC"
 set -g default-terminal tmux-256color
 set -g escape-time 0

@@ -17,7 +17,8 @@ sleep 1
 shot=$(tmux -L $P capture-pane -p -t 0)
 [ "${VERBOSE:-}" ] && printf '%s\n' "$shot"
 row() { sed -n "$1p" <<<"$shot"; }
-[[ $(row 3) == ' ┏'*'┓ ' ]] && [[ $(row 27) == ' ┗'*'┛ ' ]] && [[ $(row 4) == ' ┃'S*'┃ ' ]] \
+c() { row "$1" | cut -c"$2"; }   # frame corners/sides at cols 2,83 rows 3,27
+[ "$(c 3 2)$(c 3 83)$(c 27 2)$(c 27 83)$(c 15 2)$(c 15 83)" = "┳┳┻┻┃┃" ] \
   && [ "$(row 4 | cut -c3-82)" = "$(printf 'S%.0s' {1..80})" ] \
   || { echo "FAIL frame does not hug the 80x23 stream"; printf '%s\n' "$shot"; exit 1; }
 echo "ok theater: window 84x27+marquee, stream 80x23 framed"
