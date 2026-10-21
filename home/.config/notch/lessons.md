@@ -31,3 +31,8 @@ Contract (the actions behind each bind as of 2026-10-20):
   config; when Ever asks "does X have a key", read `scripts/niri_binds.py` output.
 
 New binds must end up in both config copies in one step, and `niri validate` must pass.
+
+## A lesson from a failed turn
+<!-- Ever: 2026-10-21 — after a question that failed -->
+
+When a screenshot or screen-capture tool call is denied, prompt the user to grant screen permission (or approve the tool) and retry once instead of returning an empty answer.
