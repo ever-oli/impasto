@@ -16,7 +16,7 @@ import sys
 
 root, work = sys.argv[1], sys.argv[2]
 spec = importlib.util.spec_from_file_location(
-    "ask_lessons", os.path.join(root, "home/.config/quickshell/scripts/ask_lessons.py"))
+    "ask_lessons", os.path.join(root, "packages/assistant/scripts/ask_lessons.py"))
 lessons = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(lessons)
 

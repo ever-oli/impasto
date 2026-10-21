@@ -4,6 +4,29 @@ A cut-down, **niri-native** fork of [andreumassanet/impasto](https://github.com/
 It started as a Quickshell shell for Hyprland and is now a small one for niri,
 built for a cloud VM that you reach over RustDesk from an iPad.
 
+## The packages
+
+The repository is one repo with a few packages in it, the way pi keeps its
+agents in one tree: each thing the shell is made of lives in its own
+folder, says what it is, and says where its files land.
+
+| Package | What it is | Lands in |
+|---|---|---|
+| `packages/shell` | the quickshell app: bar, island, panels, theme | `~/.config/quickshell` |
+| `packages/assistant` | the ask bridge, the engines, the harness that learns | `~/.config/quickshell/scripts`, `~/.config/notch`, `~/.local/bin` |
+| `packages/media` | the catalogue and the watching | `~/.config/quickshell/scripts`, `~/.local/bin` |
+| `packages/radar` | Notchstorm, the weather radar | `~/.local/bin` |
+| `packages/layouts` | the per-desktop window plans | `~/.local/bin` |
+| `packages/theme` | the four ink themes | `~/.local/bin` |
+| `packages/tools` | the command line | `~/.local/bin` |
+| `packages/desktop` | niri, mpv, the fonts, the units | `~/.config`, `~/.local/share` |
+| `packages/data` | the themes, the plans, the vendored mov-cli | `~/.local/share/notch` |
+
+Each package has an `install` file: one line per thing, where it comes
+from and where it goes. `./setup files` follows them, and
+`tests/mirror.sh` checks that the machine still has what the repository
+says it has.
+
 ## What is kept
 
 | Part | Where |

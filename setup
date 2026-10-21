@@ -62,15 +62,23 @@ files() {
         rm -rf "$HOME/.config/quickshell"
     fi
     : > "$MANIFEST"
-    (cd "$REPO/home" && find . \( -type f -o -type l \) -printf '%P\n') | while read -r rel; do
-        dest="$HOME/$rel"
-        if [ -e "$dest" ] && ! cmp -s "$REPO/home/$rel" "$dest"; then
-            mkdir -p "$BACKUP/$(dirname "$rel")"
-            cp -a "$dest" "$BACKUP/$rel"
-        fi
-        mkdir -p "$(dirname "$dest")"
-        cp -a "$REPO/home/$rel" "$dest"
-        echo "$rel" >> "$MANIFEST"
+    # Each package says where its files go; the rules live beside it, so a
+    # package can be read on its own.
+    for manifest in "$REPO"/packages/*/install; do
+        dir=$(dirname "$manifest")
+        while read -r src dst; do
+            [ -z "${src:-}" ] && continue
+            case "$src" in \#*) continue ;; esac
+            [ -e "$dir/$src" ] || continue
+            dest="$HOME/$dst"
+            if [ -e "$dest" ] && ! cmp -s "$dir/$src" "$dest"; then
+                mkdir -p "$BACKUP/$(dirname "$dst")"
+                cp -a "$dest" "$BACKUP/$dst"
+            fi
+            mkdir -p "$(dirname "$dest")"
+            cp -a "$dir/$src" "$dest"
+            echo "$dst" >> "$MANIFEST"
+        done < "$manifest"
     done
     chmod +x "$HOME"/.local/bin/notch* "$HOME"/.config/quickshell/scripts/*.py
     [ -d "$BACKUP" ] && say "files: replaced files backed up to $BACKUP"

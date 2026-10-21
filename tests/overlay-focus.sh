@@ -2,7 +2,7 @@
 # Flags any quickshell layer surface using Exclusive keyboard focus unless the
 # line just above it carries a `focus-exclusive-ok: <reason>` comment.
 set -euo pipefail
-root="${1:-$(dirname "$0")/../home/.config/quickshell}"
+root="${1:-$(dirname "$0")/../packages/shell/quickshell}"
 bad=0
 while IFS=: read -r file line _; do
   prev=$(sed -n "$((line-1))p;$((line-2))p" "$file")

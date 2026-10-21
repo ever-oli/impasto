@@ -1,0 +1,8 @@
+niri .config/niri
+mpv .config/mpv
+bat .config/bat
+fontconfig .config/fontconfig
+aether .config/aether
+systemd .config/systemd
+applications .local/share/applications
+icons .local/share/icons

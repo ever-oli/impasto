@@ -1,0 +1,3 @@
+scripts .config/quickshell/scripts
+notch .config/notch
+bin .local/bin

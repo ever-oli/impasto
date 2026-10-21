@@ -1,13 +1,13 @@
 # Files still over the 5,000-token cap (bytes/4 = 20,000 bytes), current size in bytes.
 # Ratchets only tighten: touching one must not grow it; bring it under the cap
 # whenever convenient, then delete its line (the hook nags you when you do).
-38804	home/.config/quickshell/bar/Bar.qml
-28474	home/.config/quickshell/bar/island/LauncherPanel.qml
-22180	home/.config/quickshell/bar/widgets/DynamicIsland.qml
-36006	home/.config/quickshell/services/ControlsService.qml
-32506	home/.config/quickshell/services/LauncherService.qml
-41289	home/.config/quickshell/services/SettingsService.qml
-31229	home/.config/quickshell/theme/Theme.qml
-78011	home/.config/quickshell/theme/Tr.qml
-35147	home/.local/share/notch/mov-cli/mov_cli/iterfzf/LICENSE.txt
-31113	home/.local/share/notch/mov-cli/mov_cli/utils/subtitles/iso_639.json
+38804	packages/shell/quickshell/bar/Bar.qml
+28474	packages/shell/quickshell/bar/island/LauncherPanel.qml
+22180	packages/shell/quickshell/bar/widgets/DynamicIsland.qml
+36006	packages/shell/quickshell/services/ControlsService.qml
+32506	packages/shell/quickshell/services/LauncherService.qml
+41289	packages/shell/quickshell/services/SettingsService.qml
+31229	packages/shell/quickshell/theme/Theme.qml
+78011	packages/shell/quickshell/theme/Tr.qml
+35147	packages/data/notch/mov-cli/mov_cli/iterfzf/LICENSE.txt
+31113	packages/data/notch/mov-cli/mov_cli/utils/subtitles/iso_639.json

@@ -3,7 +3,7 @@
 # heavy-bordered popup whose inside is exactly 80x23. Headless: no window opens.
 set -u
 export LANG=C.UTF-8
-BIN=$(dirname "$0")/../home/.local/bin/notch-theater
+BIN=$(dirname "$0")/../packages/tools/bin/notch-theater
 S=notch-theater-test-$$ P=notch-theater-proof-$$
 trap 'tmux -L $S kill-server 2>/dev/null; tmux -L $P kill-server 2>/dev/null' EXIT
 NOTCH_THEATER_DRY=1 NOTCH_THEATER_SOCK=$S NIRI_SOCKET=/nonexistent \
