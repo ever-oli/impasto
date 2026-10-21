@@ -25,6 +25,9 @@ notch context hand       that, on the clipboard, with T3 in front
 notch work hand job 0    one posting, handed over
 ```
 
+The whole surface is in [docs/ipc.md](docs/ipc.md): every target, every
+verb, what it answers with.
+
 ## The packages
 
 The repository is one repo with a few packages in it, the way pi keeps its
