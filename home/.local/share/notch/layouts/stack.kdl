@@ -1,8 +1,8 @@
 # label: Stack
-# icon: ▤
+# icon: ▥
 # plan: 1
 # Every window in one column, one above the other.
-gaps 10
+gaps 8
 default-column-width {
     proportion 0.6
 }

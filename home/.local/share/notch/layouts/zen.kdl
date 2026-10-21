@@ -1,9 +1,0 @@
-# label: Zen
-# icon: ▢
-# A wide margin and a centred column; one thing, well.
-gaps 28
-always-center-single-column
-center-focused-column "always"
-default-column-width {
-    proportion 0.5
-}

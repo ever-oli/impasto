@@ -8,7 +8,7 @@
 #   notch ask "<question>" [screen|region]  the notch assistant
 #   notch ask capture | mode <id>         grab the Helium tab · pick a mode
 #   notch ask --backend pi "<question>"   one question, printed here
-#   notch ask backend opencode|pi          hidden fallback switch (Pi is the engine)
+#   notch ask backend cua|opencode|pi      the engine: Cua Driver (default), opencode, Pi
 #   notch install [--dry-run]              bootstrap a fresh Arch machine (INSTALL.md)
 #   notch evolve "<request>"               Build mode: Notch changes itself (gated)
 #   notch picker [theme|wallpaper]       the carousel in the notch
@@ -35,8 +35,8 @@ case $verb in
     ask)          case "${1:-}" in
                       capture) call ask capture ;;
                       mode)    call ask mode "${2:?mode id}" ;;
-                      --backend) exec notch-ask-cli --backend "${2:?pi or opencode}" "${3:?question}" ;;
-                      backend) python3 "$HOME/.config/quickshell/scripts/ask.py" backend "${2:?pi or opencode}"
+                      --backend) exec notch-ask-cli --backend "${2:?cua, opencode or pi}" "${3:?question}" ;;
+                      backend) python3 "$HOME/.config/quickshell/scripts/ask.py" backend "${2:?cua, opencode or pi}"
                                call ask backend "$2" >/dev/null 2>&1 || true ;;
                       *)       call ask ask "${1:?question}" "${2:-none}" ;;
                   esac ;;

@@ -30,9 +30,9 @@ def _backend():
     if "--backend" in sys.argv:
         return sys.argv[sys.argv.index("--backend") + 1]
     try:
-        return open(f"{CONF}/ask-backend").read().strip() or "pi"
+        return open(f"{CONF}/ask-backend").read().strip() or "cua"
     except OSError:
-        return os.environ.get("ASK_BACKEND", "pi")
+        return os.environ.get("ASK_BACKEND", "cua")
 BACKEND = _backend()
 PI = os.environ.get("ASK_PI", f"{HOME}/.local/share/mise/installs/node/latest/bin/pi")
 # ASK_PI_STATE / ASK_PI_SESSION let tests use their own chat, never the live notch one.
@@ -71,6 +71,20 @@ def emit(**event):
 
 env = dict(os.environ, OPENCODE_CONFIG_CONTENT=json.dumps(
     {"permission": {"edit": "ask", "bash": "ask", "webfetch": "allow"}}))
+if BACKEND == "cua":
+    # The Cua Driver (MIT, cua.ai) hands the agent a computer: the desktop,
+    # its windows, and the browser over CDP. It is free and needs no
+    # account, so the assistant stops depending on a hosted engine.
+    env = dict(env, OPENCODE_CONFIG_CONTENT=json.dumps({
+        "permission": {"edit": "ask", "bash": "ask", "webfetch": "allow"},
+        "mcp": {"servers": {"cua": {
+            "type": "local",
+            "command": [os.path.join(HOME, ".local/bin/cua-driver"), "mcp"],
+            # niri is native Wayland: without this the driver falls back to
+            # X11, where a Wayland desktop has no windows to find.
+            "environment": {"CUA_DRIVER_RS_ENABLE_WAYLAND": "1"},
+            "enabled": True}}}}))
+    env["PATH"] = os.path.join(HOME, ".local/bin") + ":" + env.get("PATH", "")
 if BACKEND == "pi":
     os.makedirs(PI_STATE, exist_ok=True)
     env = dict(os.environ, NOTCH_PI_ACT=f"{PI_STATE}/act",

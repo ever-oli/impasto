@@ -31,15 +31,16 @@ Singleton {
     readonly property var modeInfo: root.modes.find(m => m.id === root.mode) ?? { name: "General", icon: "󰚩" }
     // The Helium tab captured for the next question (Alt+Y).
     property string captured: ""
-    // "opencode" (ACP) or "pi" (Pi + OptChat, one never-ending chat). Saved in
+    // "cua" (opencode + the Cua Driver's computer), "opencode" (ACP) or
+    // "pi" (Pi + OptChat, one never-ending chat). Saved in
     // ~/.config/notch/ask-backend; switching restarts the bridge.
     property string backend: ""
     function setBackend(name: string): void {
         root.cancel()
-        root.backend = name === "pi" ? "pi" : "opencode"
+        root.backend = name === "pi" ? "pi" : (name === "cua" ? "cua" : "opencode")
         Quickshell.execDetached(["python3", Quickshell.shellPath("scripts/ask.py"), "backend", root.backend])
         root.bridge.running = false
-        root.messages = root.messages.concat([{ role: "tool", text: `󰒓 Backend: ${root.backend === "pi" ? "Pi · OptChat memory" : "opencode"}` }])
+        root.messages = root.messages.concat([{ role: "tool", text: `󰒓 Backend: ${root.backend === "pi" ? "Pi · OptChat memory" : root.backend === "cua" ? "opencode · Cua Driver" : "opencode"}` }])
         root.bridge.running = true
     }
 

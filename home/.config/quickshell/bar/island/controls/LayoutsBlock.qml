@@ -85,7 +85,7 @@ Item {
 
         // Fixed split so the grid and the status row depend only on the
         // block's own height: grid gets everything above the status line.
-        readonly property int statusH: 44
+        readonly property int statusH: 40
 
         GridView {
             id: grid
@@ -96,7 +96,10 @@ Item {
             boundsBehavior: Flickable.StopAtBounds
             interactive: contentHeight > height
             cellWidth: (width - (root.cols - 1) * Theme.centreGutter) / root.cols
-            cellHeight: 58
+            // The rows the presets need, and the height each may take: the
+            // block holds them all rather than clipping the last one.
+            readonly property int rows: Math.max(1, Math.ceil(root.presets.length / root.cols))
+            cellHeight: Math.max(40, Math.floor((height - (rows - 1) * Theme.centreGutter) / rows))
             model: ScriptModel {
                 values: root.presets
             }
@@ -202,21 +205,46 @@ Item {
             }
         }
 
-        // Which desktop and which preset; tapping lifts the preset.
-        QuickTile {
+        // Which desktop and which preset; tapping lifts the preset. A plain
+        // row, not a tile: the block is narrow and the tile's icon and
+        // detail do not fit beside each other.
+        Item {
             id: status
 
             width: parent.width
             height: parent.statusH
-            icon: "󰍹"
-            label: {
-                const desk = root.ready ? (root.facts.focused ?? 0) : 0
-                return `${desk} · ${root.nameOf}`
-            }
-            detail: "tap to lift this preset"
-            available: root.ready
 
-            onToggled: root.run(["clear"])
+            Text {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width - hint.width - 16
+                elide: Text.ElideRight
+                font.family: Theme.fontBar
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.text
+                text: {
+                    const desk = root.ready ? (root.facts.focused ?? 0) : 0
+                    return `${desk} · ${root.nameOf}`
+                }
+            }
+
+            Text {
+                id: hint
+
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                font.family: Theme.fontBar
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.textMuted
+                text: "lift"
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                enabled: root.ready
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.run(["clear"])
+            }
         }
     }
 }

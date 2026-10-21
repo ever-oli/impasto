@@ -1,7 +1,0 @@
-# label: Mono
-# icon: ▬
-# No gaps at all, one full-width column. Terminal work.
-gaps 0
-default-column-width {
-    proportion 1.0
-}
