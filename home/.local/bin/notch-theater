@@ -11,7 +11,8 @@ SOCK=${NOTCH_THEATER_SOCK:-notch-theater}
 # Layout, in cells: the stream is a fixed 80x23 canvas. The tmux window is the
 # marquee (row 1); the stream runs in a bordered popup that hugs it exactly:
 #   1 frame + 80 + 1 frame = 82 cols;  1 marquee + 1 frame + 23 + 1 frame = 26 rows
-# The popup opens when Ghostty attaches; when the stream ends, so does tmux.
+# The popup opens from client-attached/-resized hooks once Ghostty has its final
+# grid (it waits for it before attaching); when the stream ends, so does tmux.
 # Ghostty sizes itself in cells (window-width/height). At 14pt AnnotationM a
 # cell is 12x24 px: 82x26 cells + padding (8,4) renders at 1008x648 px.
 W=82 H=26 PT=14 PADX=8 PADY=4
@@ -19,15 +20,14 @@ stage() { # $1 conf, $2 stream command: detached session, size pinned, popup on 
     tmux -L $SOCK -f "$1" new-session -d -s theater -x $W -y $H "exec '$0' marquee '$ACC' '$TEXT'"
     tmux -L $SOCK resize-window -t theater -x $W -y $H
     tmux -L $SOCK set -g @accent "$ACC"
-    # Deferred: Ghostty may resize once after attaching, and a resize closes popups.
-    tmux -L $SOCK set-hook -g client-attached "run-shell -b \"sleep 0.4; '$0' popup '#{client_name}'\""
+    # The hook opens the popup directly (no run-shell). Ghostty only attaches
+    # once its grid is final (see toggle), so no resize closes the popup.
+    local pop="display-popup -E -b heavy -S 'fg=$ACC' -w $W -h $((H - 1)) -x 0 -y $H \"sh -c '. $(popup_cmd)'; tmux -L $SOCK kill-server\""
+    tmux -L $SOCK set-hook -g client-attached "$pop"
+    tmux -L $SOCK set-hook -g client-resized "$pop"   # a resize closes popups: reopen
     printf '%s' "$2" > "$(popup_cmd)"
 }
 popup_cmd() { echo "${XDG_CACHE_HOME:-$HOME/.cache}/notch/$SOCK.stream"; }
-popup() { # $1 client: the framed 80x23 screen; the stream ending ends the show
-    tmux -L $SOCK display-popup -c "$1" -E -b heavy -S "fg=$(tmux -L $SOCK show -gv @accent)" \
-        -w $W -h $((H - 1)) -x 0 -y $H "sh -c '. \"$(popup_cmd)\"'; tmux -L $SOCK kill-server"
-}
 marquee() { # $1 accent, $2 text colour: one full-width bar, clock on the right
     rgb() { printf '%d;%d;%d' 0x${1:1:2} 0x${1:3:2} 0x${1:5:2}; }
     printf '\e[?25l'
@@ -58,7 +58,6 @@ PY
 }
 case ${1:-toggle} in
     marquee) shift; marquee "$@" ;;
-    popup) popup "$2" ;;
     toggle)
         read -r wid focused < <(win) || true
         if [ -n "${wid:-}" ]; then
@@ -107,6 +106,6 @@ app-notifications = false
 GH
         exec setsid -f ghostty --config-default-files=false --config-file="$gconf" \
             --class=$ID --gtk-single-instance=false --title="ASCII Theater" \
-            -e tmux -L $SOCK attach -t theater >/dev/null 2>&1 ;;
+            -e sh -c "i=0; while [ \"\$(stty size)\" != '$H $W' ] && [ \$i -lt 30 ]; do sleep 0.1; i=\$((i+1)); done; exec tmux -L $SOCK attach -t theater" >/dev/null 2>&1 ;;
     *) sed -n '2,7p' "$0" ;;
 esac
