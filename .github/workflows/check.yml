@@ -19,3 +19,7 @@ jobs:
         run: sh tests/size-ratchet.sh
       - name: The install, into a home of its own
         run: sh tests/setup.sh
+      - name: Lint
+        run: |
+          pip install --quiet pyflakes
+          python3 -m pyflakes packages/*/scripts/*.py
