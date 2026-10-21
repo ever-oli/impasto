@@ -16,6 +16,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import time
 
 HOME = os.environ.get("HOME", os.path.expanduser("~"))
@@ -45,6 +46,30 @@ def in_terminal(command):
 def say(message):
     """Leave a note in the island terminal, so a failure is not a silence."""
     in_terminal("echo '" + str(message).replace("'", "'\\''") + "'")
+
+
+def subtitle_file(url, referer):
+    """The subtitle, fetched here.
+
+    The host that carries the subtitles wants the player's referer, and
+    mpv does not send one for a subtitle file, so the notch fetches it
+    and hands mpv a path it can open.
+    """
+    if not url:
+        return ""
+    path = os.path.join(tempfile.gettempdir(), f"notch-sub-{os.getpid()}.vtt")
+    try:
+        subprocess.run(["curl", "-sS", "-o", path, "--max-time", "30",
+                        "-H", f"Referer: {referer or ''}", url],
+                       capture_output=True, timeout=45)
+    except Exception:
+        return ""
+    try:
+        if os.path.getsize(path) > 100:
+            return path
+    except OSError:
+        pass
+    return ""
 
 
 def resolve(title, episode):
@@ -102,6 +127,7 @@ def main():
     if "--episode" in args:
         episode = int(args[args.index("--episode") + 1])
     referer = None
+    subtitle = ""
     if "--referer" in args:
         referer = args[args.index("--referer") + 1]
 
@@ -114,6 +140,7 @@ def main():
             say(f"notch-watch: {error}")
             raise
         url, referer = found["url"], found.get("referer")
+        subtitle = found.get("subtitle", "")
     elif kind == "film":
         media_kind = args[1]                       # movie or tv
         media_id = args[2]
@@ -128,6 +155,7 @@ def main():
             say(f"notch-watch: {error}")
             raise
         url, referer = found["url"], found["referer"]
+        subtitle = found.get("subtitle", "")
     elif kind == "url":
         url = args[1]
     else:
@@ -137,8 +165,13 @@ def main():
     command = f"notch-video '{url}'"
     if referer:
         command += f" --referer '{referer}'"
+    if subtitle:
+        local = subtitle_file(subtitle, referer)
+        if local:
+            command += f" --sub '{local}'"
     in_terminal(command)
-    print(json.dumps({"url": url, "referer": referer, "episode": episode}))
+    print(json.dumps({"url": url, "referer": referer, "subtitle": subtitle,
+                      "episode": episode}))
 
 
 if __name__ == "__main__":

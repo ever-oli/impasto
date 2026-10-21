@@ -24,6 +24,7 @@ def main():
     source = None
     referer = None
     title = None
+    subtitle = None
     i = 0
     while i < len(args):
         if args[i] == "--referer":
@@ -32,6 +33,9 @@ def main():
         elif args[i] == "--title":
             i += 1
             title = args[i]
+        elif args[i] == "--sub":
+            i += 1
+            subtitle = args[i]
         elif args[i] in ("--url", "-u"):
             i += 1
             source = args[i]
@@ -47,13 +51,20 @@ def main():
     # The picture is redrawn as often as the film has frames; a terminal
     # cannot show more than a dozen, so the rest is dropped rather than
     # drawn (--framedrop=decoder).
+    # The osd stays on: it is where the subtitles are drawn. The noise
+    # that usually comes with it is off by other means (no osc, no
+    # stats overlay, no terminal status line, and only warnings speak).
     command = ["mpv", "--vo=tct", "--osc=no", "--load-stats-overlay=no",
-               "--term-osd=no", "--osd-level=0", "--no-ytdl",
+               "--term-osd=no", "--no-ytdl",
                "--msg-level=all=warn", "--framedrop=decoder"]
     if referer:
         command.append(f"--referrer={referer}")
     if title:
         command.append(f"--force-media-title={title}")
+    if subtitle:
+        # The subtitle is a file on the web; mpv fetches it and burns it
+        # into the picture.
+        command.append(f"--sub-file={subtitle}")
     command.append(source)
     # The terminal's own mpv config asks for a window; the picture is the
     # terminal here.
