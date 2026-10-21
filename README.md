@@ -13,6 +13,18 @@ catalogue that plays in the terminal itself.
 |---|---|---|
 | ![launcher](docs/island-launcher.png) | ![control centre](docs/island-controls.png) | ![catalogue](docs/island-catalogue.png) |
 
+## The device
+
+The notch is the device layer: the media, the panels, the bar, and the IPC
+an agent drives. There is no assistant in it — the thinking happens next
+door (T3 Code, or any opencode agent) — and the notch says what it knows:
+
+```
+notch context get        the panel, the hero, the postings, the profile
+notch context hand       that, on the clipboard, with T3 in front
+notch work hand job 0    one posting, handed over
+```
+
 ## The packages
 
 The repository is one repo with a few packages in it, the way pi keeps its
