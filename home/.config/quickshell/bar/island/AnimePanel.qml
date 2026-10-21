@@ -43,7 +43,7 @@ Item {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             width: Math.min(420, parent.width * 0.5)
-            placeholderText: "search anime…"
+            placeholderText: "search anime, films, series…"
             text: AnimeService.query
             color: Theme.text
             placeholderTextColor: Theme.textMuted
