@@ -4,6 +4,15 @@ A cut-down, **niri-native** fork of [andreumassanet/impasto](https://github.com/
 It started as a Quickshell shell for Hyprland and is now a small one for niri,
 built for a cloud VM that you reach over RustDesk from an iPad.
 
+![the notch island](docs/island-launcher.png)
+
+The island drops out of the notch: the launcher, the control centre, and a
+catalogue that plays in the terminal itself.
+
+| the launcher | the control centre | the catalogue |
+|---|---|---|
+| ![launcher](docs/island-launcher.png) | ![control centre](docs/island-controls.png) | ![catalogue](docs/island-catalogue.png) |
+
 ## The packages
 
 The repository is one repo with a few packages in it, the way pi keeps its

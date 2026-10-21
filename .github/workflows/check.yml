@@ -17,3 +17,5 @@ jobs:
           node --check packages/media/bin/notch-resolve.mjs
       - name: The size ratchet
         run: sh tests/size-ratchet.sh
+      - name: The install, into a home of its own
+        run: sh tests/setup.sh
