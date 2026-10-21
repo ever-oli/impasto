@@ -52,7 +52,7 @@ libqalculate	pacman	optional	qalc	palette calculator
 fd	pacman	required	fd	palette file search
 github-cli	pacman	required	gh	notch-dev PRs
 git	pacman	required	git	repos
-chezmoi	pacman	required	chezmoi	dotfiles
+chezmoi	pacman	optional	chezmoi	dotfiles (install bootstraps it)
 base-devel	pacman	required	-	building AUR packages
 mise	pacman	required	mise	node for Pi
 slurp	pacman	optional	slurp	region capture
