@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""notch-resolve — the stream for a film or a series, found on the box.
+
+The pages that carry films and series sit behind filters that turn this
+machine's address away: they answer a cloud address with 403, and the
+player behind them only talks to a browser the filter trusts. The box
+answers them, so the box does the asking.
+
+This ships the resolver there once, runs it with the title's details, and
+hands back the playlist.
+
+  notch-resolve --tmdb 550 --title "Fight Club" --year 1999 --type movie
+"""
+import base64
+import os
+import shlex
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+SCRIPT = os.path.join(HERE, "notch-resolve.mjs")
+INSTABOX = os.path.expanduser("~/.local/bin/instabox")
+BOX = os.environ.get("NOTCH_BOX", "notch")
+REMOTE = "/data/home/notch-resolve.mjs"
+
+
+def instabox(command, timeout):
+    """One command on the box."""
+    return subprocess.run(
+        [INSTABOX, "exec", BOX, "--timeout", str(timeout), "--", command],
+        capture_output=True, text=True, timeout=timeout + 30)
+
+
+def ship():
+    """Put the resolver on the box, once."""
+    blob = base64.b64encode(open(SCRIPT, "rb").read()).decode()
+    out = instabox(
+        f"test -f {REMOTE} || (echo {blob} | base64 -d > {REMOTE})", 90)
+    if out.returncode != 0:
+        raise RuntimeError(out.stderr.strip()[-200:] or "the box did not answer")
+    return out
+
+
+def main():
+    args = sys.argv[1:]
+    if not args:
+        sys.exit(__doc__)
+    try:
+        ship()
+        remote = "cd /data/home && timeout 150 node notch-resolve.mjs " + \
+                 " ".join(shlex.quote(arg) for arg in args)
+        out = instabox(remote, 210)
+    except subprocess.TimeoutExpired:
+        sys.exit("notch-resolve: the box did not answer in time")
+    except Exception as error:
+        sys.exit(f"notch-resolve: {error}")
+    if out.returncode != 0:
+        sys.exit("notch-resolve: " + (out.stderr.strip()[-300:] or "no stream"))
+    lines = [line for line in out.stdout.splitlines() if line.strip()]
+    if not lines:
+        sys.exit("notch-resolve: the box found no stream")
+    print(lines[-1])
+
+
+if __name__ == "__main__":
+    main()

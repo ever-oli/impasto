@@ -2,6 +2,8 @@
 reference files, the browser page, and pictures rendered from the answer."""
 import glob, tempfile, hashlib, json, os, re, sqlite3, subprocess, time, urllib.request
 
+import ask_lessons as lessons
+
 HOME = os.path.expanduser("~")
 CONF = os.environ.get("XDG_CONFIG_HOME", f"{HOME}/.config") + "/notch"
 CACHE = os.environ.get("XDG_CACHE_HOME", f"{HOME}/.cache") + "/notch/ask"
@@ -284,7 +286,7 @@ Answer so far: %s"""
 
 
 def reflect(question, answer, error):
-    """Ask a free model for a lesson, and keep it if it has one."""
+    """Ask a free model for a lesson, and keep it as a candidate."""
     prompt = REFLECT % (question[:400], str(error)[:400], (answer or "")[:800])
     try:
         run = subprocess.run(
@@ -298,16 +300,17 @@ def reflect(question, answer, error):
         return ""
     if len(lesson) > 1200:
         lesson = lesson[:1200].rsplit("\n", 1)[0]
-    stamp = time.strftime("%Y-%m-%d")
-    entry = ("\n## A lesson from a failed turn\n"
-             f"<!-- Ever: {stamp} — after a question that failed -->\n\n"
-             f"{lesson}\n")
-    try:
-        with open(LESSONS, "a") as handle:
-            handle.write(entry)
-    except OSError:
-        return ""
-    return lesson
+    return lessons.propose(question, lesson)
+
+
+def candidate(question):
+    """The lesson this attempt should try, if there is one."""
+    return lessons.candidate(question)
+
+
+def settle(worked):
+    """Keep the lesson when the attempt worked; drop it when it did not."""
+    return lessons.settle(worked)
 
 
 def sh(cmd):

@@ -43,19 +43,20 @@ Singleton {
         searchProcess.running = true
     }
 
-    // Play one title. Anime is hianime's, through ani-cli in the island
-    // terminal; a film or a series is a VidSrc embed, opened in the
-    // browser, which drops under the notch.
+    // Play one title. The picture goes in the island terminal, where
+    // mpv's truecolor output draws it: no window, no GPU. Anime comes
+    // through hianime, a film or a series through the box, whose
+    // address those sources accept.
     function watch(item: var): void {
         if (!item)
             return
         if (item.kind === "anime") {
-            Quickshell.execDetached(["notch-anime", "watch", item.romaji || item.title])
+            Quickshell.execDetached(["notch-watch", "anime", item.romaji || item.title])
             return
         }
         const kind = item.kind === "tv" ? "tv" : "movie"
-        Quickshell.execDetached(["python3", Quickshell.shellPath("scripts/stream.py"),
-                                "play", kind, String(item.id)])
+        Quickshell.execDetached(["notch-watch", "film", kind, String(item.id),
+                                item.title || "", String(item.year || "")])
     }
 
     // A trailer for one title, from TMDB's videos, opened in the browser.

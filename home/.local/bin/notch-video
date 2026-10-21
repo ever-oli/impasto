@@ -40,7 +40,9 @@ def main():
     if not source:
         sys.exit("notch-video: nothing to play")
 
-    command = ["mpv", "--vo=tct", "--no-terminal-osc"]
+    # The picture is drawn in place, so mpv's own status line is kept but
+    # the on-screen controls are not (they would fight the picture).
+    command = ["mpv", "--vo=tct", "--osc=no"]
     if referer:
         command.append(f"--referrer={referer}")
     if title:

@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+"""notch-watch — play a title in the island terminal, where the video shows.
+
+The picture goes in the terminal: mpv's truecolor output draws it where
+the text is, so no window opens and no GPU is needed. Anime is resolved
+through hianime (the same source ani-cli uses); a film or a series brings
+its own address, resolved on the instabox box, whose address those
+sources accept.
+
+  notch-watch anime "<title>" [--episode N]   resolve and play
+  notch-watch film <movie|tv> <id> "<title>" <year> [--season N]
+  notch-watch url <url> [--referer <url>]     play what you have
+"""
+
+import json
+import os
+import subprocess
+import sys
+import time
+
+HOME = os.environ.get("HOME", os.path.expanduser("~"))
+SCRIPT = os.path.join(HOME, ".config/quickshell/scripts/stream.py")
+SESSION = "notch"
+
+
+def terminal_open():
+    try:
+        out = subprocess.run(["notch-term", "status"], capture_output=True,
+                             timeout=10).stdout
+        return bool(json.loads(out or "{}").get("open"))
+    except Exception:
+        return False
+
+
+def in_terminal(command):
+    """Run a command in the island terminal, opening it if it is closed."""
+    if not terminal_open():
+        subprocess.run(["notch-term", "toggle"], stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+        time.sleep(2.0)
+    subprocess.run(["tmux", "send-keys", "-t", SESSION, command, "Enter"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def resolve(title, episode):
+    out = subprocess.run([sys.executable, SCRIPT, "resolve", title,
+                          "--episode", str(episode)],
+                         capture_output=True, text=True, timeout=180)
+    if out.returncode != 0:
+        raise RuntimeError(out.stderr.strip()[-300:] or "could not resolve that title")
+    return json.loads(out.stdout)
+
+
+def resolve_film(media_kind, media_id, title, year, season, episode):
+    """The stream for a film or a series, found on the box.
+
+    Those pages answer this machine's address with a refusal: it is a
+    cloud one. The box answers them, so the box does the asking.
+    """
+    command = [os.path.expanduser("~/.local/bin/notch-resolve"),
+               "--tmdb", media_id, "--title", title, "--year", str(year),
+               "--type", media_kind]
+    if season:
+        command += ["--season", str(season)]
+    if episode:
+        command += ["--episode", str(episode)]
+    out = subprocess.run(command, capture_output=True, text=True, timeout=300)
+    if out.returncode != 0:
+        raise RuntimeError(out.stderr.strip()[-300:] or "the box found no stream")
+    return {"url": out.stdout.strip().splitlines()[-1],
+            "referer": "https://player.videasy.to/"}
+
+
+def main():
+    args = sys.argv[1:]
+    if not args or args[0] in ("-h", "--help"):
+        sys.exit(__doc__)
+    kind = args[0]
+    episode = 1
+    if "--episode" in args:
+        episode = int(args[args.index("--episode") + 1])
+    referer = None
+    if "--referer" in args:
+        referer = args[args.index("--referer") + 1]
+
+    if kind == "anime":
+        title = " ".join(a for a in args[1:]
+                         if not a.isdigit() and a != "--episode")
+        found = resolve(title, episode)
+        url, referer = found["url"], found.get("referer")
+    elif kind == "film":
+        media_kind = args[1]                       # movie or tv
+        media_id = args[2]
+        title = args[3] if len(args) > 3 else ""
+        year = args[4] if len(args) > 4 else ""
+        season = ""
+        if "--season" in args:
+            season = args[args.index("--season") + 1]
+        found = resolve_film(media_kind, media_id, title, year, season, episode)
+        url, referer = found["url"], found["referer"]
+    elif kind == "url":
+        url = args[1]
+    else:
+        sys.exit(__doc__)
+
+    command = f"notch-video '{url}'"
+    if referer:
+        command += f" --referer '{referer}'"
+    in_terminal(command)
+    print(json.dumps({"url": url, "referer": referer, "episode": episode}))
+
+
+if __name__ == "__main__":
+    main()

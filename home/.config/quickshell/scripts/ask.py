@@ -36,7 +36,7 @@ def _backend():
         return os.environ.get("ASK_BACKEND", "cua")
 BACKEND = _backend()
 PI = os.environ.get("ASK_PI", f"{HOME}/.local/share/mise/installs/node/latest/bin/pi")
-# ASK_PI_STATE / ASK_PI_SESSION let tests use their own chat, never the live notch one.
+# ASK_PI_STATE / ASK_PI_SESSION: tests use their own chat, never the live one.
 PI_STATE = os.environ.get("ASK_PI_STATE", f"{STATE}/pi")
 PI_SESSION = os.environ.get("ASK_PI_SESSION", "notch")
 AGENT = os.environ.get("ASK_AGENT", f"{HOME}/.local/share/mise/installs/opencode/latest/node_modules/.bin/opencode")
@@ -96,7 +96,7 @@ next_id, waiting, pending = [0], {}, {}
 session, act_mode, turn = [None], [False], {"q": "", "a": ""}
 # {"op":"answer","allow":true,"session":true} approves the rest of this session.
 auto_ok = [False]
-# Rolling context: summarised every ROLL turns, replaced by a fresh session.
+# Rolling context: summarised every ROLL turns, then a fresh session.
 ROLL, KEEP = 12, 4
 turns, seed, captured = [], [""], [None]
 quiet = [False]
@@ -215,7 +215,7 @@ def pi_reader():
                 emit(type="tool", title=f"Auto-approved: {msg.get('title') or 'action'}", status="pending")
                 pick(True); continue
             pending[rid] = pick
-            # Unanswered approvals are denied after ASK_APPROVE_TIMEOUT so the turn can end.
+            # Unanswered approvals are denied after ASK_APPROVE_TIMEOUT.
             def expire(rid=rid):
                 if pending.pop(rid, None):
                     emit(type="tool", title="Approval timed out: denied", status="failed")
@@ -230,7 +230,7 @@ def pi_prompt(text, images):
     open(f"{PI_STATE}/act", "w").write("1" if act_mode[0] else "0")
     pi_done.clear(); pi_box.clear()
     data = pi_request({"type": "prompt", "message": text, "images": images})
-    # Timeout guard: a stuck turn is aborted rather than holding the notch forever.
+    # Timeout guard: a stuck turn is aborted.
     if data.get("disposition") != "handled" and not pi_done.wait(float(os.environ.get("ASK_PI_TIMEOUT", 300))):
         send({"type": "abort"})
         for pick in list(pending.values()):
@@ -257,6 +257,9 @@ def compose(cmd):
     lessons = f"{CONF}/lessons.md"
     if mode.get("act") == "on" and os.path.exists(lessons):
         parts.append(f"<lessons source=\"Ever's past corrections\">\n{open(lessons).read()[-6000:]}\n</lessons>")
+    lesson = extras.candidate(cmd.get("text", ""))
+    if lesson:
+        parts.append(f"<candidate_lesson source=\"a lesson from a failed attempt\">\n{lesson}\n</candidate_lesson>")
     skill = os.path.expanduser("~/.pi/agent/skills/notch/SKILL.md")  # Build mode: the map of Notch
     if mode.get("act") == "on" and os.path.exists(skill):
         parts.append(f"<skill name=\"notch\">\n{open(skill).read()}\n</skill>")
@@ -296,13 +299,12 @@ def roll():
 busy = threading.Lock()
 
 def ask(cmd):
-    # One question at a time: a follow-up sent mid-answer (or mid-compaction)
-    # waits rather than sharing the turn.
+    # One question at a time: a follow-up sent mid-answer waits its turn.
     with busy:
         answer_one(cmd)
 
 def answer_one(cmd):
-    # A mode with `act: on` (Build) always works with tools, behind the gate.
+    # `act: on` (Build) works with tools, behind the gate.
     act_mode[0] = bool(cmd.get("act")) or (extras.mode_of(cmd.get("mode", "general")) or {}).get("act") == "on"
     text = compose(cmd)
     blocks = []
@@ -314,7 +316,7 @@ def answer_one(cmd):
             small = sh("grim -o Virtual-1 -s 0.5 -t jpeg -q 70 -") if cmd.get("screen") == "screen" else b""
             img, mime = (small, "image/jpeg") if small else (png, "image/png")
             blocks.append({"type": "image", "mimeType": mime, "data": base64.b64encode(img).decode()})
-            # The text on it too, so a model without vision still sees the screen.
+            # The text on it too, for a model without vision.
             seen = subprocess.run(["tesseract", "stdin", "-"], input=png, capture_output=True).stdout.decode(errors="replace").strip()
             if seen:
                 text += f"\n\n<screen_text source=\"OCR of the attached screenshot\">\n{seen[:6000]}\n</screen_text>"
@@ -332,10 +334,13 @@ def answer_one(cmd):
         emit(type="done", stop=result.get("stopReason", "end_turn"))
     except RuntimeError as error:
         emit(type="error", text=str(error))
+        extras.settle(False)
         # Harness2's reflector: a failed turn may teach the harness a lesson.
         threading.Thread(target=extras.reflect,
                          args=(turn["q"], turn["a"], str(error)),
                          daemon=True).start()
+    else:
+        extras.settle(True)
     os.makedirs(STATE, exist_ok=True)
     with open(HISTORY, "a") as f:
         f.write(json.dumps({"t": time.time(), "s": conversation[0], "mode": cmd.get("mode", "general"), "q": turn["q"], "a": turn["a"]}) + "\n")

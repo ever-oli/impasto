@@ -15,8 +15,10 @@ browser under the notch; for anime it is hianime, through ani-cli.
   stream.py token                 where the TMDB token goes
 """
 
+import base64
 import json
 import os
+import re
 import subprocess
 import sys
 import urllib.error
@@ -237,6 +239,127 @@ def search(text):
     print(json.dumps({"items": found}))
 
 
+# ── HIANIME ──────────────────────────────────────────────────────────────────
+#
+# The anime source: hianime, scraped the way ani-cli does it. The search
+# page names the shows, the episode list numbers them, the servers answer
+# with a hash, and the embed page hides its playlist in a small obfuscated
+# blob. The stream host wants the embed site as its referer.
+
+HIANIME = "https://hianime.at"
+BROWSER = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+           "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+KEY = b"otaku-embed-v1"
+
+
+def fetch(url, referer=None):
+    headers = {"User-Agent": BROWSER}
+    if referer:
+        headers["Referer"] = referer
+    request = urllib.request.Request(url, headers=headers)
+    return urllib.request.urlopen(request, timeout=25).read().decode(
+        errors="replace")
+
+
+def hianime_search(text):
+    """[(slug, title)] for the titles that match."""
+    page = fetch(f"{HIANIME}/search?keyword=" + urllib.parse.quote(text))
+    if "Just a moment" in page:
+        raise RuntimeError("hianime is behind its cloudflare check")
+    # The sidebar repeats the markup; cut it off before flattening.
+    page = page.split('id="main-sidebar"')[0]
+    found = []
+    for block in page.split('<div class="film-detail">')[1:]:
+        name = re.search(r'<h3 class="film-name">\s*<a href="[^"]*/([^"/]+)"\s*title="([^"]*)"', block)
+        if name:
+            found.append((name.group(1), name.group(2)))
+    return found
+
+
+def hianime_episodes(slug):
+    """[(id, number)] for the episodes of a show."""
+    # The slug carries the id after its last dash ("cowboy-bebop-1281"),
+    # and the episode list wants only that id.
+    slug = slug.rsplit("-", 1)[-1]
+    page = fetch(f"{HIANIME}/api/theme/episode/list/{slug}").replace("\\", "")
+    found = []
+    for block in page.split("ep-item")[1:]:
+        number = re.search(r'data-number="([^"]*)"', block)
+        ident = re.search(r'data-id="([0-9]+)"', block)
+        if number and ident:
+            found.append((ident.group(1), number.group(1)))
+    return found
+
+
+def hianime_servers(episode_id, mode="sub"):
+    """The ZokoAnime embed of an episode: (embed url, referer)."""
+    page = fetch(f"{HIANIME}/api/theme/episode/servers?episodeId={episode_id}")
+    page = page.replace('\\"', '"')
+    for block in page.split("server-item")[1:]:
+        if f'data-type="{mode}"' not in block:
+            continue
+        name = re.search(r'data-server-name="([^"]*)"', block)
+        digest = re.search(r'data-hash="([^"]*)"', block)
+        if not name or not digest or name.group(1) != "ZokoAnime":
+            continue
+        try:
+            embed = base64.b64decode(digest.group(1) + "==").decode(errors="replace")
+        except Exception:
+            continue
+        if not embed.startswith("http"):
+            continue
+        # The stream host wants the embed site as its referer.
+        parts = urllib.parse.urlparse(embed)
+        return embed, f"{parts.scheme}://{parts.netloc}/"
+    return None, None
+
+
+def hianime_blob(embed):
+    """The playlist inside the embed page, which is obfuscated."""
+    page = fetch(embed)
+    blob = re.search(r'window\.__P="([^"]*)"', page)
+    if not blob:
+        return None
+    raw = base64.b64decode(blob.group(1) + "==")
+    plain = bytes(byte ^ KEY[index % len(KEY)] for index, byte in enumerate(raw))
+    return plain.decode(errors="replace")
+
+
+def resolve_anime(text, episode=1, mode="sub"):
+    """A playable stream for a title: {url, referer, subtitle, title}."""
+    shows = hianime_search(text)
+    if not shows:
+        raise RuntimeError(f"nothing called {text!r} on hianime")
+    slug, title = shows[0]
+    episodes = hianime_episodes(slug)
+    if not episodes:
+        raise RuntimeError(f"no episodes for {title!r}")
+    chosen = None
+    for ident, number in episodes:
+        if str(number) == str(episode):
+            chosen = ident
+            break
+    if chosen is None:
+        chosen = episodes[0][0]
+    embed, referer = hianime_servers(chosen, mode)
+    if not embed:
+        raise RuntimeError("no ZokoAnime server for that episode")
+    json_text = hianime_blob(embed)
+    if not json_text:
+        raise RuntimeError("the embed page hid its playlist")
+    source = re.search(r'"src":"([^"]*\.m3u8[^"]*)"', json_text)
+    if not source:
+        raise RuntimeError("no playlist in the embed")
+    subtitle = ""
+    marks = re.findall(r'"default":true[^}]*"src":"([^"]+)"', json_text)
+    if not marks:
+        marks = re.findall(r'"src":"([^"]+\.vtt[^"]*)"', json_text)
+    if marks:
+        subtitle = marks[0]
+    return {"url": source.group(1).replace("\\/", "/"), "referer": referer,
+            "subtitle": subtitle, "title": title, "episode": episode}
+
+
 def open_in_browser(url):
     """Put a page in the browser, which is the player here.
 
@@ -317,6 +440,12 @@ def main():
     elif args[0] == "play" and len(args) > 2:
         play(args[1], args[2], args[3] if len(args) > 3 else None,
              args[4] if len(args) > 4 else None)
+    elif args[0] == "resolve" and len(args) > 1:
+        episode = 1
+        if "--episode" in args:
+            episode = int(args[args.index("--episode") + 1])
+        print(json.dumps(resolve_anime(" ".join(a for a in args[1:] if not a.isdigit()),
+                                      episode)))
     elif args[0] == "trailer" and len(args) > 2:
         trailer(args[1], args[2])
     elif args[0] == "token":
