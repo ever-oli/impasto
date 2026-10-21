@@ -15,7 +15,7 @@ chezmoi init --apply --branch notch-desktop ever-oli/dotfiles   # clones Notch t
 1. **Base tools:** `git chezmoi base-devel github-cli mise`, then `yay` from the AUR.
 2. **Dotfiles:** `chezmoi init --apply ever-oli/dotfiles`. Its `.chezmoiexternal.toml` clones
    Notch and `run_onchange_after-notch.sh` runs `./setup files` on every new commit.
-3. **Packages:** `packages/pacman.txt` (pacman) and `packages/aur.txt` (yay).
+3. **Packages:** `home/.local/share/notch/deps.tsv`, one table for pacman, AUR (yay), npm and mise.
 4. **Notch:** `./setup fonts` (AnnotationMono + Tinos Nerd Fonts), `./setup files` (copies
    `home/` into `~`, backing up to `~/.config-backups/`), `./setup theme`.
 5. **greetd/niri:** `system/etc/greetd/config.toml` from the dotfiles to `/etc/greetd/`,

@@ -1,2 +1,0 @@
-# notch · nothing from the AUR is needed.
-aether

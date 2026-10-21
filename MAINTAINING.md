@@ -9,10 +9,10 @@ shell. MIT; keep GPL code (caelestia, end-4, vicinae) out.
 - **CLIs** (`home/.local/bin`): `notch` (palette, picker), `notch-theme`, `notch-font`, `notch-act`, `notch-doctor`; `impasto` is a compat symlink.
 - **Themes:** `home/.local/share/notch/themes/<name>/colors.toml` is the source of truth; `themed/*.tpl` render Ghostty, Helix, niri, fuzzel, btop, fastfetch, fzf, GTK, qt6ct, T3, Helium policy.
 - **Text size:** `notch-font size <n>` (default 11) → `~/.config/notch/font-size`; notch-theme renders it everywhere (shell `Theme.fs()`, Ghostty n+2, fuzzel n+1, GTK, qt6ct, mako).
-- **Packages:** `packages/pacman.txt`, `packages/aur.txt`. Machine-specific bits (bash, mako, mise, greetd, package snapshot) live in ever-oli/dotfiles.
+- **Packages:** `home/.local/share/notch/deps.tsv` (package, source, required/optional, command, purpose; read by install, setup and doctor). Machine-specific bits (bash, mako, mise, greetd, package snapshot) live in ever-oli/dotfiles.
 
 ## Layout
-`home/` mirrors `~`; `setup` installs it; `tests/` holds the checks; `packages/` the lists.
+`home/` mirrors `~`; `setup` installs it; `tests/` holds the checks; `home/.local/share/notch/deps.tsv` the one dependency table.
 
 ## Update
 1. `git pull` here (or `chezmoi update`, which re-runs `./setup files`).

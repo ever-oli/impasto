@@ -26,13 +26,15 @@ if [ -d "$HOME/.local/share/chezmoi/.git" ]; then skip "chezmoi source present";
 else run chezmoi init --apply --branch notch-desktop ever-oli/dotfiles; fi
 
 say "4/8 packages"
-for list in pacman aur; do
-    f=$SRC/packages/$list.txt; [ -f "$f" ] || { skip "no $f yet"; continue; }
-    mapfile -t miss < <(sed 's/#.*//' "$f" | awk 'NF{print $1}' | while read -r p; do pacman -Qq "$p" >/dev/null 2>&1 || echo "$p"; done)
-    if ((${#miss[@]}==0)); then skip "$list: all present"
-    elif [ $list = pacman ]; then run sudo pacman -S --needed --noconfirm "${miss[@]}"
-    else run yay -S --needed --noconfirm "${miss[@]}"; fi
-done
+DEPS=$SRC/home/.local/share/notch/deps.tsv   # the one dependency table (also read by notch doctor)
+if [ -f "$DEPS" ]; then
+    for list in pacman aur; do
+        mapfile -t miss < <(awk -F'\t' -v s=$list '!/^#/ && NF && $2==s {print $1}' "$DEPS" | while read -r p; do pacman -Qq "$p" >/dev/null 2>&1 || echo "$p"; done)
+        if ((${#miss[@]}==0)); then skip "$list: all present"
+        elif [ $list = pacman ]; then run sudo pacman -S --needed --noconfirm "${miss[@]}"
+        else run yay -S --needed --noconfirm "${miss[@]}"; fi
+    done
+else skip "no $DEPS yet"; fi
 
 say "5/8 Notch files, fonts, theme"
 if [ -x "$SRC/setup" ]; then run "$SRC/setup" fonts; run "$SRC/setup" files; run "$SRC/setup" theme
@@ -45,7 +47,8 @@ else run sudo install -Dm644 "$HOME/.local/share/chezmoi/system/etc/greetd/confi
 
 say "7/8 Pi engine + OptChat durable memory"
 [ -x "$NODE/node" ] && skip "node (mise)" || run mise use -g node@latest
-[ -x "$NODE/pi" ] && skip "pi" || run "$NODE/npm" i -g @earendil-works/pi-coding-agent @mermaid-js/mermaid-cli
+mapfile -t npms < <(awk -F'\t' '!/^#/ && NF && $2=="npm" {print $1}' "$DEPS" 2>/dev/null)
+[ -x "$NODE/pi" ] && skip "pi" || run "$NODE/npm" i -g "${npms[@]:-@earendil-works/pi-coding-agent}"
 if grep -qs optchat-durable "$HOME/.pi/agent/settings.json"; then skip "optchat-durable"
 else run env PATH="$NODE:$PATH" "$NODE/pi" install git:github.com/kevinqz/optchat-durable@v0.5.0; fi
 mkdir -p "$HOME/.config/notch" 2>/dev/null || true

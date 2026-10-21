@@ -45,9 +45,15 @@ if [ -z "${NOTCH_DOCTOR_FAST:-}" ] && [ -x "$pi" ]; then
 fi
 command -v opencode >/dev/null && ok "opencode hidden fallback (notch ask backend opencode)" || warn "no opencode fallback"
 ls "$HOME"/.cache/notch/chrome/chrome-headless-shell/*/*/chrome-headless-shell >/dev/null 2>&1 && ok "mermaid renderer (chrome-headless-shell)" || no "no chrome-headless-shell: ./setup fonts (Helium breaks mmdc)"
-echo "Dependencies"
-for d in qs niri qalc fd gh git wl-copy grim slurp tesseract helium-browser gtk-launch fuzzel ghostty helix notify-send python3; do
-    command -v "$d" >/dev/null && ok "$d" || no "$d missing"
-done
+echo "Dependencies (deps.tsv)"
+deps=${XDG_DATA_HOME:-$HOME/.local/share}/notch/deps.tsv
+if [ -f "$deps" ]; then
+    while IFS=$'\t' read -r pkg src need cmd why; do
+        case $pkg in ''|'#'*) continue;; esac
+        if [ "$cmd" != - ]; then command -v "$cmd" >/dev/null; else pacman -Qq "$pkg" >/dev/null 2>&1; fi && continue
+        [ "$need" = required ] && no "$pkg ($src) missing: $why" || warn "optional $pkg ($src) missing: $why"
+    done < "$deps"
+    ok "deps.tsv checked ($(grep -vc '^#' "$deps") rows; only problems listed)"
+else no "no $deps (run ./setup files)"; fi
 echo
 [ $bad -eq 0 ] && echo "All good." || { echo "$bad problem(s)."; exit 1; }

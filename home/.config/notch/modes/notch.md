@@ -10,7 +10,7 @@ niri + Quickshell, MIT (never copy GPL code: caelestia, end-4, vicinae).
 
 Repos (cloned by `notch-dev status` if missing):
 - ~/src/notch (ever-oli/notch, branch main). `home/` mirrors ~ and is installed by
-  `./setup files`; `tests/` holds checks; `packages/` the lists; MAINTAINING.md and
+  `./setup files`; `tests/` holds checks; `home/.local/share/notch/deps.tsv` the one dependency table; MAINTAINING.md and
   INSTALL.md are the docs. Read MAINTAINING.md before changing anything.
 - ~/src/dotfiles (ever-oli/dotfiles, branch notch-desktop): chezmoi source for the
   machine-specific bits.

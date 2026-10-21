@@ -1,0 +1,65 @@
+# notch · every dependency, one row each. Read by `notch install`, `./setup packages` and `notch doctor`.
+# package	source(pacman|aur|npm|mise|manual)	need(required|optional)	command(- = package check only)	purpose
+quickshell	pacman	required	qs	the shell
+python	pacman	required	python3	scripts/*.py and notch-theme
+gtk3	pacman	required	gtk-launch	gtk-launch, which the launcher opens applications with
+libnotify	pacman	required	notify-send	notify-send
+fontconfig	pacman	required	-	-
+pipewire	pacman	optional	-	the volume, through Quickshell's Pipewire service
+wireplumber	pacman	optional	-	-
+libpulse	pacman	optional	-	pactl, which finds the output a recording hears
+polkit	pacman	optional	-	the island answers polkit requests
+iproute2	pacman	required	ip	the network chip (ip -j)
+xdg-user-dirs	pacman	optional	-	where captures land
+xdg-utils	pacman	optional	-	-
+inter-font	pacman	required	-	the shell's type
+ttf-jetbrains-mono-nerd	pacman	required	-	every glyph on the bar
+noto-fonts	pacman	optional	-	-
+noto-fonts-emoji	pacman	optional	-	-
+noto-fonts-cjk	pacman	optional	-	CJK fallback behind AnnotationMono
+papirus-icon-theme	pacman	optional	-	application icons in the launcher
+unicode-emoji	pacman	optional	-	the launcher's emoji mode
+unicode-cldr-annotations	pacman	optional	-	-
+wl-clipboard	pacman	required	wl-copy	copying, and the clipboard history
+grim	pacman	required	grim	the photograph
+satty	pacman	optional	satty	annotating
+tesseract	pacman	optional	tesseract	reading a region as text
+tesseract-data-eng	pacman	optional	-	-
+wf-recorder	pacman	optional	wf-recorder	recording
+swaybg	pacman	optional	swaybg	the wallpaper
+ghostty	pacman	required	ghostty	the terminal, themed by notch-theme
+fuzzel	pacman	required	fuzzel	-
+mako	pacman	optional	-	themed; not run, the shell is the notification server
+helix	pacman	required	helix	-
+eza	pacman	optional	-	-
+zoxide	pacman	optional	-	-
+bat	pacman	optional	-	-
+ripgrep	pacman	optional	-	-
+starship	pacman	optional	-	-
+atuin	pacman	optional	-	-
+bash-preexec	pacman	optional	-	-
+lazygit	pacman	optional	-	-
+yazi	pacman	optional	-	-
+tmux	pacman	required	tmux	-
+imv	pacman	optional	-	-
+mpv	pacman	optional	-	-
+papers	pacman	optional	-	-
+obsidian	pacman	optional	-	-
+signal-desktop	pacman	optional	-	-
+pacman-contrib	pacman	optional	-	-
+niri	manual	required	niri	the compositor (the VM runs its own build)
+libqalculate	pacman	optional	qalc	palette calculator
+fd	pacman	required	fd	palette file search
+github-cli	pacman	required	gh	notch-dev PRs
+git	pacman	required	git	repos
+chezmoi	pacman	required	chezmoi	dotfiles
+base-devel	pacman	required	-	building AUR packages
+mise	pacman	required	mise	node for Pi
+slurp	pacman	optional	slurp	region capture
+helium-browser-bin	aur	optional	helium-browser	browser, quicklinks, web apps
+aether	aur	optional	aether	theme app, feeds notch themes
+node	mise	required	node	runs Pi
+@earendil-works/pi-coding-agent	npm	required	pi	the engine behind the notch
+@mermaid-js/mermaid-cli	npm	optional	mmdc	diagrams in Ask
+openssh	pacman	optional	ssh	SSH quick-connect rows
+curl	pacman	required	curl	OpenRouter usage meter, fonts
