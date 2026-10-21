@@ -96,13 +96,12 @@ window-rule {
     default-floating-position x=0 y=44 relative-to="top"
 }
 
-// ASCII Theater (notch-theater): drops down under the notch, sized to the 80x23 stream.
+// ASCII Theater (notch-theater): drops down under the notch. No size here: Ghostty
+// sizes itself in cells (84x28 + velvet padding) so the 80x23 stream fits exactly.
 window-rule {
     match app-id=r#"^com\.notch\.theater$"#
     open-floating true
     open-focused true
-    default-column-width { fixed 920; }
-    default-window-height { fixed 600; }
     default-floating-position x=0 y=44 relative-to="top"
 }
 
