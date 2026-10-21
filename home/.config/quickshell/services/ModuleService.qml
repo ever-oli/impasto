@@ -87,7 +87,7 @@ Singleton {
             }
             if (id === "terminal") {
                 // The island terminal: a Ghostty bound to tmux session "notch" (notch-term).
-                out[id] = { name: "Terminal", glyph: "",
+                out[id] = { name: "Terminal", glyph: "󰆍",
                             action: () => Quickshell.execDetached(["notch-term", "toggle"]) }
                 continue
             }
