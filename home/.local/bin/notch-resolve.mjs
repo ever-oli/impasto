@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 // notch-resolve.mjs — the stream for a film or a series, without a browser.
 //
 // A site's player page asks an api for the sources and opens the answer

@@ -191,7 +191,8 @@ def aim(place):
 def main():
     args = sys.argv[1:]
     if not args:
-        sys.exit(__doc__)
+        print(__doc__)
+        sys.exit(0)
     command = args[0]
     if command == "start":
         start()
@@ -243,7 +244,8 @@ def main():
         sock.close()
         print(json.dumps(facts(message)))
         return
-    sys.exit(__doc__)
+    print(__doc__)
+    sys.exit(0)
 
 
 if __name__ == "__main__":

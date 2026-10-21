@@ -83,6 +83,9 @@ def in_terminal(command):
 
 def main():
     args = sys.argv[1:]
+    if not args or args[0] in ("help", "--help", "-h"):
+        print(__doc__)
+        return
     if args and args[0] == "install":
         install()
         return

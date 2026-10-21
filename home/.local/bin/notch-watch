@@ -95,7 +95,8 @@ def node():
 def main():
     args = sys.argv[1:]
     if not args or args[0] in ("-h", "--help"):
-        sys.exit(__doc__)
+        print(__doc__)
+        sys.exit(0)
     kind = args[0]
     episode = 1
     if "--episode" in args:
@@ -130,7 +131,8 @@ def main():
     elif kind == "url":
         url = args[1]
     else:
-        sys.exit(__doc__)
+        print(__doc__)
+        sys.exit(0)
 
     command = f"notch-video '{url}'"
     if referer:

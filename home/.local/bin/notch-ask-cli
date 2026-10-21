@@ -7,8 +7,9 @@ import json, os, subprocess, sys
 args, opts = sys.argv[1:], {}
 while args and args[0] in ("--backend", "--mode"):
     opts[args[0][2:]] = args[1]; args = args[2:]
-if not args:
-    sys.exit(__doc__)
+if not args or args[0] in ("help", "--help", "-h"):
+    print(__doc__)
+    sys.exit(0)
 cmd = [sys.executable, os.path.expanduser("~/.config/quickshell/scripts/ask.py"), "--once"]
 if "backend" in opts:
     cmd[2:2] = ["--backend", opts["backend"]]

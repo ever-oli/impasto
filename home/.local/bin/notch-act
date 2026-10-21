@@ -23,5 +23,6 @@ case "$1" in
     scroll) wlrctl pointer scroll "$2" 0 ;;
     window) if [ "$2" = focus ]; then niri msg action focus-window --id "$3"; else niri msg windows; fi ;;
     open)   shift; case "$1" in *://*) xdg-open "$1" ;; *) setsid -f "$@" >/dev/null 2>&1 ;; esac ;;
+    help|--help|-h) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *)      sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac

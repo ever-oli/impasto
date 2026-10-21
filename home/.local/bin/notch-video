@@ -19,7 +19,8 @@ import sys
 def main():
     args = sys.argv[1:]
     if not args or args[0] in ("-h", "--help"):
-        sys.exit(__doc__)
+        print(__doc__)
+        sys.exit(0)
     source = None
     referer = None
     title = None

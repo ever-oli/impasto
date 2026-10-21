@@ -31,7 +31,7 @@ verb=${1:-help}; shift || true
 case $verb in
     open|toggle)  call panel "$verb" "${1:?which panel}" ;;
     close)        call panel close ;;
-    palette)      call palette open "${1:-}" ;;
+    palette)      call palette open "${1:-/}" ;;   # a folder in the menu tree
     picker)       call picker open "${1:-theme}" ;;
     ask)          case "${1:-}" in
                       capture) call ask capture ;;
@@ -90,5 +90,6 @@ PY
         ;;
     reload)       call shell reload ;;
     doctor)       exec "$HOME/.local/bin/notch-doctor" ;;
+    help|--help|-h) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *)            sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac

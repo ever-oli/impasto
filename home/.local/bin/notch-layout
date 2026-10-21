@@ -232,7 +232,7 @@ def flatten(workspace_id):
         niri("expel-window-from-column")
 
 
-def arrange(idx, plan):
+def arrange(idx, plan, even=True):
     """Make the windows of a desktop sit as the plan says.
 
     The plan counts the windows each column holds, left to right: `1,1` is
@@ -269,11 +269,13 @@ def arrange(idx, plan):
         niri("focus-window", "--id", str(group[0]["id"]))
         for _ in range(len(group) - 1):
             niri("consume-window-into-column")
-    # Even shares: every column the same width.
-    share = 100.0 / max(1, len(groups))
-    for group in groups:
-        niri("focus-window", "--id", str(group[0]["id"]))
-        niri("set-column-width", f"{share:g}%")
+    # Even shares: every column the same width. Lifting a plan leaves the
+    # widths alone, so the desktop keeps the shape the user had.
+    if even:
+        share = 100.0 / max(1, len(groups))
+        for group in groups:
+            niri("focus-window", "--id", str(group[0]["id"]))
+            niri("set-column-width", f"{share:g}%")
     if was and was != idx:
         niri("focus-workspace", str(was))
 
@@ -319,6 +321,10 @@ def clear(idx=0):
         niri("unset-workspace-name")
         if was and was != target:
             niri("focus-workspace", str(was))
+    # The arrangement the plan made is still on the desktop, and a preset
+    # that is lifted should leave the desktop the way a desktop is: the
+    # windows in one column, one tab each.
+    arrange(target, [1], even=False)
 
 
 def watch():
@@ -355,7 +361,8 @@ def main():
     as_json = "--json" in args
     args = [arg for arg in args if arg != "--json"]
     if not args or args[0] in ("help", "--help", "-h"):
-        sys.exit(HELP)
+        print(HELP)
+        sys.exit(0)
     if args[0] == "list":
         known = presets()
         state = load()

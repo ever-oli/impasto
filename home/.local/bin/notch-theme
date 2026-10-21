@@ -389,7 +389,8 @@ def main():
     elif verb == "current":
         print(current().get("id", DEFAULT))
     else:
-        sys.exit(__doc__)
+        print(__doc__)
+        sys.exit(0)
 
 
 if __name__ == "__main__":
