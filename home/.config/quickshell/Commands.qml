@@ -51,7 +51,7 @@ Scope {
     // Panels that are really the launcher opened on a sigil.
     readonly property var launcherModes: ["clipboard", "emoji", "windows", "files"]
     readonly property var panels: ["windows", "files", "launcher", "ask", "controls", "session", "keys", "t3",
-        "bluetooth", "sound", "microphone", "clipboard", "emoji", "anime"]
+        "bluetooth", "sound", "microphone", "clipboard", "emoji", "anime", "notchstorm"]
 
     // Bar and island modules, each loaded on its own (ModuleService).
     IpcHandler {

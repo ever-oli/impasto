@@ -76,7 +76,7 @@ Singleton {
         return root.catalogue.find(item => item.id === id) ?? root.catalogue[0]
     }
 
-    readonly property var buttonIds: ["launcher", "controls", "capture", "keys", "session", "terminal", "theater", "anime"]
+    readonly property var buttonIds: ["launcher", "controls", "capture", "keys", "session", "terminal", "theater", "anime", "notchstorm"]
 
     readonly property var buttons: {
         const out = {}
@@ -89,6 +89,12 @@ Singleton {
                 // The island terminal: a Ghostty bound to tmux session "notch" (notch-term).
                 out[id] = { name: "Terminal", glyph: "󰆍",
                             action: () => Quickshell.execDetached(["notch-term", "toggle"]) }
+                continue
+            }
+            if (id === "notchstorm") {
+                // Live radar, in a panel of its own.
+                out[id] = { name: "Notchstorm", glyph: "\uF0C9E",
+                            action: () => Quickshell.execDetached(["qs", "ipc", "call", "panel", "open", "notchstorm"]) }
                 continue
             }
             if (id === "anime") {

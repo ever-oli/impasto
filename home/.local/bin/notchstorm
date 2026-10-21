@@ -1,0 +1,250 @@
+#!/usr/bin/env python3
+"""notchstorm — live weather radar for the notch.
+
+The radar engine (the Rust one from the omastorm project, MIT) draws the
+sweeps; this talks to it over its socket and hands the shell the pictures
+and the facts around them: the station, the product, the age of the frame.
+
+The engine lives in the notch's own data directory and runs under the
+notch's runtime directory, so nothing of the omastorm project's is
+touched.
+
+  notchstorm start            start the engine (if it is not already)
+  notchstorm state            what the engine is showing, as JSON
+  notchstorm center <lat> <lon>   point the map at a place
+  notchstorm place <text>     find places by name
+  notchstorm site <id>        follow a radar station
+  notchstorm source <id>      nexrad, or a mosaic
+"""
+
+import json
+import os
+import urllib.parse
+import socket
+import subprocess
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+HOME = os.environ.get("HOME", os.path.expanduser("~"))
+ENGINE = Path(HOME) / ".local/share/notchstorm/bin/notchstorm-engine"
+RUNTIME = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "notchstorm"
+WORK = RUNTIME / "omastorm"
+SOCKET = WORK / "engine.sock"
+CONF = Path(HOME) / ".config/notch"
+HOME_PLACE = CONF / "notchstorm.json"
+
+
+def engine_env():
+    """The engine's own runtime directory, under the notch's."""
+    env = dict(os.environ)
+    env["XDG_RUNTIME_DIR"] = str(RUNTIME)
+    return env
+
+
+def running():
+    return SOCKET.exists()
+
+
+def start():
+    """Start the engine daemon, and wait for its socket."""
+    if not ENGINE.exists():
+        sys.exit(f"notchstorm: no engine at {ENGINE}")
+    if running():
+        return
+    RUNTIME.mkdir(parents=True, exist_ok=True)
+    WORK.mkdir(parents=True, exist_ok=True)
+    subprocess.Popen([str(ENGINE), "serve"], env=engine_env(),
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                     start_new_session=True)
+    for _ in range(50):
+        if SOCKET.exists():
+            return
+        time.sleep(0.2)
+    sys.exit("notchstorm: the engine did not come up")
+
+
+def connect(timeout=5):
+    """A socket to the engine, and everything it says while we listen."""
+    if not running():
+        start()
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.settimeout(timeout)
+    sock.connect(str(SOCKET))
+    return sock
+
+
+def say(sock, message):
+    sock.sendall((json.dumps(message) + "\n").encode())
+
+
+def listen(sock, wanted="state", limit=40):
+    """Read until a message of the wanted type arrives."""
+    buffer = b""
+    for _ in range(limit):
+        try:
+            chunk = sock.recv(65536)
+        except socket.timeout:
+            break
+        if not chunk:
+            break
+        buffer += chunk
+        for line in buffer.split(b"\n"):
+            if not line.strip():
+                continue
+            try:
+                message = json.loads(line)
+            except ValueError:
+                continue
+            if message.get("type") == wanted:
+                return message
+    return None
+
+
+def facts(message):
+    """The frame's facts, and where its picture is."""
+    if not message:
+        return {"ok": False, "error": "no answer from the engine"}
+    frame = message.get("frame") or {}
+    selection = message.get("selection") or {}
+    target = selection.get("target") or {}
+    out = {
+        "ok": True,
+        "mode": message.get("mode", "live"),
+        "source": selection.get("sourceId", ""),
+        "site": target.get("siteId", ""),
+        "kind": target.get("kind", ""),
+        "product": frame.get("productName", ""),
+        "scanTime": frame.get("scanTime", ""),
+        "status": (message.get("connection") or {}).get("status", ""),
+        "ageSeconds": (message.get("connection") or {}).get("ageSeconds", 0),
+        "texture": "",
+        "timeline": len(message.get("timeline") or []),
+    }
+    texture = frame.get("texture")
+    if texture:
+        # The engine's paths are relative to its own runtime directory.
+        out["texture"] = "file://" + str(WORK / texture)
+    return out
+
+
+def weather_place():
+    """The place the notch already keeps for its weather."""
+    try:
+        settings = json.loads((Path(HOME) / ".local/state/quickshell/settings.json").read_text())
+        return settings.get("weatherPlace") or ""
+    except Exception:
+        return ""
+
+
+def geocode(place):
+    """A place's coordinates, from wttr.in (the notch's weather already asks it)."""
+    if not place:
+        return None
+    try:
+        url = "https://wttr.in/" + urllib.parse.quote(place) + "?format=j1"
+        data = json.load(urllib.request.urlopen(url, timeout=20))
+        area = (data.get("current_area") or [{}])[0]
+        lat, lon = area.get("latitude"), area.get("longitude")
+        if lat and lon:
+            return float(lat), float(lon)
+    except Exception:
+        pass
+    return None
+
+
+def places(query):
+    """Places that match a name, from the engine's own gazetteer."""
+    sock = connect()
+    say(sock, {"type": "search_places", "query": query})
+    answer = listen(sock, "places")
+    sock.close()
+    if not answer:
+        return []
+    return [{"id": p.get("id"), "name": p.get("name"),
+             "lat": p.get("lat"), "lon": p.get("lon"),
+             "kind": p.get("kind")} for p in answer.get("places") or []]
+
+
+def home():
+    """The place the radar is pointed at, kept between sessions."""
+    try:
+        return json.loads(HOME_PLACE.read_text())
+    except Exception:
+        return {}
+
+
+def aim(place):
+    """Point the map at a place, and remember it."""
+    if place.get("lat") is None or place.get("lon") is None:
+        return
+    HOME_PLACE.parent.mkdir(parents=True, exist_ok=True)
+    HOME_PLACE.write_text(json.dumps(place, indent=1) + "\n")
+    sock = connect()
+    say(sock, {"type": "view_center", "lat": float(place["lat"]),
+               "lon": float(place["lon"])})
+    listen(sock, "state")
+    sock.close()
+
+
+def main():
+    args = sys.argv[1:]
+    if not args:
+        sys.exit(__doc__)
+    command = args[0]
+    if command == "start":
+        start()
+        print(json.dumps({"ok": True}))
+        return
+    if command == "state":
+        sock = connect()
+        message = listen(sock, "state")
+        if not (message or {}).get("selection"):
+            place = home()
+            if place:
+                say(sock, {"type": "view_center", "lat": float(place["lat"]),
+                           "lon": float(place["lon"])})
+                message = listen(sock, "state") or message
+        sock.close()
+        print(json.dumps(facts(message)))
+        return
+    if command == "home":
+        if len(args) > 2:
+            aim({"lat": float(args[1]), "lon": float(args[2]),
+                 "name": args[3] if len(args) > 3 else ""})
+        print(json.dumps(home()))
+        return
+    if command == "center" and len(args) > 2:
+        sock = connect()
+        say(sock, {"type": "view_center",
+                   "lat": float(args[1]), "lon": float(args[2])})
+        message = listen(sock, "state")
+        time.sleep(2.5)
+        message = listen(sock, "state") or message
+        sock.close()
+        print(json.dumps(facts(message)))
+        return
+    if command == "place" and len(args) > 1:
+        found = places(" ".join(args[1:]))
+        print(json.dumps({"places": found}))
+        return
+    if command == "site" and len(args) > 1:
+        sock = connect()
+        say(sock, {"type": "select_site", "id": args[1]})
+        message = listen(sock, "state")
+        sock.close()
+        print(json.dumps(facts(message)))
+        return
+    if command == "source" and len(args) > 1:
+        sock = connect()
+        say(sock, {"type": "select_source", "id": args[1]})
+        message = listen(sock, "state")
+        sock.close()
+        print(json.dumps(facts(message)))
+        return
+    sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()

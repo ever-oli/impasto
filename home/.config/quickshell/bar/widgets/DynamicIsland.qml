@@ -61,7 +61,7 @@ Rectangle {
         return SettingsService.notched ? Theme.islandGround : Theme.islandSurface
     }
 
-    // ── HOSTED ──────────────────────────────────────────────────────────────
+    // ── HOSTED ──
     //
     // In the one-capsule style the bar draws a band behind the island and puts
     // the sides on it. This flag only changes what the island paints at rest;
@@ -74,7 +74,7 @@ Rectangle {
     property int roomForPanel: 100000
 
 
-    // ── PANEL SIZES ─────────────────────────────────────────────────────────
+    // ── PANEL SIZES ──
     //
     // Declared rather than measured: the island has to reach its final shape
     // before the panel inside it is loaded.
@@ -95,6 +95,8 @@ Rectangle {
         tray:       { width: TrayService.menuWidth, height: TrayService.menuHeight },
         t3:         { width: T3Service.panelWidth, height: T3Service.panelHeight },
         picker:     { width: 900, height: 400 },
+        // The radar, big.
+        notchstorm: { width: 900, height: 560 },
         // Rows of posters, the big one at the top.
         anime:      { width: 1040, height: 640 },
         ask:        { width: 760, height: AskService.messages.length ? 460 : 220 }
@@ -154,6 +156,7 @@ Rectangle {
         t3: t3Panel,
         ask: askPanel,
         picker: pickerPanel,
+        notchstorm: notchstormPanel,
         anime: animePanel,
         module: moduleDetail,
         tray: trayMenu
@@ -188,7 +191,7 @@ Rectangle {
         active: root.active
     }
 
-    // ── GLANCE ──────────────────────────────────────────────────────────────
+    // ── GLANCE ──
     //
     // Hovering opens the summary after a short intent delay, leaving closes it
     // after a grace period, and a click opens the control centre. 80 ms is
@@ -360,7 +363,7 @@ Rectangle {
     }
     Behavior on color { ColorAnimation { duration: Theme.durationFast } }
 
-    // ── COLLAPSED ───────────────────────────────────────────────────────────
+    // ── COLLAPSED ──
 
     // An Item, not a second rounded rectangle, so the hover light and the
     // click target cover the whole island.
@@ -422,7 +425,7 @@ Rectangle {
         }
     }
 
-    // ── EXPANDED ────────────────────────────────────────────────────────────
+    // ── EXPANDED ──
 
     // A FocusScope, so one Escape handler covers every panel. A plain Item
     // holding focus here would take it from the launcher's search field; a
@@ -471,7 +474,7 @@ Rectangle {
         }
     }
 
-    // ── LAYERS ──────────────────────────────────────────────────────────────
+    // ── LAYERS ──
 
     Component {
         id: restLayer
@@ -522,6 +525,11 @@ Rectangle {
     Component {
         id: pickerPanel
         PickerPanel { onClosed: root.close() }
+    }
+
+    Component {
+        id: notchstormPanel
+        NotchstormPanel { onClosed: root.close() }
     }
 
     Component {

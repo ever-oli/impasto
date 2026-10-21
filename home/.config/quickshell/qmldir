@@ -102,3 +102,7 @@ MicrophoneDetail 1.0 bar/island/MicrophoneDetail.qml
 TrayMenuPanel    1.0 bar/island/TrayMenuPanel.qml
 BluetoothDetail  1.0 bar/island/BluetoothDetail.qml
 Commands         1.0 Commands.qml
+singleton AnimeService     1.0 services/AnimeService.qml
+singleton NotchstormService 1.0 services/NotchstormService.qml
+AnimePanel        1.0 bar/island/AnimePanel.qml
+NotchstormPanel   1.0 bar/island/NotchstormPanel.qml
