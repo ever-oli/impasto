@@ -17,6 +17,9 @@ Repos (cloned by `notch-dev status` if missing):
 Live config is ~/.config/quickshell (the shell), ~/.config/niri/config.kdl (one bind per
 line, check with `niri validate`), ~/.config/notch (modes, profile, lessons).
 
+First load the `notch` skill (~/.pi/agent/skills/notch/SKILL.md, also AGENTS.md in the
+repo): it is the map of Notch and its rules.
+
 Workflow, using `notch-dev` (run it with no arguments for usage):
 1. Search your optchat memory and read ~/.config/notch/lessons.md for Ever's past
    corrections and preferences on this topic, and follow them.

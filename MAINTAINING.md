@@ -14,6 +14,13 @@ shell. MIT; keep GPL code (caelestia, end-4, vicinae) out.
 ## Layout
 `home/` mirrors `~`; `setup` installs it; `tests/` holds the checks; `home/.local/share/notch/deps.tsv` the one dependency table.
 
+## k4-style pieces
+- **Modules:** each bar/island module loads alone; `qs ipc call modules failed`, `… reload <id>`.
+- **OpenRouter meter:** `usage` on the bar; polls every 10 min, warns under $1. Key read from Pi at run time.
+- **Island terminal:** `notch-term toggle` (Alt+\`, or the  button): Ghostty `com.notch.island` on tmux `notch`.
+- **Palette:** keybinds by what they do (Enter runs safe ones), `SSH: <host>` rows from `~/.ssh/config`.
+- **Agents:** `AGENTS.md` → `home/.pi/agent/skills/notch/SKILL.md`, loaded by Build mode.
+
 ## Update
 1. `git pull` here (or `chezmoi update`, which re-runs `./setup files`).
 2. `./setup files` (backs up to `~/.config-backups/notch-<stamp>`), then `notch-theme restore`.

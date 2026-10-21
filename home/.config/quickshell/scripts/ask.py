@@ -271,6 +271,9 @@ def compose(cmd):
     lessons = f"{CONF}/lessons.md"
     if mode.get("act") == "on" and os.path.exists(lessons):
         parts.append(f"<lessons source=\"Ever's past corrections\">\n{open(lessons).read()[-6000:]}\n</lessons>")
+    skill = os.path.expanduser("~/.pi/agent/skills/notch/SKILL.md")  # Build mode: the map of Notch
+    if mode.get("act") == "on" and os.path.exists(skill):
+        parts.append(f"<skill name=\"notch\">\n{open(skill).read()}\n</skill>")
     if seed[0]:
         parts.append(seed[0]); seed[0] = ""
     if captured[0]:
