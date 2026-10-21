@@ -66,13 +66,27 @@ Electron app.
 | TEAM-S | **8.0** | 27 / 2 / 0 | 7.0 | 5.7 |
 | SALES-S | **9.0** | 25 / 1 / 2 | 8.3 | 5.7 |
 | INT-M | **7.0** | 35 / 17 / 9 | 4.3 | 3.3 |
+| REAL-LECT-L (65 min) | **9.0** | 72 / 7 / 0 | 5.7 | 5.0 |
 
-Ours, on their tasks, with their rubric: 8.0 average. Theirs, on the
-same tasks: 6.5 at their best, 4.9 in the configuration they ship.
-No contradictions on any of the three.
+Ours, on their tasks, with their rubric: 8.3 average. Theirs, on the
+same tasks: 6.2 at their best, 5.0 in the configuration they ship.
+No contradictions on any of them.
+
+The long lecture is the interesting one, because their report says
+quality holds across lengths *because* their pipeline chunks and
+reduces — and a single pass over 8,518 words was the case we expected
+to lose. It did not: 72 facts present, none missing, none contradicted.
 
 Three caveats, stated plainly: the judges are different models (a free
 one here, Gemini 3.1 Pro there), so the scales are not identical; our
-pipeline is one pass where theirs chunks and reduces; and our judge
-shares a family with our answer, which flatters us. Three tasks is
-three tasks — their suite is eleven.
+pipeline is one pass where theirs chunks and reduces; and three tasks
+is three tasks — their suite is eleven.
+
+On the third of Natively's rules — the judge must not share a family
+with the answer — the bench happens to satisfy it: the answers came
+from MiniMax (the free model the shell's engine is configured for) and
+the judge is GLM, a different house. That is luck rather than
+discipline, so the bench now records which backend answered and which
+model judged, and keeps every run in
+`~/.local/state/notch/bench-results.json`, so a drift in either is
+visible instead of assumed.

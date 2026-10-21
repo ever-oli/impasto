@@ -23,6 +23,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASK = os.path.join(ROOT, "packages/assistant/bin/notch-ask-cli")
@@ -155,6 +156,32 @@ def run_task(reference_path, transcript_path, verbose=False):
     return {"id": reference.get("id"), "scores": scores, "notes": notes}
 
 
+RESULTS = os.path.join(os.environ.get("XDG_STATE_HOME",
+                                     os.path.expanduser("~/.local/state")),
+                       "notch", "bench-results.json")
+
+
+def remember(result):
+    """Keep the score, so the trend is visible."""
+    try:
+        os.makedirs(os.path.dirname(RESULTS), exist_ok=True)
+        with open(RESULTS) as handle:
+            history = json.load(handle)
+    except (OSError, ValueError):
+        history = []
+    history.append({"id": result.get("id"), "when": time.time(),
+                    "judge": JUDGE, "backend": BACKEND,
+                    "overall": result.get("scores", {}).get("overall_summary_quality"),
+                    "average": result.get("average"),
+                    "facts": result.get("facts")})
+    try:
+        with open(RESULTS, "w") as handle:
+            json.dump(history[-40:], handle, indent=1)
+    except OSError:
+        pass
+    return history
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ref", help="a Natively reference json")
@@ -206,17 +233,23 @@ def main():
             if dimension in scores:
                 print(f"    {dimension:38} {scores[dimension]}")
         print(f"    facts: {got}")
-        print(f"    overall: {scores.get('overall_summary_quality')}")
+        average = sum(scores.get(d, 0) for d in dimensions) / len(dimensions)
+        result["average"] = round(average, 2)
+        result["facts"] = got
+        print(f"    overall: {scores.get('overall_summary_quality')} "
+              f"(dimensions average {average:.1f})")
         if scores.get("critical_errors"):
             print(f"    critical: {scores['critical_errors'][:3]}")
         print(f"    why: {scores.get('rationale', '')[:400]}")
         totals.append(scores)
+        remember(result)
     if totals:
         average = sum(sum(s.get(d, 0) for d in dimensions) / len(dimensions)
                       for s in totals) / len(totals)
         overall = sum(s.get("overall_summary_quality", 0) for s in totals) / len(totals)
         print(f"\n{len(totals)} task(s): the average of the dimensions is "
               f"{average:.1f}/10, the overall {overall:.1f}/10")
+        print(f"answered by the {BACKEND} backend, judged by {JUDGE}")
     return 0
 
 
