@@ -34,7 +34,8 @@ Item {
         t3: "T3Module.qml",
         machine: "CloudModule.qml",
         idle: "CloudModule.qml",
-        battery: "BatteryModule.qml"
+        battery: "BatteryModule.qml",
+        usage: "UsageModule.qml"
     })
 
     implicitWidth: holder.item ? holder.implicitWidth : 0

@@ -180,8 +180,8 @@ Singleton {
     // `tray` the applications' icons and `split` starts a new capsule; none is
     // a module. The tray is not drawn while it is empty.
     readonly property var barDefaults: ({
-        left: ["workspaces"],
-        right: ["notifications", "network", "machine", "idle", "controls", "battery"]
+        left: ["workspaces", "terminal"],
+        right: ["notifications", "network", "machine", "usage", "idle", "controls", "battery"]
     })
 
     // An entry is a bare id, or `{ id, shape, figure, when }` when the piece

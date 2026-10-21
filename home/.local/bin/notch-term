@@ -1,0 +1,26 @@
+#!/bin/bash
+# notch-term — the island terminal: a Ghostty floating under the notch, attached
+# to tmux session "notch", so the session outlives the window.
+#   notch-term toggle   open it, focus it, or close it when it is focused
+#   notch-term status   {"open":bool,"focused":bool,"session":bool}
+# Placement is a niri window rule on app-id com.notch.island (config.kdl).
+# Why not Ghostty's own quick terminal: toggle_quick_terminal is only reachable
+# from a Ghostty keybind (global: needs the GlobalShortcuts portal, which niri
+# lacks) and Ghostty's D-Bus actions do not include it. Idea from k4ditano/k4 (MIT).
+set -u
+ID=com.notch.island
+win() { niri msg -j windows 2>/dev/null | python3 -c "import json,sys
+for w in json.load(sys.stdin):
+    if w.get('app_id')=='$ID': print(w['id'], int(w.get('is_focused',False))); break"; }
+read -r wid focused < <(win) || true
+case ${1:-toggle} in
+    status) tmux has-session -t notch 2>/dev/null && s=true || s=false
+            printf '{"open":%s,"focused":%s,"session":%s}\n' "$([ -n "${wid:-}" ] && echo true || echo false)" "$([ "${focused:-0}" = 1 ] && echo true || echo false)" "$s" ;;
+    toggle)
+        if [ -z "${wid:-}" ]; then
+            exec setsid -f ghostty --class=$ID --gtk-single-instance=false --title="Notch terminal" \
+                --window-decoration=none -e tmux new-session -A -s notch >/dev/null 2>&1
+        elif [ "$focused" = 1 ]; then niri msg action close-window --id "$wid"
+        else niri msg action focus-window --id "$wid"; fi ;;
+    *) sed -n '2,9p' "$0" ;;
+esac

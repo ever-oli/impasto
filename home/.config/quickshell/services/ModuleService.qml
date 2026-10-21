@@ -43,6 +43,7 @@ Singleton {
         { id: "volume",        name: "Volume",        bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "machine",       name: "CPU · RAM",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "battery",       name: "Battery",       bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
+        { id: "usage",         name: "OpenRouter",    bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "idle",          name: "Auto-stop",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "network",       name: "Network",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "bluetooth",     name: "Bluetooth",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
@@ -75,13 +76,19 @@ Singleton {
         return root.catalogue.find(item => item.id === id) ?? root.catalogue[0]
     }
 
-    readonly property var buttonIds: ["launcher", "controls", "capture", "keys", "session"]
+    readonly property var buttonIds: ["launcher", "controls", "capture", "keys", "session", "terminal"]
 
     readonly property var buttons: {
         const out = {}
         for (const id of root.buttonIds) {
             if (id === "controls") {
                 out[id] = { name: "Control centre", glyph: "󰊠", panel: "controls" }
+                continue
+            }
+            if (id === "terminal") {
+                // The island terminal: a Ghostty bound to tmux session "notch" (notch-term).
+                out[id] = { name: "Terminal", glyph: "",
+                            action: () => Quickshell.execDetached(["notch-term", "toggle"]) }
                 continue
             }
             if (id === "capture") {
@@ -155,6 +162,8 @@ Singleton {
             return "󰍛"
         case "idle":
             return "󰁹"
+        case "usage":
+            return "󰇁"
         }
         return ""
     }
@@ -171,6 +180,8 @@ Singleton {
             return `CPU ${CloudService.cpu}%  RAM ${CloudService.mem}%`
         case "idle":
             return CloudService.idleText
+        case "usage":
+            return UsageService.text
         case "bluetooth":
             return BluetoothService.summary
         case "t3":
@@ -198,6 +209,8 @@ Singleton {
                 return Theme.indicatorWarn
         }
         if (id === "battery" && BatteryService.bad)
+            return Theme.indicatorWarn
+        if (id === "usage" && UsageService.isLow)
             return Theme.indicatorWarn
         if (id === "idle" && CloudService.idleLeft < 900)
             return Theme.indicatorWarn
@@ -321,6 +334,7 @@ Singleton {
         case "t3":
         case "machine":
         case "idle":
+        case "usage":
             return true
         case "battery":
             return BatteryService.has
