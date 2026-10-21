@@ -6,7 +6,27 @@
 # q in the stream quits; closing only kills the "notch-theater" tmux socket.
 # Placement is a niri window rule on app-id com.notch.theater (config.kdl).
 set -u
-ID=com.notch.theater SOCK=notch-theater
+ID=com.notch.theater
+SOCK=${NOTCH_THEATER_SOCK:-notch-theater}
+# Layout, in cells: the stream is a fixed 80x23 canvas. Velvet panes of 1 cell
+# sit around it so tmux draws a heavy frame hugging exactly 80x23:
+#   1 velvet + 1 frame + 80 + 1 frame + 1 velvet = 84 cols
+#   1 velvet + 1 frame + 23 + 1 frame + 1 velvet = 27 rows, + 1 marquee = 28
+# Ghostty sizes itself in cells (window-width/height); Ghostty padding is the
+# outer velvet. At 14pt AnnotationM (500/800 em advance, 1000/800 em line, 96
+# dpi) a cell is ~12x24 px, so 84x28 cells + 2x(48,24) pad ~ 1104x720 px.
+SW=80 SH=23 W=84 H=27 PT=14 PADX=48 PADY=24
+stage() { # $1 conf, $2 stream command: detached session, frame panes, size pinned
+    local t=theater
+    tmux -L $SOCK -f "$1" new-session -d -s $t -x $W -y $H "$2; tmux -L $SOCK kill-server"
+    tmux -L $SOCK resize-window -t $t -x $W -y $H
+    local s; s=$(tmux -L $SOCK display -p -t $t '#{pane_id}')
+    tmux -L $SOCK split-window -t "$s" -vb -l 1 'exec sleep infinity' \; \
+         split-window -t "$s" -v -l 1 'exec sleep infinity' \; \
+         split-window -t "$s" -hb -l 1 'exec sleep infinity' \; \
+         split-window -t "$s" -h -l 1 'exec sleep infinity' \; \
+         select-pane -t "$s"
+}
 win() { niri msg -j windows 2>/dev/null | python3 -c "import json,sys
 for w in json.load(sys.stdin):
     if w.get('app_id')=='$ID': print(w['id'], int(w.get('is_focused',False))); break"; }
@@ -53,11 +73,16 @@ set -g default-terminal tmux-256color
 set -g escape-time 0
 set -g bell-action none
 set -g set-titles off
+set -g window-size manual
+set -g default-size ${W}x${H}
+set -g mouse off
 CONF
+        stage "$conf" "${NOTCH_THEATER_STREAM:-ssh -o StrictHostKeyChecking=accept-new -o LogLevel=ERROR watch.ascii.theater}"
+        [ -n "${NOTCH_THEATER_DRY:-}" ] && exit 0   # tests: tmux only, no window
         exec setsid -f ghostty --class=$ID --gtk-single-instance=false --title="ASCII Theater" \
-            --window-decoration=none --font-size=14 --background="$BG" --foreground="$FG" \
-            --window-padding-x=16 --window-padding-y=8 --window-padding-balance=true \
-            -e tmux -L $SOCK -f "$conf" new-session -s theater \
-            'ssh -o StrictHostKeyChecking=accept-new -o LogLevel=ERROR watch.ascii.theater' >/dev/null 2>&1 ;;
+            --window-decoration=none --font-size=$PT --background="$BG" --foreground="$FG" \
+            --window-width=$W --window-height=$((H + 1)) \
+            --window-padding-x=$PADX --window-padding-y=$PADY --window-padding-balance=true \
+            -e tmux -L $SOCK attach -t theater >/dev/null 2>&1 ;;
     *) sed -n '2,7p' "$0" ;;
 esac
