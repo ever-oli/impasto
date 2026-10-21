@@ -8,24 +8,35 @@
 set -u
 ID=com.notch.theater
 SOCK=${NOTCH_THEATER_SOCK:-notch-theater}
-# Layout, in cells: the stream is a fixed 80x23 canvas. Velvet panes of 1 cell
-# sit around it so tmux draws a heavy frame hugging exactly 80x23:
-#   1 velvet + 1 frame + 80 + 1 frame + 1 velvet = 84 cols
-#   1 velvet + 1 frame + 23 + 1 frame + 1 velvet = 27 rows, + 1 marquee = 28
-# Ghostty sizes itself in cells (window-width/height); Ghostty padding is the
-# outer velvet. At 14pt AnnotationM (500/800 em advance, 1000/800 em line, 96
-# dpi) a cell is ~12x24 px, so 84x28 cells + 2x(48,24) pad ~ 1104x720 px.
-SW=80 SH=23 W=84 H=27 PT=14 PADX=48 PADY=24
-stage() { # $1 conf, $2 stream command: detached session, frame panes, size pinned
-    local t=theater
-    tmux -L $SOCK -f "$1" new-session -d -s $t -x $W -y $H "$2; tmux -L $SOCK kill-server"
-    tmux -L $SOCK resize-window -t $t -x $W -y $H
-    local s; s=$(tmux -L $SOCK display -p -t $t '#{pane_id}')
-    tmux -L $SOCK split-window -t "$s" -vb -l 1 'exec sleep infinity' \; \
-         split-window -t "$s" -v -l 1 'exec sleep infinity' \; \
-         split-window -t "$s" -hb -l 1 'exec sleep infinity' \; \
-         split-window -t "$s" -h -l 1 'exec sleep infinity' \; \
-         select-pane -t "$s"
+# Layout, in cells: the stream is a fixed 80x23 canvas. The tmux window is the
+# marquee (row 1); the stream runs in a bordered popup that hugs it exactly:
+#   1 frame + 80 + 1 frame = 82 cols;  1 marquee + 1 frame + 23 + 1 frame = 26 rows
+# The popup opens when Ghostty attaches; when the stream ends, so does tmux.
+# Ghostty sizes itself in cells (window-width/height). At 14pt AnnotationM a
+# cell is 12x24 px: 82x26 cells + padding (8,4) = 1000x632 px (rendered).
+W=82 H=26 PT=14 PADX=8 PADY=4
+stage() { # $1 conf, $2 stream command: detached session, size pinned, popup on attach
+    tmux -L $SOCK -f "$1" new-session -d -s theater -x $W -y $H "exec '$0' marquee '$ACC' '$TEXT'"
+    tmux -L $SOCK resize-window -t theater -x $W -y $H
+    tmux -L $SOCK set -g @accent "$ACC"
+    # Deferred: Ghostty may resize once after attaching, and a resize closes popups.
+    tmux -L $SOCK set-hook -g client-attached "run-shell -b \"sleep 0.4; '$0' popup '#{client_name}'\""
+    printf '%s' "$2" > "$(popup_cmd)"
+}
+popup_cmd() { echo "${XDG_CACHE_HOME:-$HOME/.cache}/notch/$SOCK.stream"; }
+popup() { # $1 client: the framed 80x23 screen; the stream ending ends the show
+    tmux -L $SOCK display-popup -c "$1" -E -b heavy -S "fg=$(tmux -L $SOCK show -gv @accent)" \
+        -w $W -h $((H - 1)) -x 0 -y $H "sh -c '. \"$(popup_cmd)\"'; tmux -L $SOCK kill-server"
+}
+marquee() { # $1 accent, $2 text colour: one full-width bar, clock on the right
+    rgb() { printf '%d;%d;%d' 0x${1:1:2} 0x${1:3:2} 0x${1:5:2}; }
+    printf '\e[?25l'
+    while :; do
+        local l=" ✦ ASCII THEATER │ NOW SHOWING" r="q quit │ $(date +%H:%M) " n
+        n=$(( $(tput cols) - ${#l} - ${#r} ))
+        printf '\e[H\e[48;2;%sm\e[38;2;%sm\e[1m%s\e[22m%*s%s\e[0m' "$(rgb "$1")" "$(rgb "$2")" "$l" $n "" "$r"
+        sleep 20
+    done
 }
 win() { niri msg -j windows 2>/dev/null | python3 2>/dev/null -c "import json,sys
 for w in json.load(sys.stdin):
@@ -46,6 +57,8 @@ print(bg, fg, acc, text)
 PY
 }
 case ${1:-toggle} in
+    marquee) shift; marquee "$@" ;;
+    popup) popup "$2" ;;
     toggle)
         read -r wid focused < <(win) || true
         if [ -n "${wid:-}" ]; then
@@ -58,16 +71,9 @@ case ${1:-toggle} in
         conf=${XDG_CACHE_HOME:-$HOME/.cache}/notch/theater.tmux.conf
         mkdir -p "${conf%/*}"
         cat > "$conf" <<CONF
-set -g status-position top
-set -g status-interval 30
-set -g status-style "bg=$ACC,fg=$TEXT"
-set -g status-left-length 60
-set -g status-left "#[bold] ✦ ASCII THEATER#[nobold] │ NOW SHOWING "
-set -g status-right " q quit │ #[bold]%H:%M "
-set -g window-status-format ""
-set -g window-status-current-format ""
+set -g status off
 set -g pane-border-lines heavy
-set -g pane-border-style "fg=$BG"   # velvet: only the frame around the stream shows
+set -g pane-border-style "fg=#000000"   # velvet: only the frame around the stream shows
 set -g pane-active-border-style "fg=$ACC"
 set -g default-terminal tmux-256color
 set -g escape-time 0
@@ -76,13 +82,31 @@ set -g set-titles off
 set -g window-size manual
 set -g default-size ${W}x${H}
 set -g mouse off
+set -g popup-style "bg=#000000,fg=#d8d8d8"
 CONF
         stage "$conf" "${NOTCH_THEATER_STREAM:-ssh -o StrictHostKeyChecking=accept-new -o LogLevel=ERROR watch.ascii.theater}"
         [ -n "${NOTCH_THEATER_DRY:-}" ] && exit 0   # tests: tmux only, no window
-        exec setsid -f ghostty --class=$ID --gtk-single-instance=false --title="ASCII Theater" \
-            --window-decoration=none --font-size=$PT --background="$BG" --foreground="$FG" \
-            --window-width=$W --window-height=$((H + 1)) \
-            --window-padding-x=$PADX --window-padding-y=$PADY --window-padding-balance=true \
+        # Own Ghostty config, not the user's: theme colours would paint the
+        # screen; the theater is always black, only marquee + frame are themed.
+        gconf=${conf%/*}/theater.ghostty
+        cat > "$gconf" <<GH
+font-family = AnnotationM Nerd Font Mono
+font-size = $PT
+background = #000000
+foreground = #d8d8d8
+window-decoration = none
+window-width = $W
+window-height = $H
+window-padding-x = $PADX
+window-padding-y = $PADY
+window-padding-balance = true
+window-padding-color = background
+confirm-close-surface = false
+cursor-opacity = 0
+app-notifications = false
+GH
+        exec setsid -f ghostty --config-default-files=false --config-file="$gconf" \
+            --class=$ID --gtk-single-instance=false --title="ASCII Theater" \
             -e tmux -L $SOCK attach -t theater >/dev/null 2>&1 ;;
     *) sed -n '2,7p' "$0" ;;
 esac

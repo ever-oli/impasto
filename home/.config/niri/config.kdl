@@ -97,7 +97,7 @@ window-rule {
 }
 
 // ASCII Theater (notch-theater): drops down under the notch. No size here: Ghostty
-// sizes itself in cells (84x28 + velvet padding) so the 80x23 stream fits exactly.
+// sizes itself in cells (82x26 + 8x4 px padding) so the 80x23 stream fits exactly.
 window-rule {
     match app-id=r#"^com\.notch\.theater$"#
     open-floating true
