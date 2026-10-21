@@ -67,15 +67,24 @@ Electron app.
 | SALES-S | **9.0** | 25 / 1 / 2 | 8.3 | 5.7 |
 | INT-M | **7.0** | 35 / 17 / 9 | 4.3 | 3.3 |
 | REAL-LECT-L (65 min) | **9.0** | 72 / 7 / 0 | 5.7 | 5.0 |
+| LECT-VL (90 min) | **6.0** | 62 / 17 / 11 | 5.3 | 3.0 |
 
-Ours, on their tasks, with their rubric: 8.3 average. Theirs, on the
-same tasks: 6.2 at their best, 5.0 in the configuration they ship.
+Ours, on their tasks, with their rubric: 7.8 average. Theirs, on the
+same tasks: 6.2 at their best, 4.7 in the configuration they ship.
 No contradictions on any of them.
 
-The long lecture is the interesting one, because their report says
+The long lectures are the interesting ones, because their report says
 quality holds across lengths *because* their pipeline chunks and
 reduces — and a single pass over 8,518 words was the case we expected
-to lose. It did not: 72 facts present, none missing, none contradicted.
+to lose. At 65 minutes it did not: 72 facts present, none missing,
+none contradicted. At 90 minutes it started to: eleven facts missing,
+seventeen partial, and the score down to 6.0 — though still above
+their 5.3 on the same lecture.
+
+So the honest shape of it: we are ahead everywhere, and the gap opens
+exactly where their chunking earns its keep. The fix, when we want it,
+is theirs — chunk the transcript, summarise each chunk, reduce — and the
+bench is now the thing that would show it working.
 
 Three caveats, stated plainly: the judges are different models (a free
 one here, Gemini 3.1 Pro there), so the scales are not identical; our
