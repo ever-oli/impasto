@@ -8,7 +8,7 @@ its own address, resolved on the instabox box, whose address those
 sources accept.
 
   notch-watch anime "<title>" [--episode N]   resolve and play
-  notch-watch film <movie|tv> <id> "<title>" <year> [--season N]
+  notch-watch film <movie|tv> <id> "<title>" <year> [--season N] [--episode N]
   notch-watch url <url> [--referer <url>]     play what you have
 """
 
@@ -42,6 +42,11 @@ def in_terminal(command):
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
+def say(message):
+    """Leave a note in the island terminal, so a failure is not a silence."""
+    in_terminal("echo '" + str(message).replace("'", "'\\''") + "'")
+
+
 def resolve(title, episode):
     out = subprocess.run([sys.executable, SCRIPT, "resolve", title,
                           "--episode", str(episode)],
@@ -52,23 +57,39 @@ def resolve(title, episode):
 
 
 def resolve_film(media_kind, media_id, title, year, season, episode):
-    """The stream for a film or a series, found on the box.
+    """The stream for a film or a series.
 
-    Those pages answer this machine's address with a refusal: it is a
-    cloud one. The box answers them, so the box does the asking.
+    The pages that carry films and series answer a cloud address with a
+    refusal, so the notch does what the player does: it asks the api the
+    player asks and opens the answer the way the player opens it. No
+    browser, no box.
     """
-    command = [os.path.expanduser("~/.local/bin/notch-resolve"),
-               "--tmdb", media_id, "--title", title, "--year", str(year),
-               "--type", media_kind]
+    command = [node(), os.path.expanduser("~/.local/bin/notch-resolve.mjs"),
+               "--tmdb", str(media_id), "--type", media_kind,
+               "--title", title or "", "--year", str(year or ""), "--json"]
     if season:
         command += ["--season", str(season)]
     if episode:
         command += ["--episode", str(episode)]
-    out = subprocess.run(command, capture_output=True, text=True, timeout=300)
+    out = subprocess.run(command, capture_output=True, text=True, timeout=180)
     if out.returncode != 0:
-        raise RuntimeError(out.stderr.strip()[-300:] or "the box found no stream")
-    return {"url": out.stdout.strip().splitlines()[-1],
-            "referer": "https://player.videasy.to/"}
+        raise RuntimeError(out.stderr.strip()[-300:] or "no stream for that title")
+    found = json.loads(out.stdout)
+    return {"url": found["found"], "referer": found.get("referer", "")}
+
+
+def node():
+    """Node, wherever it lives on this machine."""
+    import shutil
+    found = shutil.which("node")
+    if found:
+        return found
+    home = os.environ.get("HOME", os.path.expanduser("~"))
+    for path in (f"{home}/.local/share/mise/installs/node/latest/bin/node",
+                 f"{home}/.local/bin/node", "/usr/bin/node"):
+        if os.path.exists(path):
+            return path
+    raise RuntimeError("node is not on this machine")
 
 
 def main():
@@ -86,7 +107,11 @@ def main():
     if kind == "anime":
         title = " ".join(a for a in args[1:]
                          if not a.isdigit() and a != "--episode")
-        found = resolve(title, episode)
+        try:
+            found = resolve(title, episode)
+        except Exception as error:
+            say(f"notch-watch: {error}")
+            raise
         url, referer = found["url"], found.get("referer")
     elif kind == "film":
         media_kind = args[1]                       # movie or tv
@@ -96,7 +121,11 @@ def main():
         season = ""
         if "--season" in args:
             season = args[args.index("--season") + 1]
-        found = resolve_film(media_kind, media_id, title, year, season, episode)
+        try:
+            found = resolve_film(media_kind, media_id, title, year, season, episode)
+        except Exception as error:
+            say(f"notch-watch: {error}")
+            raise
         url, referer = found["url"], found["referer"]
     elif kind == "url":
         url = args[1]
