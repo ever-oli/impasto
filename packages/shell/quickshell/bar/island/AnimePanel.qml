@@ -160,6 +160,19 @@ Item {
                 text: hero.show ? hero.show.description : ""
             }
 
+            // What went wrong, said where the button was pressed.
+            Text {
+                visible: AnimeService.error !== ""
+                width: parent.width
+                wrapMode: Text.WordWrap
+                maximumLineCount: 2
+                elide: Text.ElideRight
+                font.family: Theme.fontBar
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.indicatorWarn
+                text: AnimeService.error
+            }
+
             Row {
                 spacing: 10
 

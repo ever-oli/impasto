@@ -57,23 +57,47 @@ Singleton {
     // mpv's truecolor output draws it: no window, no GPU. Anime comes
     // through hianime, a film or a series through the box, whose
     // address those sources accept.
+    // What went wrong the last time a title was asked for, so the panel
+    // can say it where the button was pressed.
+    property string error: ""
+
     function watch(item: var): void {
         if (!item)
             return
+        root.error = ""
+        var command
         if (item.kind === "anime") {
             // The id goes along, so the title can be found again later.
-            Quickshell.execDetached(["notch-watch", "anime", item.romaji || item.title,
-                                     "--media-id", String(item.id), "--kind", "anime"])
-            return
+            command = ["notch-watch", "anime", item.romaji || item.title,
+                       "--media-id", String(item.id), "--kind", "anime"]
+        } else {
+            const kind = item.kind === "tv" ? "tv" : "movie"
+            command = ["notch-watch", "film", kind, String(item.id),
+                       item.title || "", String(item.year || "")]
+            if (kind === "tv")
+                command.push("--season", String(root.season), "--episode", String(root.episode))
+            if (item.resume)
+                command.push("--start", String(Math.floor(item.resume)))
         }
-        const kind = item.kind === "tv" ? "tv" : "movie"
-        const command = ["notch-watch", "film", kind, String(item.id),
-                         item.title || "", String(item.year || "")]
-        if (kind === "tv")
-            command.push("--season", String(root.season), "--episode", String(root.episode))
-        if (item.resume)
-            command.push("--start", String(Math.floor(item.resume)))
-        Quickshell.execDetached(command)
+        // The watch is run here, not thrown away, so its answer can be
+        // read: a title the source does not carry must not look like a
+        // button that did nothing.
+        watchProcess.command = command
+        watchProcess.running = false
+        watchProcess.running = true
+    }
+
+    readonly property Process watchProcess: Process {
+        stdout: StdioDiscard {}
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const text = (text || "").trim().split("\n").filter(Boolean).pop() || ""
+                if (root.watchProcess.exitCode !== 0)
+                    root.error = text.replace(/^notch-watch:\s*/, "")
+                else
+                    root.error = ""
+            }
+        }
     }
 
     // The title on show. When it changes, its episodes change with it.
