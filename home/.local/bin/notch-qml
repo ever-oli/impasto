@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+"""notch-qml — render a QML component to a picture, in a sandbox.
+
+The idea comes from the Omarchy T3 Code client: an agent can answer with a
+`qml` code block, and the client runs it and shows the result, in the
+user's own colours. The QML runs where the agent wrote it, so it runs
+sandboxed: a bubblewrap jail with no network, no way out of the working
+directory, and only the Qt Quick modules a picture needs. The notch's
+theme colours are handed to it as `notch.background`, `notch.foreground`,
+`notch.accent` and a few more, so a component looks like the rest of the
+shell.
+
+  notch-qml <file.qml> [--size WxH] [--out picture.png]
+
+The component is wrapped in a window of the given size, left to settle for
+a moment, and grabbed. A component that blocks its event loop is killed
+rather than waited on: the answer arrives, the picture does not hang the
+panel.
+"""
+
+import argparse
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+HOME = os.environ.get("HOME", os.path.expanduser("~"))
+QML_DIR = "/usr/lib/qt6/qml"
+TIMEOUT = 8
+
+# The Qt Quick modules a component may import: the picture needs the core,
+# the common controls, the layout, the shapes and the effects. Anything else
+# (QtNetwork, QtWebEngine, QtQuick.Dialogs) stays outside the jail, so a
+# component cannot reach the network or the disk.
+ALLOWED = {
+    "QtQuick": ["Controls", "Effects", "Layouts", "Shapes", "Templates", "Window"],
+    "QtQml": ["DesignSupport", "Models", "WorkerScript", "XmlListModel"],
+}
+
+# The colours a component is given, read from the shell's theme.
+THEME = Path(HOME) / ".local/state/notch/theme.json"
+
+WRAPPER = """
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+
+Window {
+    id: win
+    width: {width}
+    height: {height}
+    visible: true
+    color: "transparent"
+    title: "notch-qml"
+
+    // The notch's colours, so a component looks like the rest of the shell.
+    // Named `notch`, since `palette` is Qt's own control palette. A
+    // component reaches them as `notch.background` and so on: the scope
+    // carries over into the loaded file.
+    QtObject {
+        id: notch
+        readonly property color background: "{background}"
+        readonly property color foreground: "{foreground}"
+        readonly property color accent: "{accent}"
+        readonly property color surface: "{surface}"
+        readonly property color border: "{border}"
+        readonly property color muted: "{muted}"
+    }
+
+    Loader {
+        id: loader
+        anchors.fill: parent
+        source: "component.qml"
+
+        // A component that does not compile has no picture to show; say so
+        // rather than handing back a blank one.
+        onStatusChanged: if (status === Loader.Error) Qt.exit(3)
+        onLoaded: Qt.callLater(win.grab)
+    }
+
+    function grab() {
+        contentItem.grabToImage(function (result) {
+            result.saveToFile("{out}")
+            Qt.callLater(Qt.quit)
+        })
+    }
+
+    // A component that never settles must not hold the answer hostage.
+    Timer {
+        interval: {settle}
+        running: true
+        onTriggered: win.grab()
+    }
+}
+"""
+
+
+def colours():
+    """The theme's colours, as hex, or the shell's defaults."""
+    out = {
+        "background": "#1c1c1e", "foreground": "#f5f5f7", "accent": "#0a84ff",
+        "surface": "#2c2c2e", "border": "#3a3a3c", "muted": "#8e8e93",
+    }
+    try:
+        import json
+        data = json.loads(THEME.read_text())
+    except Exception:
+        return out
+    shell = data.get("shell") or {}
+    for key, name in (("background", "background"), ("foreground", "text"),
+                      ("accent", "accent"), ("surface", "surface"),
+                      ("border", "border"), ("muted", "textMuted")):
+        value = shell.get(name)
+        if isinstance(value, str) and value.startswith("#"):
+            out[key] = value
+    return out
+
+
+def jail(root):
+    """A directory holding only the Qt Quick modules a picture needs."""
+    for module, subs in ALLOWED.items():
+        target = root / module
+        target.mkdir(parents=True, exist_ok=True)
+        source = Path(QML_DIR) / module
+        for item in source.iterdir():
+            if item.name in subs or item.suffix in (".so", ".qmltypes") or item.name == "qmldir":
+                if item.is_dir():
+                    shutil.copytree(item, target / item.name, symlinks=True)
+                else:
+                    shutil.copy2(item, target / item.name)
+    return root
+
+
+def render(source, size, out, settle):
+    """Run the component in the jail and grab a picture of it."""
+    width, height = size
+    with tempfile.TemporaryDirectory(prefix="notch-qml-") as work:
+        work = Path(work)
+        app = work / "app"
+        app.mkdir()
+        shutil.copy(source, app / "component.qml")
+        shutil.copy(source, app / "component.qml")
+        out_dir = work / "out"
+        out_dir.mkdir()
+
+        palette = colours()
+        wrapper = WRAPPER
+        for key, value in dict(width=width, height=height, settle=settle,
+                               out="/out/picture.png", **palette).items():
+            wrapper = wrapper.replace("{" + key + "}", str(value))
+        (app / "wrapper.qml").write_text(wrapper)
+
+        modules = jail(work / "modules")
+
+        # bubblewrap: no network, no processes of its own, nothing outside
+        # the app directory but the Qt modules it was given.
+        command = [
+            "bwrap",
+            "--unshare-net", "--unshare-pid", "--unshare-ipc",
+            "--die-with-parent", "--new-session",
+            "--ro-bind", "/usr", "/usr",
+            "--ro-bind", "/etc", "/etc",
+            "--ro-bind", "/lib", "/lib",
+            "--ro-bind", "/lib64", "/lib64",
+            "--proc", "/proc", "--dev", "/dev",
+            "--ro-bind", str(modules), QML_DIR,
+            "--ro-bind", str(app), "/app",
+            "--bind", str(out_dir), "/out",
+            "--tmpfs", "/tmp",
+            "--setenv", "HOME", "/tmp",
+            "--setenv", "XDG_RUNTIME_DIR", "/tmp",
+            "--setenv", "XDG_CONFIG_HOME", "/tmp",
+            "--setenv", "XDG_DATA_HOME", "/tmp",
+            "--setenv", "XDG_CACHE_HOME", "/tmp",
+            "--setenv", "QT_QPA_PLATFORM", "offscreen",
+            "--setenv", "QT_QUICK_BACKEND", "software",
+            "--chdir", "/app",
+            "nice", "-n", "10", "qml6", "wrapper.qml",
+        ]
+        try:
+            result = subprocess.run(command, capture_output=True, timeout=TIMEOUT)
+        except subprocess.TimeoutExpired:
+            return None, "the component did not finish"
+        picture = out_dir / "picture.png"
+        detail = result.stderr.decode(errors="replace").strip().splitlines()
+        if not picture.exists():
+            # A component that did not compile says why on stderr.
+            return None, detail[-1] if detail else "the component did not draw"
+        shutil.copy2(picture, out)
+        return out, None
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("source", help="the .qml file to render")
+    parser.add_argument("--size", default="420x260", help="the picture's size")
+    parser.add_argument("--out", default="", help="where to write the picture")
+    parser.add_argument("--settle", type=int, default=700,
+                        help="milliseconds before the picture is taken")
+    args = parser.parse_args()
+
+    try:
+        width, height = (int(part) for part in args.size.lower().split("x"))
+    except Exception:
+        sys.exit(f"bad size {args.size!r}: expected WxH")
+
+    source = Path(args.source)
+    if not source.exists():
+        sys.exit(f"no such file: {source}")
+
+    out = Path(args.out) if args.out else source.with_suffix(".png")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    picture, error = render(source, (width, height), out, args.settle)
+    if error:
+        sys.exit(f"notch-qml: {error}")
+    print(picture)
+
+
+if __name__ == "__main__":
+    main()

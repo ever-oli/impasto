@@ -13,6 +13,10 @@ When a diagram or chart makes the answer clearer, include ONE fenced block:
 ```chart    for data, JSON: {"type":"bar|line|scatter|pie","title":"…","labels":[…],
             "series":[{"name":"…","values":[…]}],"x":"axis label","y":"axis label"}
 The shell renders it as a picture. Only when it helps; never for trivia.
+```qml      for a small live Qt Quick component, when a picture of the answer
+            is better drawn than described: an Item with the shell's colours
+            (notch.background, notch.foreground, notch.accent, notch.surface,
+            notch.border, notch.muted).
 </visual_rules>"""
 
 # ── MODES ──────────────────────────────────────────────────────────────────
@@ -199,14 +203,31 @@ def mermaid(source, out):
     if run.returncode != 0 or not os.path.exists(out):
         raise RuntimeError(run.stderr.decode(errors="replace")[-300:])
 
+def qml(source, out):
+    """Render a Qt Quick component to a picture, in a sandbox."""
+    src = f"{CACHE}/{os.path.splitext(os.path.basename(out))[0]}.qml"
+    os.makedirs(CACHE, exist_ok=True)
+    with open(src, "w") as handle:
+        handle.write(source)
+    run = subprocess.run([f"{HOME}/.local/bin/notch-qml", src, "--out", out, "--size", "420x260"],
+                         capture_output=True, timeout=30)
+    if run.returncode != 0 or not os.path.exists(out):
+        raise RuntimeError(run.stderr.decode(errors="replace")[-300:])
+
+
 def visuals(answer):
-    """[(kind, png path or None, source)] for each closed mermaid/chart block."""
+    """[(kind, png path or None, source)] for each closed mermaid/chart/qml block."""
     os.makedirs(CACHE, exist_ok=True)
     found = []
-    for kind, source in re.findall(r"```(mermaid|chart)\s*\n(.*?)```", answer, re.S):
+    for kind, source in re.findall(r"```(mermaid|chart|qml)\s*\n(.*?)```", answer, re.S):
         out = f"{CACHE}/{hashlib.sha1(source.encode()).hexdigest()[:12]}.png"
         try:
-            chart(json.loads(source), out) if kind == "chart" else mermaid(source, out)
+            if kind == "chart":
+                chart(json.loads(source), out)
+            elif kind == "qml":
+                qml(source, out)
+            else:
+                mermaid(source, out)
             found.append((kind, out, source))
         except Exception as error:  # a broken block falls back to its source
             found.append((kind, None, f"{source}\n(could not render: {error})"))
