@@ -3,7 +3,6 @@
 # whenever convenient, then delete its line (the hook nags you when you do).
 38804	packages/shell/quickshell/bar/Bar.qml
 28474	packages/shell/quickshell/bar/island/LauncherPanel.qml
-22180	packages/shell/quickshell/bar/widgets/DynamicIsland.qml
 36006	packages/shell/quickshell/services/ControlsService.qml
 32506	packages/shell/quickshell/services/LauncherService.qml
 41289	packages/shell/quickshell/services/SettingsService.qml
