@@ -73,6 +73,26 @@ doctor)
     else
         no "notch doctor runs" "$answer"
     fi
+    # Is this the shell Ever runs, or a stale one that answers the ipc?
+    # The shell's own files, not the ones other packages put beside
+    # them: the media scripts live in the same directory.
+    repo="${NOTCH_REPO:-$HOME/src/notch}"
+    stale=""
+    for f in "$repo"/packages/shell/quickshell/*.qml "$repo"/packages/shell/quickshell/qmldir; do
+        [ -f "$f" ] || continue
+        live="$HOME/.config/quickshell/$(basename "$f")"
+        if [ ! -f "$live" ]; then
+            stale="$stale $(basename "$f")"
+        elif ! cmp -s "$f" "$live"; then
+            stale="$stale $(basename "$f")"
+        fi
+    done
+    if [ -z "$stale" ]; then
+        ok "the shell on this machine is the one in the repository"
+    else
+        no "the shell on this machine is the one in the repository" \
+           "stale:$stale; run ./setup files"
+    fi
     ;;
 
 panels)

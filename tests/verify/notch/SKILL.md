@@ -21,15 +21,6 @@ and how each journey is proved: one file per journey
 convenient entry point is incomplete when the map lists others, so the
 map is where a new journey goes.
 
-## The feature map
-
-`features/` is the maintained list of what a user can do with the shell
-and how each journey is proved: one file per journey
-(`features/panels.md`, `features/palette.md`, `features/handoff.md`,
-`features/theme.md`, `features/work.md`). A proof that drives one
-convenient entry point is incomplete when the map lists others, so the
-map is where a new journey goes.
-
 ## The surface
 
 - `qs ipc call <target> <verb> [args]` — the whole shell. Every answer is
@@ -95,6 +86,18 @@ If `modules failed` is not empty, the shell is not worth driving: a module
 that failed to load means the bar is broken, and the answers you collect
 after that are not the shell Ever sees. `qs ipc call modules reload <name>`
 reloads one module.
+
+The doctor also has to answer "is this the shell Ever runs?", not just
+"is a shell up":
+
+- **the version.** The shell is the one the install put there. A stale
+  `qs` on the PATH answers the ipc and shows an older shell, and the
+  proof is then of something Ever does not use. Compare the machine's
+  `~/.config/quickshell` with the repository (`tests/mirror.sh`), or the
+  proof is of a different shell than the one Ever sees.
+- **the ownership of the screen.** The shell has to be the one on this
+  display: `niri msg -j windows` names the island's window, and the
+  proof is a screenshot of that window, not of whatever is in front.
 
 ## Drive
 
