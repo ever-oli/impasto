@@ -103,7 +103,7 @@ the real surface and asserts on what a caller can observe, not on the word
 "ok":
 
 ```sh
-tests/verify/notch/notch-drive.sh <doctor|panels|palette|context|theme> <evidence-dir>
+tests/verify/notch/notch-drive.sh <doctor|panels|palette|context|theme|work> <evidence-dir>
 ```
 
 - `panels` — every panel opens and closes, and the shell still answers after

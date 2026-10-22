@@ -17,11 +17,16 @@ The palette has a "Work" entry, and the agent reads the same data through
 ## Driving it with the helper
 
 ```sh
-tests/verify/notch/notch-drive.sh context <evidence-dir>
+tests/verify/notch/notch-drive.sh work <evidence-dir>
 ```
 
-The `context` scenario checks that `context get` carries the work. The
-platforms need their own assertions, which are in the raw calls:
+The `work` scenario checks the postings, the platforms, the geo note, one
+platform's requirements, and that a platform can be handed over by
+index. The `context` scenario checks that `context get` carries the work
+as well, so the two overlap on purpose: the hand is a way to reach the
+same data.
+
+The raw calls, if you want them:
 
 ```sh
 qs ipc call work get
