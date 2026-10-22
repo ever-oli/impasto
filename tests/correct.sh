@@ -26,9 +26,11 @@ head_() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 # every file that mentions it.
 head_ "removed things leave nothing behind"
 for ghost in "notch-ask-cli" "notch-harness" "notch evolve" "AskService" "AskPanel"; do
+    # A document may name a thing that is gone, to say it is gone: the
+    # check is for code that would still use it.
     hits=$(grep -rln "$ghost" --include=* . 2>/dev/null \
            | grep -v "^./.git/" | grep -v "^./tests/correct.sh" | grep -v "^./.gitignore" \
-           | grep -v "^./docs/quickshell.md" | grep -v "^./tests/setup.sh" | head -3)
+           | grep -v "^./docs/" | grep -v "^./tests/setup.sh" | head -3)
     if [ -z "$hits" ]; then
         ok "nothing mentions $ghost"
     else

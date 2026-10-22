@@ -33,6 +33,15 @@ this, and nothing else.
 | `t3` | `get`, `refresh`, `update`, `open` | the agent's own app: its service, its version, and raising it |
 | `shell` | `reload` | reload the shell from disk |
 
+Three targets live outside `Commands.qml`, because they belong to the
+part of the shell that owns them. They answer the same way.
+
+| target | verbs | where it lives |
+|---|---|---|
+| `playing` | `get` | `services/PlayingService.qml`: what is playing, the caption, the history |
+| `orb` | `toggle`, `open`, `close`, `status`, `key <name>` | `orb/Orb.qml`: the round menu on the bar |
+| `fontsize` | `open`, `close`, `toggle`, `status`, `set <n>`, `key <name>` | `fontsize/FontSlider.qml`: the text size slider |
+
 ## The handoff
 
 The notch has no assistant in it. It says what it knows and gets out of

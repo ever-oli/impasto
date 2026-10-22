@@ -18,11 +18,10 @@ import "../../services"
 //     panel         opened by the user      until dismissed
 //     notification  something arrived       until it expires or is closed
 //     transient     volume, brightness…     shown, then expires
-//     summary       the pointer rests on it  until it leaves
 //     modules       nothing happening       always available
 //
 // A notification outranks a transient, which only confirms something the user
-// just did. The summary sits just above rest because it only restates what was
+// just did.
 // already true. Adding a layer means giving it a rank.
 //
 // There is one of these per screen, and only the live one arbitrates: an
@@ -40,7 +39,6 @@ QtObject {
     readonly property string layerNotification: "notification"
     readonly property string layerOsd: "osd"
     readonly property string layerPanel: "panel"
-    readonly property string layerSummary: "summary"
 
     // How long a transient event holds the island before it falls away.
     readonly property int transientDuration: 1800
@@ -55,7 +53,6 @@ QtObject {
     property string openPanel: ""
 
     // Set by the island while the pointer has rested on it long enough.
-    property bool summary: false
 
     readonly property string layer: {
         if (!root.active)
@@ -66,8 +63,6 @@ QtObject {
             return root.layerNotification
         if (root.transientActive)
             return root.layerOsd
-        if (root.summary)
-            return root.layerSummary
         return root.layerModules
     }
 
@@ -80,7 +75,6 @@ QtObject {
         if (root.active)
             return
         root.openPanel = ""
-        root.summary = false
         root.transientActive = false
         root.expiry.stop()
     }
@@ -117,7 +111,6 @@ QtObject {
         // The notification goes too, without being marked as acted on: opening
         // a panel is not the same as answering what was on screen.
         NotificationService.dismiss()
-        root.summary = false
         root.openPanel = panel
     }
 

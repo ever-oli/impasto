@@ -444,8 +444,12 @@ Scope {
     IpcHandler {
         target: "shell"
 
-        function reload(): void {
+        function reload(): string {
+            // The answer comes before the reload, because the reload takes
+            // the shell down and the next call would answer "Not ready to
+            // accept queries yet" instead of json.
             Quickshell.reload(false)
+            return root.ok({ reloading: true })
         }
     }
 }

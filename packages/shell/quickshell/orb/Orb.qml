@@ -108,7 +108,7 @@ Scope {
     }
 
     function status() {
-        return JSON.stringify({ opened: opened, positioned: positioned, placedBy: placedBy,
+        return JSON.stringify({ ok: true, opened: opened, positioned: positioned, placedBy: placedBy,
             x: Math.round(pointer.x), y: Math.round(pointer.y), selected: selected,
             submenu: submenuTitle, page: menuPage, pages: pageCount,
             items: wheelActions.map(a => a.label), lastAction: lastAction, motion: Theme.motion });

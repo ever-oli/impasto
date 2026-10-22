@@ -141,11 +141,11 @@ PanelWindow {
 
     readonly property real bandRow: Theme.capsuleHeight + island.notchPad
 
-    // The island is showing more than the clock: a panel, a detail, the
-    // glance or a notification. An OSD fits in the band and does not count.
+    // The island is showing more than the clock: a panel, a detail or a
+    // notification. An OSD fits in the band and does not count.
     // In zen too, where the sides are away and the band is only the island.
     readonly property bool islandTaken: island.expanded
-        || island.state.layer === island.state.layerSummary
+
         || island.state.layer === island.state.layerNotification
         || root.zen
     readonly property real bodyX: root.edgeToEdge
@@ -232,7 +232,7 @@ PanelWindow {
     // transient — with the sides left up there.
     readonly property bool zen: SettingsService.barHidden
     readonly property bool called: island.state.layer !== island.state.layerModules
-        && island.state.layer !== island.state.layerSummary
+
     readonly property bool away: root.zen && !root.called
 
     mask: Region {

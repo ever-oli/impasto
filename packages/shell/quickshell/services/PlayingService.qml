@@ -103,7 +103,10 @@ Singleton {
         target: "playing"
 
         function get(): string {
+            // Every answer carries ok, like every other target, so a
+            // caller that checks it does not read this as a failure.
             return JSON.stringify({
+                ok: true,
                 playing: root.playing,
                 caption: root.caption,
                 history: root.history.length,

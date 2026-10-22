@@ -76,6 +76,10 @@ case $verb in
         esac ;;
     say)          call osd say "${1:?say what}" "${2:-}" ;;
     learn)
+        # --help is a request for help, not a lesson to learn.
+        case "${1:-}" in
+            --help|-h) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        esac
         lesson="${*:-$([[ -t 0 ]] && printf '' || cat)}"
         python3 - "$lesson" <<'PY'
 import re, sys, time, os

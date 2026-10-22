@@ -138,7 +138,6 @@ Rectangle {
 
     readonly property var layerComponents: ({
         modules: restLayer,
-        summary: summaryLayer,
         osd: osdLayer,
         notification: notificationLayer
     })
@@ -189,56 +188,6 @@ Rectangle {
         active: root.active
     }
 
-    // ── GLANCE ──
-    //
-    // Hovering opens the summary after a short intent delay, leaving closes it
-    // after a grace period, and a click opens the control centre. 80 ms is
-    // under a perceptible wait but longer than a moving pointer spends
-    // crossing the clock; the grace period stops a pointer on the edge from
-    // flapping it open and shut.
-    //
-    // Re-entering cancels the close. A click holds the glance off until the
-    // pointer leaves, so a just-dismissed panel is not replaced by the summary.
-    // A HoverHandler rather than the MouseArea because it stays hovered over
-    // the sides' own click targets.
-    HoverHandler {
-        id: hover
-    }
-
-    property bool summaryHeld: false
-
-    readonly property bool restBusy: islandState.layer === islandState.layerModules
-        && (collapsedLoader.item?.busy ?? false)
-
-    readonly property bool canSummarise: false && SettingsService.islandSummary
-        && root.active
-        && !root.summaryHeld
-        && !root.landing
-        && ModuleService.openId === ""
-        && (islandState.layer === islandState.layerModules
-            || islandState.layer === islandState.layerSummary)
-
-    onCanSummariseChanged: {
-        if (!root.canSummarise)
-            islandState.summary = false
-    }
-
-    onRestBusyChanged: {
-        if (root.restBusy)
-            dwell.stop()
-        else if (hover.hovered && !islandState.summary)
-            dwell.restart()
-    }
-
-    Timer {
-        id: dwell
-        interval: 80
-        onTriggered: {
-            if (hover.hovered && root.canSummarise && !root.restBusy)
-                islandState.summary = true
-        }
-    }
-
     // Set while the island shrinks back to rest from a panel, detail,
     // notification or OSD: opening the glance mid-morph would turn the shape
     // round halfway. The glance's own close is not a landing, since re-entering
@@ -268,33 +217,6 @@ Rectangle {
         if (!root.landing || !root.settled || islandState.layer !== islandState.layerModules)
             return
         root.landing = false
-        if (hover.hovered && !islandState.summary)
-            dwell.restart()
-    }
-
-    Timer {
-        id: grace
-        interval: 260
-        onTriggered: {
-            if (!hover.hovered)
-                islandState.summary = false
-        }
-    }
-
-    Connections {
-        target: hover
-
-        function onHoveredChanged(): void {
-            if (hover.hovered) {
-                grace.stop()
-                if (!islandState.summary)
-                    dwell.restart()
-            } else {
-                dwell.stop()
-                grace.restart()
-                root.summaryHeld = false
-            }
-        }
     }
 
     width: root.size.width
@@ -385,7 +307,6 @@ Rectangle {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: {
-                root.summaryHeld = true
                 root.open("launcher")
             }
         }
@@ -477,11 +398,6 @@ Rectangle {
     Component {
         id: restLayer
         IslandRest {}
-    }
-
-    Component {
-        id: summaryLayer
-        Item {}
     }
 
     Component {

@@ -102,7 +102,22 @@ theme() {
 
 uninstall() {
     [ -f "$MANIFEST" ] || { say "nothing recorded in $MANIFEST"; return; }
-    while read -r rel; do rm -f "$HOME/$rel"; done < "$MANIFEST"
+    # The manifest records directories as well as files, and a directory
+    # entry is the top of a tree the notch owns: ~/.local/bin is where
+    # every program lives, and rm -rf on it would take the user's own
+    # with it. So: a file goes, a directory is emptied of the notch's
+    # own files and no further.
+    while read -r rel; do
+        target="$HOME/$rel"
+        [ -e "$target" ] || continue
+        if [ -d "$target" ]; then
+            for file in "$target"/notch*; do
+                [ -e "$file" ] && rm -f "$file"
+            done
+        else
+            rm -f "$target"
+        fi
+    done < "$MANIFEST"
     rm -rf "$HOME/.config/quickshell"
     rm -f "$MANIFEST"
     say "removed; backups under ~/.config-backups are untouched"

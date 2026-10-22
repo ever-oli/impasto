@@ -22,7 +22,7 @@ Scope {
     function close() { FontSizeService.applyNow(); opened = false }
     function cancel() { FontSizeService.preview(original); FontSizeService.applyNow(); opened = false }
     function status() {
-        return JSON.stringify({ opened: opened, value: FontSizeService.value, applied: FontSizeService.applied,
+        return JSON.stringify({ ok: true, opened: opened, value: FontSizeService.value, applied: FontSizeService.applied,
             pending: FontSizeService.pending, from: FontSizeService.from, to: FontSizeService.to });
     }
 

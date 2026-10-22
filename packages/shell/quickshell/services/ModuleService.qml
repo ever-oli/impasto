@@ -289,29 +289,6 @@ Singleton {
         : root.clockCore + 2 * root.activitySide
             + (root.overflow > 0 ? root.overflowWidth : 0)
 
-    readonly property int summaryWidth: (root.glanceFace === "clock" ? 420 : 560)
-        + root.glanceTime - root.glanceTimeBase
-    readonly property int glanceTimeBase: root.timeMetrics.font.family !== ""
-        ? Math.ceil(root.timeMetrics.advanceWidth("20:48")) : 0
-    readonly property int glanceTime: root.timeMetrics.font.family !== ""
-        ? Math.max(root.glanceTimeBase, Math.ceil(root.timeMetrics.advanceWidth(
-            Qt.formatTime(new Date(2000, 0, 1, 20, 48, 58), SettingsService.clockFormat))))
-        : 0
-    readonly property FontMetrics timeMetrics: FontMetrics {
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fs(62)
-        font.weight: Font.Black
-    }
-    readonly property int summaryHeight: root.glanceFaceHeight
-        + (root.glanceStrip.length > 0 ? root.glanceStripHeight : 0)
-
-    readonly property var glanceRows: RecorderService.recording ? ["recorder"] : []
-    readonly property string glanceFace: root.glanceRows.length > 0 ? root.glanceRows[0] : "clock"
-    readonly property var glanceStrip: root.glanceRows.filter(id => id !== root.glanceFace)
-    readonly property int glanceMargin: 19
-    readonly property int glanceFaceHeight: 150
-    readonly property int glanceStripHeight: 38
-
     property string openId: ""
     property string openHost: ""
 

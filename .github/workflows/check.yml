@@ -23,3 +23,8 @@ jobs:
         run: |
           pip install --quiet pyflakes
           python3 -m pyflakes packages/*/scripts/*.py
+      - name: The mistakes that keep happening
+        # correct.sh needs no shell: it reads the tree and the docs. The
+        # gates that need a live shell cannot run here, and the ci said so
+        # by not running them, which is how a red gate looked green.
+        run: sh tests/correct.sh

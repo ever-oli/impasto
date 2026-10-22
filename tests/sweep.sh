@@ -22,7 +22,7 @@ ipc() { timeout 25 qs ipc call "$@" 2>&1; }
 head_ "panels"
 for panel in launcher controls t3 keys session clipboard emoji anime notchstorm; do
     answer=$(ipc panel open "$panel")
-    if echo "$answer" | grep -q '"ok":true'; then
+    if echo "$answer" | grep -qE '"ok": ?true'; then
         sleep 1.2
         closed=$(ipc panel close)
         if echo "$closed" | grep -q '"ok":true'; then
@@ -38,7 +38,7 @@ done
 # ── the commands ─────────────────────────────────────────────────────────────
 head_ "commands"
 answer=$(ipc panel list)
-if echo "$answer" | grep -q '"ok":true'; then
+if echo "$answer" | grep -qE '"ok": ?true'; then
     ok "the panel list answers" "$(echo "$answer" | head -c 160)"
 else
     no "the panel list answers" "$answer"
@@ -47,7 +47,7 @@ fi
 for call in "volume get" "focus set toggle" "theme get" "t3 get" "osd say hello test"; do
     set -- $call
     answer=$(ipc "$@")
-    if echo "$answer" | grep -q '"ok":true'; then
+    if echo "$answer" | grep -qE '"ok": ?true'; then
         ok "ipc $call"
     else
         no "ipc $call" "$answer"
@@ -125,7 +125,7 @@ head_ "radar"
 answer=$(timeout 30 "$HOME/.local/bin/notchstorm" state 2>&1)
 # The old check grepped for "error" as well as the answers, so it passed
 # on a dead engine. The answer has to say ok.
-if echo "$answer" | grep -q '"ok": true'; then
+if echo "$answer" | grep -qE '"ok": ?true'; then
     ok "the radar answers" "$(echo "$answer" | head -c 120)"
 else
     no "the radar answers" "$(echo "$answer" | head -c 160)"
@@ -198,7 +198,7 @@ rm -rf "$work"
 # ── the capture ──────────────────────────────────────────────────────────────
 head_ "capture"
 answer=$(timeout 90 "$HOME/.local/bin/notch" capture text 2>&1)
-if echo "$answer" | grep -q '"ok":true'; then
+if echo "$answer" | grep -qE '"ok": ?true'; then
     ok "the screen can be read"
 else
     no "the screen can be read" "$answer"
@@ -207,7 +207,7 @@ fi
 # ── the palette ──────────────────────────────────────────────────────────────
 head_ "palette"
 answer=$(timeout 25 qs ipc call palette open "/" 2>&1)
-if echo "$answer" | grep -q '"ok":true'; then
+if echo "$answer" | grep -qE '"ok": ?true'; then
     ok "the palette opens the launcher"
 else
     no "the palette opens the launcher" "$answer"

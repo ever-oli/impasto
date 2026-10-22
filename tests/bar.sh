@@ -72,6 +72,18 @@ check_json() {
         no "$name answers with data" "$answer"
     fi
 }
+# Every target answers with ok, including the three that live outside
+# Commands.qml: a caller that checks ok must not read one as a failure.
+for target in playing:get orb:status fontsize:status; do
+    name=${target%%:*}; verb=${target##*:}
+    answer=$(ipc "$name" "$verb" 2>/dev/null)
+    if echo "$answer" | grep -q '"ok":true'; then
+        ok "the $name target answers with ok"
+    else
+        no "the $target target answers with ok" "$answer"
+    fi
+done
+
 check_json "panel list" "panel list"
 check_json "the context" "context get"
 check_json "the work" "work get"
@@ -197,7 +209,8 @@ done
 
 # ── the theme ───────────────────────────────────────────────────────────────
 head_ "the theme"
-# The shell takes the theme; notch-theme does the rest of the work.
+# The theme is the user's: the test puts it back when it is done.
+was=$(ipc theme get | sed 's/.*"theme":"\([^"]*\)".*/\1/')
 answer=$(ipc theme set e-ink)
 if echo "$answer" | grep -q '"ok":true'; then
     sleep 1
@@ -209,6 +222,18 @@ if echo "$answer" | grep -q '"ok":true'; then
     fi
 else
     no "the theme changes and says so" "$answer"
+fi
+if [ -n "$was" ] && [ "$was" != "e-ink" ]; then
+    # The shell's theme set runs notch-theme, which writes the state and
+    # takes a moment; the check waits for it.
+    ipc theme set "$was" >/dev/null 2>&1
+    sleep 3
+    back=$(ipc theme get | sed 's/.*"theme":"\([^"]*\)".*/\1/')
+    if [ "$back" = "$was" ]; then
+        ok "the theme is put back"
+    else
+        no "the theme is put back" "was $was, now $back"
+    fi
 fi
 
 # ── the verdict ─────────────────────────────────────────────────────────────

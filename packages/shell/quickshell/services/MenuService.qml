@@ -271,13 +271,19 @@ Singleton {
             SettingsService.set("barHidden", !SettingsService.barHidden)
         else if (node.panel)
             return node.panel
-        else if (node.url)
+        else if (node.url) {
+            // A url or a term leaf is done when it has run: the chain
+            // below used to find no sh and leave the palette open, so
+            // "Arch wiki" opened the browser over an empty palette.
             Quickshell.execDetached(["xdg-open", node.url])
-        else if (node.term)
+            return "close"
+        } else if (node.term) {
             Quickshell.execDetached(["ghostty", "-e", "bash", "-c", `PATH="$HOME/.local/bin:$PATH"; ${node.term}${root.done}`])
-        if (node.term && node.term.indexOf("notch-updates run") >= 0)
-            root.refreshAfterUpdate.restart()
-        else if (node.sh)
+            if (node.term.indexOf("notch-updates run") >= 0)
+                root.refreshAfterUpdate.restart()
+            return "close"
+        }
+        if (node.sh)
             Quickshell.execDetached(["sh", "-c", `PATH="$HOME/.local/bin:$PATH"; ${node.sh}`])
         else
             return "stay"
