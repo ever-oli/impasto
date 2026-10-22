@@ -8,9 +8,9 @@ qs ipc call <target> <verb> [args…]
 ```
 
 Every answer is JSON. Success carries `{"ok":true, …}`; failure carries
-`{"error":"…"}`. The `notch` CLI is a thin wrapper over these — `notch
-context get` is `qs ipc call context get` — and the panels, the palette
-and the niri binds all go through the same calls.
+`{"error":"…"}`. The `notch` CLI is a thin wrapper over these: `notch
+context get` is `qs ipc call context get`. The panels, the palette and
+the niri binds all go through the same calls.
 
 This is the notch's public surface: an agent drives the shell through
 this, and nothing else.
@@ -46,8 +46,8 @@ qs ipc call work hand job 0 # one posting, on the clipboard, with T3 in front
 ```
 
 `context hand` and `work hand` put a plain-text brief on the clipboard
-and open T3 Code. From there the agent drives the notch back — the
-panels, the theme, the capture — and the desktop, with `notch-act`
+and open T3 Code. From there the agent drives the notch back (the
+panels, the theme, the capture) and the desktop, with `notch-act`
 (grim, wtype, wlrctl, niri) or the Cua driver's MCP tools.
 
 ## What a caller should know
@@ -59,7 +59,7 @@ panels, the theme, the capture — and the desktop, with `notch-act`
 - **`work hand` takes an index**, not a title: the list is in
   `work get` and `work platforms`, and the order is the order of the
   shelf.
-- **`theme set` applies to everything** — the shell, the terminals, the
+- **`theme set` applies to everything**: the shell, the terminals, the
   borders, the wallpaper.
 - **The shell's own errors are not answers.** A QML error shows in the
   shell's log, not in the reply; the reply is empty or the target is

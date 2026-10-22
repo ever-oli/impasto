@@ -1,4 +1,4 @@
-# notch — a lean, niri-native shell
+# notch: a lean, niri-native shell
 
 A cut-down, **niri-native** fork of [andreumassanet/impasto](https://github.com/andreumassanet/impasto).
 It started as a Quickshell shell for Hyprland and is now a small one for niri,
@@ -16,8 +16,8 @@ catalogue that plays in the terminal itself.
 ## The device
 
 The notch is the device layer: the media, the panels, the bar, and the IPC
-an agent drives. There is no assistant in it — the thinking happens next
-door (T3 Code, or any opencode agent) — and the notch says what it knows:
+an agent drives. There is no assistant in it. The thinking happens next door
+(T3 Code, or any opencode agent), and the notch says what it knows:
 
 ```
 notch context get        the panel, the hero, the postings, the profile
@@ -56,8 +56,8 @@ says it has.
 |---|---|
 | Bar: launcher button, niri workspaces, tray, T3 chip, notifications, network, volume, control centre | `bar/` |
 | The island: launcher (apps, `=` calculator, `>` desk and themes, windows, clipboard, emoji) | `bar/island/LauncherPanel.qml`, `services/LauncherService.qml` |
-| **Catalogue**: anime from AniList, films and series from TMDB, and the watching — the picture plays in the island terminal, not in a window | `bar/island/AnimePanel.qml`, `services/AnimeService.qml`, `scripts/stream.py`, `notch-watch`, `notch-resolve.mjs` |
-| **Handoff**: the notch has no brain of its own — it says what it knows (the panel, the posting, the profile to read) and hands it to the agent in front of it | `Commands.qml` (`context`, `work`), `services/T3Service.qml` |
+| **Catalogue**: anime from AniList, films and series from TMDB, and the watching. The picture plays in the island terminal, not in a window | `bar/island/AnimePanel.qml`, `services/AnimeService.qml`, `scripts/stream.py`, `notch-watch`, `notch-resolve.mjs` |
+| **Handoff**: the notch has no brain of its own. It says what it knows (the panel, the posting, the profile to read) and hands it to the agent in front of it | `Commands.qml` (`context`, `work`), `services/T3Service.qml` |
 | **Notchstorm**: the radar, live sweep and all | `bar/island/NotchstormPanel.qml`, `services/NotchstormService.qml`, `notchstorm` |
 | **Layouts**: per-desktop plans for the windows | `controls/LayoutsBlock.qml`, `notch-layout` |
 | Notifications (the shell is the server) and the OSD | `NotificationLayer`, `OsdLayer`, `NotificationService` |

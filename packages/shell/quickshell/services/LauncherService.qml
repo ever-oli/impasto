@@ -285,7 +285,7 @@ QtObject {
     function webRows(term: string): var {
         return [["DuckDuckGo", "https://duckduckgo.com/?q="], ["Google", "https://www.google.com/search?q="]]
             .map(([n, u]) => ({ kind: "web", id: u + encodeURIComponent(term), icon: "󰖟",
-                                name: `Search ${n} for “${term}”`, subtitle: "Opens in Helium" }))
+                                name: `Search ${n} for "${term}"`, subtitle: "Opens in Helium" }))
     }
 
     // ── ACTION PANEL (Ctrl+K) ───────────────────────────────────────────────
@@ -345,7 +345,7 @@ QtObject {
         if (root.aliasTarget) {
             const a = (query ?? "").trim()
             return [{ kind: "act", id: "alias-save", icon: "󰌌", alias: a,
-                      name: a ? `Alias “${a}” → ${root.aliasTarget.name}` : `Type an alias for ${root.aliasTarget.name}`,
+                      name: a ? `Alias "${a}" → ${root.aliasTarget.name}` : `Type an alias for ${root.aliasTarget.name}`,
                       subtitle: "Enter saves, Esc cancels" }]
         }
         const mode = root.modeFor(query)

@@ -4,7 +4,7 @@ What the shell is made of, what it can do, and where it bites. Written
 against the version the notch runs and the documentation as it stands.
 
 **The version in use: Quickshell 0.3.2** (revision blank, distributed by
-Arch Linux) — `qs --version` on this machine.
+Arch Linux). `qs --version` on this machine.
 
 **The documentation is behind the version.** The docs site now serves
 `https://quickshell.org/docs/v0.1.0/…` (the old `quickshell.outfoxxed.me`
@@ -49,7 +49,7 @@ A service in the shell is a `pragma Singleton` QML file under
 `packages/shell/quickshell/services/`. **Every one of them must be listed
 in `packages/shell/quickshell/qmldir`.** Miss that line and the shell
 does not start, and the error names the *type* it could not find rather
-than the line that caused it — the message is `Type AnimeService
+than the line that caused it. The message is `Type AnimeService
 unavailable`, which sends you looking for a QML file that is sitting
 right there.
 
@@ -68,8 +68,8 @@ was written but never wired.
 The notch's `Commands.qml` holds every target for this reason, and the
 whole surface is written down in [ipc.md](ipc.md).
 
-The IPC documentation is not a type page — it is not in the module
-navigation above — which is itself a small sharp edge: the thing the
+The IPC documentation is not a type page. It is not in the module
+navigation above, which is itself a small sharp edge: the thing the
 whole shell is driven through is documented somewhere other than the
 types.
 
@@ -140,15 +140,15 @@ finish this document.
 
 ## Sources
 
-- <https://quickshell.org/docs/v0.1.0/types/Quickshell.Io/> — the
+- <https://quickshell.org/docs/v0.1.0/types/Quickshell.Io/>: the
   `Process` and stdio types; `StdioCollector` is the only stdio type
   named
-- <https://quickshell.org/docs/v0.1.0/types/Quickshell/> — the
+- <https://quickshell.org/docs/v0.1.0/types/Quickshell/>: the
   `Quickshell` singleton
-- <https://quickshell.org/docs/v0.1.0/> — the documentation root, and
+- <https://quickshell.org/docs/v0.1.0/>: the documentation root, and
   the version it serves
-- <https://github.com/quickshell-mirror/quickshell> — the source
-- `qs --version` on this machine — 0.3.2
+- <https://github.com/quickshell-mirror/quickshell>: the source
+- `qs --version` on this machine: 0.3.2
 - the notch's own history, in the repository: the `StdioDiscard` failure
   and the missing `qmldir` line are both in this repo's commits, and
   `tests/setup.sh` is the check that came out of the third
