@@ -227,8 +227,14 @@ if [ -n "$was" ] && [ "$was" != "e-ink" ]; then
     # The shell's theme set runs notch-theme, which writes the state and
     # takes a moment; the check waits for it.
     ipc theme set "$was" >/dev/null 2>&1
-    sleep 3
-    back=$(ipc theme get | sed 's/.*"theme":"\([^"]*\)".*/\1/')
+    # The theme lands through notch-theme, which writes the state file
+    # and then the terminals. Wait for the state to say what was asked.
+    back=""
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+        sleep 1
+        back=$(ipc theme get | sed 's/.*"theme":"\([^"]*\)".*/\1/')
+        [ "$back" = "$was" ] && break
+    done
     if [ "$back" = "$was" ]; then
         ok "the theme is put back"
     else
