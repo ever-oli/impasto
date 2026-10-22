@@ -27,7 +27,9 @@ notch work hand job 0    one posting, handed over
 
 The whole surface is in [docs/ipc.md](docs/ipc.md): every target, every
 verb, what it answers with. The decisions behind the shape, and what
-settled them, are in [docs/decisions.md](docs/decisions.md).
+settled them, are in [docs/decisions.md](docs/decisions.md). How the
+stack scores against Natively's own benchmark is in
+[docs/PARITY.md](docs/PARITY.md).
 
 ## The packages
 
