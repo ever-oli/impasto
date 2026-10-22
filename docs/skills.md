@@ -8,13 +8,13 @@ has not.
 **The done predicate:** every skill has been applied to this repo, or it
 has a recorded reason why it does not apply.
 
-**Where they stand: 53 of the 60 applied, 7 recorded as not applying.**
-The seven are the ones about other things: TypeScript (there is none in
+**Where they stand: 48 of the 60 applied, 12 recorded as not applying.**
+The twelve are the ones about other things: TypeScript (there is none in
 the notch), a bot's interface (the notch is not a bot), poteto's own
 agent style and guide, the four instabox skills (for moving a repo to a
-cloud box; the notch is already on one), and a way of answering that
-is not a task (`bro`, `ketchup`). Every one of them is listed with its
-reason in the last table.
+cloud box; the notch is already on one), and three ways of answering
+rather than working (`bro`, `ketchup`, `recall`). Every one of them is
+listed with its reason in the last table, and no skill is missing.
 
 ## Applied, and it changed something
 
