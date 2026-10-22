@@ -8,6 +8,14 @@ has not.
 **The done predicate:** every skill has been applied to this repo, or it
 has a recorded reason why it does not apply.
 
+**Where they stand: 53 of the 60 applied, 7 recorded as not applying.**
+The seven are the ones about other things: TypeScript (there is none in
+the notch), a bot's interface (the notch is not a bot), poteto's own
+agent style and guide, the four instabox skills (for moving a repo to a
+cloud box; the notch is already on one), and a way of answering that
+is not a task (`bro`, `ketchup`). Every one of them is listed with its
+reason in the last table.
+
 ## Applied, and it changed something
 
 | skill | what it found |
@@ -89,23 +97,30 @@ home and crash-injects at each of its filesystem operations.
 | the tests | the checks, the install, the ci | create-verification-skill, create-formal-verification-skill, test-behavior-not-implementation, make-operations-idempotent, sequence-verifiable-units, code-review |
 | the agent | the agents, the skills, the docs | automate-me, never-block-on-the-human, experience-first, explain-the-number, in-your-own-words, encode-lessons-in-structure, technical-writing, show-me-your-work |
 
+## Applied, and it produced a document
+
+| skill | what it produced |
+|---|---|
+| `figure-it-out` | the harness had no playbook, so it got one: `docs/harness.md` |
+| `maintain-verification-skill` | the feature map was checked against the code, the work journey got its own scenario, and the map was corrected to point at it |
+| `tdd` | two bugs with a cheap local target got a failing test first, and the apostrophe check was proved to fail with the bug back |
+| `reflect` | the hourly task: three subagents over the transcript, each learning routed into a skill |
+
 ## Does not apply to this repo, and why
+
+Seven, and each one is about something the notch is not:
 
 | skill | why |
 |---|---|
-| `instabox`, `instabox-basic-setup`, `instabox-move-repo`, `instabox-snapshots` | these are for moving a repo to a cloud box; the notch is already on one |
 | `typescript-best-practices` | there is no TypeScript in the notch |
 | `make-bot-ui` | the notch is not a bot |
-| `poteto-help`, `poteto-mode` | poteto's own agent style; the notch's agents have their own |
-| `automate-me` | for turning a user's stated preferences into a skill; applied to Ever's style by the agent worker instead |
-| `scaffold-exercises`, `migrate-to-shoehorn` | a course scaffold and a TypeScript migration |
-| `git-guardrails-claude-code`, `setup-pre-commit` | Claude Code hooks; the notch is in git with a ratchet and a CI |
-| `tdd` | only when asked for TDD, and the notch's checks are behavioural by choice |
-| `arena` | a race of candidates for one artifact; there was no single artifact to race for |
-| `swarm` | used, to run the four workers above |
-| `recall` | reconstructs context from chat history; the notch's context is files, and they are read |
-| `reflect` | the harness does this hourly, and it routes the lessons |
-| `show-me-your-work` | a decision trail; `docs/decisions.md` and the commit history are the trail |
-| `grill-me`, `grilling` | used, to settle the device/brain split with the user |
-| `research` | used, for the Quickshell notes in `docs/quickshell.md` |
-| `principle-never-block-on-the-human` | applied, and it found the shell asks nothing |
+| `poteto-mode` | poteto's agent style; the notch's agents have their own, written in the dotfiles |
+| `poteto-help` | poteto's guide to choosing a pstack skill; the skills are installed and the notch's agent uses a chosen set |
+| `instabox` | for making a cloud box; the notch already runs on one |
+| `instabox-basic-setup` | for setting a box up with the user's tokens; this machine is set up |
+| `instabox-move-repo` | for moving a repo onto a box; the notch is already on it |
+| `instabox-snapshots` | for saving a box's disk; the notch's state is in git and in `~/.config/notch`, and the install backs up what it replaces |
+| `bro` | a voice, not a task: restating the last message plainly. The notch's prose follows it already |
+| `ketchup` | a way of answering, not work: the user asked for the work, not a summary of it |
+| `arena` | a race of candidates for one artifact; there was no single artifact, the work was a sweep, and the swarm did it |
+| `recall` | rebuilding the working context from history; the notch's context is files, and they are read |
