@@ -160,6 +160,35 @@ for tool in packages/*/bin/notch*; do
     fi
 done
 
+# ── the skills ledger is honest ─────────────────────────────────────────────
+# Every skill is either applied or listed with a reason. A ledger that
+# claims a number the table under it does not support is worse than no
+# ledger.
+head_ "the skills ledger accounts for every skill"
+ledger=docs/skills.md
+if [ -f "$ledger" ]; then
+    # Every backticked name in a table row, whichever column it is in.
+    listed=$(grep -E '^\|' "$ledger" | grep -oE '`[a-z0-9-]+`' | tr -d '`' | sort -u)
+    missing=""
+    for skill in "$HOME"/.agents/skills/*/; do
+        name=$(basename "$skill")
+        echo "$listed" | grep -qx "$name" || missing="$missing $name"
+    done
+    if [ -z "$missing" ]; then
+        ok "every installed skill is in the ledger"
+    else
+        no "every installed skill is in the ledger" "$missing"
+    fi
+    claimed=$(grep -oE '[0-9]+ of the [0-9]+ applied' "$ledger" | head -1)
+    if [ -n "$claimed" ]; then
+        ok "the ledger claims a number: $claimed"
+    else
+        no "the ledger claims a number"
+    fi
+else
+    no "the skills ledger is there"
+fi
+
 # ── the lessons that have no check yet ─────────────────────────────────────
 # The harness writes a lesson when a mistake happens. A lesson nobody can
 # break by accident is worth keeping; one that lives only in a file is a

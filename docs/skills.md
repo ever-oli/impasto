@@ -8,13 +8,15 @@ has not.
 **The done predicate:** every skill has been applied to this repo, or it
 has a recorded reason why it does not apply.
 
-**Where they stand: 48 of the 60 applied, 12 recorded as not applying.**
-The twelve are the ones about other things: TypeScript (there is none in
-the notch), a bot's interface (the notch is not a bot), poteto's own
+**Where they stand: 47 of the 60 applied, 13 recorded as not applying.**
+The thirteen are the ones about other things: TypeScript (there is none
+in the notch), a bot's interface (the notch is not a bot), poteto's own
 agent style and guide, the four instabox skills (for moving a repo to a
-cloud box; the notch is already on one), and three ways of answering
-rather than working (`bro`, `ketchup`, `recall`). Every one of them is
-listed with its reason in the last table, and no skill is missing.
+cloud box; the notch is already on one), and four ways of answering
+rather than working (`bro`, `ketchup`, `recall`,
+`maintain-formal-verification-skill`, which keeps a prover in line with
+code that has no prover here). Every one of them is listed with its
+reason in the last table, and no skill is missing.
 
 ## Applied, and it changed something
 
@@ -34,6 +36,8 @@ listed with its reason in the last table, and no skill is missing.
 | `principle-fix-root-causes` | routed as a skill: when a command fails only in some places, read the actual error |
 | `principle-encode-lessons-in-structure` | nine lessons moved out of a file only the agent read, into the skills that carry them |
 | `setup-pstack` | the free models written into the agent's prompt, so it never picks a paid one |
+| `swarm` | four workers, each with a slice of the repo and its own skills, run in parallel |
+| `how` and `teach` | the map of the shell and the whole thing in plain words, both in `docs/` |
 
 ## Applied, and it found nothing
 
@@ -61,7 +65,6 @@ listed with its reason in the last table, and no skill is missing.
 | `principle-separate-before-serializing-shared-state` | one writer per state file; the clipboard is the one watcher, and it takes a pidfile |
 | `sharpen` | the media slice's brief was sharpened before the work: the surface, the drive, the evidence |
 | `technical-writing` | the docs are in four shapes: the map, the reference, the decisions, the plain words |
-| `how` and `teach` | see the applied table |
 | `principle-exhaust-the-design-space` | see the applied table |
 
 ## Applied by the swarm
@@ -92,10 +95,10 @@ home and crash-injects at each of its filesystem operations.
 
 | worker | slice | skills |
 |---|---|---|
-| the shell | the qml and the services | architect, codebase-design, domain-modeling, exhaust-the-design-space, foundational-thinking, build-the-lever |
-| the media | the catalogue and the radar | sharpen, test-behavior-not-implementation, separate-before-serializing, sequence-verifiable-units, no-comments, laziness-protocol |
-| the tests | the checks, the install, the ci | create-verification-skill, create-formal-verification-skill, test-behavior-not-implementation, make-operations-idempotent, sequence-verifiable-units, code-review |
-| the agent | the agents, the skills, the docs | automate-me, never-block-on-the-human, experience-first, explain-the-number, in-your-own-words, encode-lessons-in-structure, technical-writing, show-me-your-work |
+| the shell | the qml and the services | `architect`, `codebase-design`, `domain-modeling`, `principle-exhaust-the-design-space`, `principle-foundational-thinking`, `principle-build-the-lever` |
+| the media | the catalogue and the radar | `sharpen`, `principle-test-behavior-not-implementation`, `principle-separate-before-serializing-shared-state`, `principle-sequence-verifiable-units`, `no-comments`, `principle-laziness-protocol` |
+| the tests | the checks, the install, the ci | `create-verification-skill`, `create-formal-verification-skill`, `principle-test-behavior-not-implementation`, `principle-make-operations-idempotent`, `principle-sequence-verifiable-units`, `code-review` |
+| the agent | the agents, the skills, the docs | `automate-me`, `principle-never-block-on-the-human`, `principle-experience-first`, `principle-explain-the-number`, `in-your-own-words`, `principle-encode-lessons-in-structure`, `technical-writing`, `show-me-your-work` |
 
 ## Applied, and it produced a document
 
@@ -124,3 +127,4 @@ Seven, and each one is about something the notch is not:
 | `ketchup` | a way of answering, not work: the user asked for the work, not a summary of it |
 | `arena` | a race of candidates for one artifact; there was no single artifact, the work was a sweep, and the swarm did it |
 | `recall` | rebuilding the working context from history; the notch's context is files, and they are read |
+| `maintain-formal-verification-skill` | there is no model checker or prover in this repo, so there is no formal check that could drift out of line with the code |
