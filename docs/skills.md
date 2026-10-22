@@ -59,7 +59,28 @@ has a recorded reason why it does not apply.
 ## Applied by the swarm
 
 Four workers, each with a slice of the repo and its own set of skills,
-ran in parallel. Their findings are in the report that followed.
+ran in parallel. Between them they found thirty, and twenty of them
+were real bugs rather than opinions. The ones that broke something
+Ever uses:
+
+- the palette never closed after a url or a term leaf
+- three ipc targets answered without `ok`, and one (`shell reload`)
+  answered nothing at all
+- the hover glance was switched off by a hard-coded false while its
+  setting still said it happened
+- `setup uninstall` would have run `rm -rf` over `~/.local/bin`
+- the "mistakes that keep happening" gate was red on main and the ci
+  never ran it, so the ci was green over a red gate
+- `notch learn --help` wrote the word "--help" into the lessons file
+- the capture check read "ok" and so could not fail
+- the continue-watching shelf was always empty, the radar's place
+  search always returned nothing, and a title with an apostrophe in it
+  never played
+
+Two verification skills came out of it, and they are in the repo:
+`tests/verify/notch` drives the live shell and proves what a user can
+see, and `tests/verify/install` runs the real setup into a throwaway
+home and crash-injects at each of its filesystem operations.
 
 | worker | slice | skills |
 |---|---|---|
