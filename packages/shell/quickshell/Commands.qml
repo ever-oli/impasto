@@ -38,10 +38,38 @@ Scope {
 
     // The handoff. The notch has no brain of its own: what it knows goes
     // on the clipboard, and the agent in front of it takes it from there.
+    // The copy is the handoff, and it can fail, so it runs as a process
+    // whose exit code is known. The reply says the handoff is happening;
+    // the island says whether it worked.
+    property bool handed: false
+    property string handError: ""
+
+    // Every handoff begins with this line, and the clipboard watcher
+    // skips it: what the notch hands over is a CV and a job posting, and
+    // it is not Ever's clipboard history.
+    readonly property string handMark: "notch-context"
+
     function hand(brief: string): string {
-        Quickshell.execDetached(["wl-copy", "--", brief])
+        root.handed = false
+        root.handError = ""
+        handProcess.brief = root.handMark + "\n" + brief
+        handProcess.running = false
+        handProcess.running = true
         T3Service.open()
-        return root.ok({ handed: true })
+        return root.ok({ handing: true })
+    }
+
+    readonly property Process handProcess: Process {
+        id: hand
+        property string brief: ""
+        command: ["sh", "-c", "wl-copy -- \"$1\"", "sh", hand.brief]
+        onExited: (code) => {
+            root.handed = code === 0
+            if (code !== 0) {
+                root.handError = "the clipboard refused it"
+                OsdService.requested("󰅚", "the handoff failed: the clipboard refused it", -1)
+            }
+        }
     }
 
     // The clipboard and the emoji are launcher modes: asked for again on the
@@ -55,6 +83,12 @@ Scope {
         LauncherService.query = sigil
         root.island?.open("launcher")
     }
+
+    // The work is asked for at startup, from the config root. The
+    // catalogue is a singleton, so it is not created until the panel that
+    // uses it is loaded, and the work would then answer only after
+    // someone had opened the catalogue. The work is not the catalogue's.
+    Component.onCompleted: AnimeService.loadWork()
 
     // Panels that are really the launcher opened on a sigil.
     readonly property var launcherModes: ["clipboard", "emoji", "windows", "files"]
@@ -234,13 +268,15 @@ Scope {
         target: "work"
 
         function get(): string {
-            return JSON.stringify({ jobs: AnimeService.jobs.length,
+            return JSON.stringify({ ok: true, jobs: AnimeService.jobs.length,
                                    first: AnimeService.jobs[0] || null })
         }
 
-        // The platforms: what they are, and what they want.
+        // The platforms: what they are, and what they want. The note goes
+        // with them: it is the rule that decides who can sign up.
         function platforms(): string {
-            return JSON.stringify(AnimeService.platforms)
+            return JSON.stringify({ ok: true, note: AnimeService.platformNote,
+                                    platforms: AnimeService.platforms })
         }
 
         // One of them, by name: `qs ipc call work platform Outlier`.
@@ -250,7 +286,7 @@ Scope {
                 (one) => one.name.toLowerCase() === wanted)
             if (!found)
                 return root.fail(`no platform: "${name}"`)
-            return JSON.stringify(found)
+            return JSON.stringify(Object.assign({ ok: true }, found))
         }
 
         // Hand a piece of the work over: the posting or the platform, on
@@ -280,14 +316,18 @@ Scope {
 
         function get(): string {
             const hero = AnimeService.hero
-            return JSON.stringify({
+            // Every answer carries ok, like every other target, and the
+            // geo note travels with the platforms: the agent is asked
+            // what it is missing, so it needs the rule that decides it.
+            return JSON.stringify(Object.assign({ ok: true }, {
                 panel: root.island?.state.openPanel || "",
                 hero: hero ? { title: hero.title || "", year: hero.year || "" } : null,
                 work: AnimeService.jobs.slice(0, 5),
                 platforms: AnimeService.platforms.map((one) => ({ name: one.name, rate: one.rate })),
+                platformNote: AnimeService.platformNote,
                 profile: "~/.config/notch/profile.md",
                 lessons: "~/.config/notch/lessons.md"
-            })
+            }))
         }
 
         // The whole context, handed over: on the clipboard and in front.

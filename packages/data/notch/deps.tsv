@@ -55,12 +55,12 @@ github-cli	pacman	required	gh	notch-dev PRs
 git	pacman	required	git	repos
 chezmoi	pacman	optional	chezmoi	dotfiles (install bootstraps it)
 base-devel	pacman	required	-	building AUR packages
-mise	pacman	required	mise	node for Pi
+mise	pacman	required	mise	the agent's toolchain
 slurp	pacman	optional	slurp	region capture
 helium-browser-bin	aur	optional	helium-browser	browser, quicklinks, web apps
 aether	aur	optional	aether	theme app, feeds notch themes
-node	mise	required	node	runs Pi
-@earendil-works/pi-coding-agent	npm	required	pi	the engine behind the notch
-@mermaid-js/mermaid-cli	npm	optional	mmdc	diagrams in Ask
+node	mise	required	node	the agent runs on it
+@earendil-works/pi-coding-agent	npm	optional	pi	an alternative agent
+@mermaid-js/mermaid-cli	npm	optional	mmdc	diagrams the agent draws
 openssh	pacman	optional	ssh	SSH quick-connect rows
 curl	pacman	required	curl	OpenRouter usage meter, fonts

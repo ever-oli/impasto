@@ -5,7 +5,7 @@
 # ╰──────────────────────────────────────────────────────────────────────────╯
 #
 #   ./setup                 packages, then files, then the theme
-#   ./setup packages        pacman -S --needed every pacman row of home/.local/share/notch/deps.tsv
+#   ./setup packages        pacman -S --needed every pacman row of packages/data/notch/deps.tsv
 #   ./setup fonts           AnnotationMono and Tinos Nerd Fonts into ~/.local/share/fonts
 #   ./setup files           copy home/ into ~, backing up what it replaces
 #   ./setup theme [name]    notch-theme set (default e-ink)
@@ -24,7 +24,7 @@ MANIFEST="$STATE/files"
 say() { printf '\033[1m::\033[0m %s\n' "$*"; }
 
 packages() {
-    mapfile -t want < <(awk -F'\t' '!/^#/ && NF && $2=="pacman" {print $1}' "$REPO/home/.local/share/notch/deps.tsv")
+    mapfile -t want < <(awk -F'\t' '!/^#/ && NF && $2=="pacman" {print $1}' "$REPO/packages/data/notch/deps.tsv")
     mapfile -t missing < <(for p in "${want[@]}"; do pacman -Qq "$p" >/dev/null 2>&1 || echo "$p"; done)
     if ((${#missing[@]} == 0)); then say "packages: all present"; return; fi
     say "packages: installing ${missing[*]}"

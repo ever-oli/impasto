@@ -199,6 +199,12 @@ def store(keep, keep_images):
     body, mime, kind = read_offer(offered, body, keep_images)
     if not kind or not body or len(body) > LIMIT:
         return
+    # The notch hands its own context over by copying it, and marks it so.
+    # That is a CV, a job posting, a profile: it is not Ever's clipboard
+    # history, and it is not kept.
+    if body.lstrip().startswith(b"notch-context"):
+        return
+        return
     if kind == "text" and not body.strip():
         return
 

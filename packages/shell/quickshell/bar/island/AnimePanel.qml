@@ -236,8 +236,8 @@ Item {
     // ── THE WORK ────────────────────────────────────────────────────────────
 
     // The work: the AI training platforms, which are a table of where to
-    // sign up, and the remote postings, which are a feed. One press asks
-    // the assistant about either, in the mode for looking for work.
+    // sign up, and the remote postings, which are a feed. One press hands
+    // one over, for whoever wants it.
     Column {
         id: work
 

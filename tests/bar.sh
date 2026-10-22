@@ -61,10 +61,12 @@ done
 
 # ── the ipc targets answer with something real ─────────────────────────────
 head_ "the ipc targets"
+# An answer that carries an error is not an answer: the check has to
+# look, or a target that always fails would pass.
 check_json() {
     name=$1
     answer=$(ipc $2)
-    if echo "$answer" | head -c 1 | grep -q '[{"[]'; then
+    if echo "$answer" | head -c 1 | grep -q '[{"[]' && ! echo "$answer" | grep -q '"error"'; then
         ok "$name answers with data"
     else
         no "$name answers with data" "$answer"
@@ -79,7 +81,8 @@ check_json "the theme" "theme get"
 check_json "t3" "t3 get"
 check_json "the modules" "modules failed"
 
-# The one platform, by name, is the work the band hands over.
+# The work must answer on its own: it is not the catalogue's, and
+# nothing may have to open a panel first.
 one=$(ipc work platform Outlier)
 if echo "$one" | grep -q 'Outlier' && echo "$one" | grep -q 'requirements'; then
     ok "a platform answers with its requirements"

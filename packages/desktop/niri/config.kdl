@@ -148,8 +148,8 @@ binds {
     Alt+Space { spawn "notch" "toggle" "launcher"; }
     Mod+Space { spawn "notch" "toggle" "launcher"; }
     Ctrl+Alt+Space { spawn "notch" "toggle" "launcher"; }
-    Alt+A hotkey-overlay-title="Ask T3" { spawn "notch" "context" "hand"; }
-    Mod+A hotkey-overlay-title="Ask T3" { spawn "notch" "context" "hand"; }
+    Alt+A hotkey-overlay-title="Hand the context over" { spawn "notch" "context" "hand"; }
+    Mod+A hotkey-overlay-title="Hand the context over" { spawn "notch" "context" "hand"; }
     Alt+Y hotkey-overlay-title="Screen" { spawn "notch" "capture" "open" "screen"; }
     Mod+Y hotkey-overlay-title="Screen" { spawn "notch" "capture" "open" "screen"; }
     Mod+Ctrl+Space { spawn "notch" "toggle" "launcher"; }

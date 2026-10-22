@@ -47,12 +47,19 @@ Singleton {
         root.busy = true
         rowsProcess.running = false
         rowsProcess.running = true
-        // The work, too: it is the other half of what the assistant is for.
+    }
+
+    // The work is not the media's. It loads on its own, so `work get`
+    // answers whether or not anyone has opened the catalogue: an agent
+    // asking what work there is should not have to open a panel first.
+    function loadWork(): void {
         jobsProcess.running = false
         jobsProcess.running = true
         platformsProcess.running = false
         platformsProcess.running = true
     }
+
+    Component.onCompleted: root.loadWork()
 
     function search(text: string): void {
         root.query = text
@@ -133,8 +140,8 @@ Singleton {
     }
 
     // Hand a posting over. The notch has no brain of its own: it says
-    // what it knows — the posting, the panel, the profile to read — and
-    // the agent in front of it does the thinking.
+    // what it knows (the posting, the panel, the profile to read) and
+    // whoever wants it takes it from there.
     function handJob(job: var): void {
         if (!job)
             return

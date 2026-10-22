@@ -18,12 +18,21 @@
 #   notch theme set <name> | get           (notch-theme does the work)
 #   notch say <text> [icon]                a line on the island
 #   notch learn "<lesson>"                 a correction that sticks forever (lessons.md)
-#   notch hand [job|platform] <n>          the work, on the clipboard, T3 in front
 #   notch reload
 #   notch doctor                         check binds, shell, dependencies
 set -euo pipefail
 
-call() { qs ipc call "$@"; }
+# `qs ipc call` always exits 0, even when the target answers with an
+# error. The cli is what a script or a bind runs, so it has to fail when
+# the shell said no.
+call() {
+    answer=$(qs ipc call "$@")
+    echo "$answer"
+    case "$answer" in
+        *'"error"'*) return 1 ;;
+        *) return 0 ;;
+    esac
+}
 
 verb=${1:-help}; shift || true
 case $verb in
