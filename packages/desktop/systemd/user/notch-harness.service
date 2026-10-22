@@ -1,7 +1,0 @@
-[Unit]
-Description=notch: let the harness learn from what failed
-After=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=%h/.local/bin/notch-harness run

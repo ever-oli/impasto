@@ -66,8 +66,8 @@ says it has.
 | Clipboard history | `ClipboardService`, `scripts/clipboard.py` |
 | Session menu (log out, restart, shut down) and polkit prompt | `SessionPanel`, `AuthPanel` |
 | **T3 Code card**: t3code-web state, the installed nightly against the latest release, Open / Start / Update | `T3Module`, `T3Service`, `scripts/t3.py` |
-| **Ink themes**: e-ink, e-ink-dark, red-ink, red-ink-dark | `home/.local/share/notch/themes`, `notch-theme` |
-| niri config with Alt as the main key | `home/.config/niri/config.kdl` |
+| **Ink themes**: e-ink, e-ink-dark, red-ink, red-ink-dark | `packages/data/notch/themes`, `notch-theme` |
+| niri config with Alt as the main key | `packages/desktop/niri/config.kdl` |
 
 ### The picture in the terminal
 
@@ -133,4 +133,4 @@ helix, niri's focus ring and border, mako and fuzzel, and runs swaybg as the `no
 | Alt+Shift+Y / W | Next theme / next wallpaper |
 
 GPL-3.0, like upstream.
-- [INSTALL.md](INSTALL.md): fresh Arch setup. Build mode: `notch evolve`.
+- [INSTALL.md](INSTALL.md): fresh Arch setup.

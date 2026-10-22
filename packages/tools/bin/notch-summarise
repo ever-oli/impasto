@@ -15,6 +15,7 @@ not split in half, and each piece is asked for the same thing: the facts
 that matter, and nothing invented.
 """
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -22,7 +23,10 @@ import sys
 HOME = os.environ.get("HOME", os.path.expanduser("~"))
 MODEL = os.environ.get("ASK_REFLECT_MODEL", "opencode/glm-5.3-flash-free")
 PIECE = int(os.environ.get("SUMMARISE_PIECE", "12000"))
-ASK = os.path.join(HOME, ".local/bin/notch-ask-cli")
+# The agent next door answers: opencode run, on a free model. The
+# notch has no ask cli of its own any more.
+ASK_CLI = os.environ.get("ASK_CLI", "opencode")
+ASK_MODEL = os.environ.get("ASK_REFLECT_MODEL", "opencode/glm-5.3-flash-free")
 
 HEAD = ("These are notes from part of a long talk. Write down what matters in "
         "this part: the facts, the numbers, the decisions, the actions and "
@@ -35,12 +39,21 @@ def ask(prompt, text, timeout=600):
     """One question to the engine."""
     try:
         run = subprocess.run(
-            [ASK, "--backend", os.environ.get("ASK_BACKEND", "opencode"),
+            [ASK_CLI, "run", "--model", ASK_MODEL, "--auto",
              prompt + "\n\n" + text],
             capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         return ""
-    return (run.stdout or "").strip()
+    parts = []
+    for line in (run.stdout or "").splitlines():
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        part = event.get("part") or {}
+        if event.get("type") == "text" and part.get("text"):
+            parts.append(part["text"])
+    return "".join(parts).strip()
 
 
 def pieces(text, size=PIECE):

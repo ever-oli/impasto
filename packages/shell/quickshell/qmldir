@@ -71,7 +71,6 @@ OsdLayer         1.0 bar/island/OsdLayer.qml
 NotificationLayer 1.0 bar/island/NotificationLayer.qml
 ControlsPanel    1.0 bar/island/ControlsPanel.qml
 LauncherPanel    1.0 bar/island/LauncherPanel.qml
-AskPanel         1.0 bar/island/AskPanel.qml
 PickerPanel      1.0 bar/island/PickerPanel.qml
 
 Module           1.0 bar/modules/Module.qml
