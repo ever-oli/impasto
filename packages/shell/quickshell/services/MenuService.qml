@@ -47,8 +47,8 @@ Singleton {
             { icon: "󰑓", name: "Hand this to T3", subtitle: "The notch's context on the clipboard, T3 in front",
               sh: "qs ipc call context hand" },
             { icon: "󰀄", name: "Edit profile", subtitle: "Your CV, for the agent to read", sh: "ghostty -e helix ~/.config/notch/profile.md" },
-            { icon: "󰘦", name: "Modes folder", subtitle: "The agent's modes: drop a .md file to add one", sh: "ghostty --working-directory=$HOME/.config/opencode/skill/notch/modes" },
-            { icon: "󰈙", name: "Reference files", subtitle: "files/<mode>/ — PDF, DOCX, text", sh: "mkdir -p ~/.config/notch/files && xdg-open ~/.config/notch/files" }
+            { icon: "󰘦", name: "Agents folder", subtitle: "The agent's agents: drop a .md file to add one", sh: "ghostty --working-directory=$HOME/.config/opencode/agent" },
+            { icon: "󰈙", name: "Reference files", subtitle: "PDF, DOCX and text for the agent to read", sh: "mkdir -p ~/.config/notch/files && xdg-open ~/.config/notch/files" }
         ] },
         { icon: "󰋖", name: "Learn", subtitle: "Keys, wikis, cheat sheets", items: [
             { icon: "󰌌", name: "Keys sheet", subtitle: "Every bind", panel: "keys" },

@@ -1,5 +1,6 @@
-<!-- Your profile for interview modes. Edit freely; the first 8000 characters
-     are sent as <candidate_profile>. Palette › Assistant › Edit profile opens it.
+<!-- Your profile, for the agent that finds work and runs the interviews.
+     Edit freely; the first 8000 characters are what the agent reads.
+     Palette > The agent > Edit profile opens it.
      This repo copy is a template: ./setup never overwrites an existing profile. -->
 # Your name
 
