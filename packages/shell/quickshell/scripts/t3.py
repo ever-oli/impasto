@@ -93,8 +93,12 @@ def latest(refresh=False):
                   "published": release.get("published_at", ""), "url": asset,
                   "checked": time.time()}
         os.makedirs(os.path.dirname(CACHE), exist_ok=True)
-        with open(CACHE, "w") as f:
+        # Through a temporary and a rename: the next run reads this file,
+        # and a half-written cache is a broken cache.
+        temporary = CACHE + ".new"
+        with open(temporary, "w") as f:
             json.dump(cached, f)
+        os.replace(temporary, CACHE)
     except Exception as error:
         cached = dict(cached, error=str(error))
     return cached
