@@ -108,8 +108,14 @@ for script in stream.py jobs.py; do
     if python3 -m py_compile "$path" 2>/dev/null; then ok "$script compiles"; else no "$script compiles"; fi
 done
 
-answer=$(timeout 30 python3 "$HOME/.config/quickshell/scripts/stream.py" token 2>&1)
-if [ -n "$answer" ]; then ok "the catalogue has a TMDB token"; else no "the catalogue has a TMDB token"; fi
+# The token command prints the path whether or not a token is there, so
+# the old check passed with no token at all. Ask the catalogue instead.
+answer=$(timeout 30 python3 "$HOME/.config/quickshell/scripts/stream.py" rows 2>&1)
+if echo "$answer" | grep -q '"token": true'; then
+    ok "the catalogue has a TMDB token"
+else
+    no "the catalogue has a TMDB token" "$(echo "$answer" | head -c 120)"
+fi
 
 answer=$(timeout 40 python3 "$HOME/.config/quickshell/scripts/stream.py" episodes 1396 --season 1 2>&1)
 if echo "$answer" | grep -q '"episode"'; then ok "the catalogue lists episodes"; else no "the catalogue lists episodes"; fi
@@ -117,7 +123,9 @@ if echo "$answer" | grep -q '"episode"'; then ok "the catalogue lists episodes";
 # ── the radar ────────────────────────────────────────────────────────────────
 head_ "radar"
 answer=$(timeout 30 "$HOME/.local/bin/notchstorm" state 2>&1)
-if echo "$answer" | grep -qiE "station|product|sweep|error"; then
+# The old check grepped for "error" as well as the answers, so it passed
+# on a dead engine. The answer has to say ok.
+if echo "$answer" | grep -q '"ok": true'; then
     ok "the radar answers" "$(echo "$answer" | head -c 120)"
 else
     no "the radar answers" "$(echo "$answer" | head -c 160)"

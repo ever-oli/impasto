@@ -205,11 +205,17 @@ def main():
         print(__doc__)
         sys.exit(0)
 
-    command = f"notch-video '{url}'"
+    # The command goes to tmux through a shell, so every value is quoted
+    # the way the shell needs it: a title with an apostrophe in it
+    # ("Ocean's Eleven") ended the quoting and the film never started.
+    def quoted(value):
+        return "'" + str(value).replace("'", "'\\''") + "'"
+
+    command = f"notch-video {quoted(url)}"
     if referer:
-        command += f" --referer '{referer}'"
+        command += f" --referer {quoted(referer)}"
     if title:
-        command += f" --title '{title}'"
+        command += f" --title {quoted(title)}"
     if subtitle:
         local = subtitle_file(subtitle, referer)
         if local:

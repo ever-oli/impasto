@@ -148,11 +148,16 @@ def remember(path, entry):
 
 
 def write_state(path, state):
+    """Write the watch history.
+
+    The shape is {"items": [...]}: the shell reads historyJson.items, and
+    a bare array left the "continue watching" shelf permanently empty.
+    """
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         temporary = path + ".new"
         with open(temporary, "w") as handle:
-            json.dump(state, handle)
+            json.dump({"items": state}, handle)
         os.replace(temporary, path)
     except OSError:
         pass

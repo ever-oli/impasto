@@ -162,9 +162,13 @@ def places(query):
     sock.close()
     if not answer:
         return []
-    return [{"id": p.get("id"), "name": p.get("name"),
-             "lat": p.get("lat"), "lon": p.get("lon"),
-             "kind": p.get("kind")} for p in answer.get("places") or []]
+    # The engine answers {"type": "places", "results": [...]}, and each
+    # record has name, lat, lon, class, rank, region and country: there is
+    # no id and no kind. Reading "places" left the list empty every time.
+    return [{"name": p.get("name"), "lat": p.get("lat"), "lon": p.get("lon"),
+             "kind": p.get("class"), "region": p.get("region"),
+             "country": p.get("country")}
+            for p in answer.get("results") or []]
 
 
 def home():

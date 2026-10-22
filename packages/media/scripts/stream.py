@@ -9,9 +9,8 @@ browser under the notch; for anime it is hianime, through ani-cli.
 
   stream.py rows                  the shelves, and the hero
   stream.py search <text>         anime, films and series that match
-  stream.py play <kind> <id>      the page to play: <kind> is movie, tv
-                                  or anime; id is the TMDB id, or the
-                                  AniList id for anime
+  stream.py resolve <title>       the page to play, resolved for the
+                                  island terminal (notch-watch does it)
   stream.py token                 where the TMDB token goes
   stream.py jobs [--limit N]      remote work, from the boards that publish
                                   it without a key
@@ -264,20 +263,29 @@ def film_search(text):
 # ── THE PANEL'S DATA ─────────────────────────────────────────────────────────
 
 def rows():
-    """Every shelf: anime first, then films and series."""
-    out = []
+    """Every shelf: anime first, then films and series.
+
+    A source that is down names itself in "down" rather than leaving a
+    gap: six anime shelves used to vanish with no word, and the panel
+    looked like the notch had run out of things to show.
+    """
+    out, down = [], []
     for label, sort, genre in SHELVES:
         try:
             found = anime_shelf(sort, genre)
-        except Exception:
+        except Exception as error:
             found = []
+            down.append({"shelf": label, "source": "anilist",
+                         "why": str(error)[:120]})
         if found:
             out.append({"title": label, "items": found})
     for label, kind, sort in FILM_SHELVES:
         try:
             found = film_shelf(kind, sort)
-        except Exception:
+        except Exception as error:
             found = []
+            down.append({"shelf": label, "source": "tmdb",
+                         "why": str(error)[:120]})
         if found:
             out.append({"title": label, "items": found})
     hero = None
@@ -285,7 +293,8 @@ def rows():
         if row["items"]:
             hero = row["items"][0]
             break
-    print(json.dumps({"hero": hero, "rows": out, "token": bool(token())}))
+    print(json.dumps({"hero": hero, "rows": out, "token": bool(token()),
+                      "down": down}))
 
 
 def search(text):
@@ -459,39 +468,6 @@ def trailer(kind, media_id):
     print(url)
 
 
-def play(kind, media_id, season=None, episode=None):
-    """The page to open for one title.
-
-    Films and series play from a VidSrc embed, keyed by the TMDB id, the
-    way streambert does it. Anime is hianime's business, and ani-cli knows
-    how to reach it, so the notch hands it the name.
-    """
-    if kind in ("movie", "tv"):
-        source = os.environ.get("NOTCH_SOURCE", "videasy")
-        if kind == "movie":
-            url = {"videasy": f"https://player.videasy.to/movie/{media_id}",
-                   "vidking": f"https://www.vidking.net/embed/movie/{media_id}",
-                   "vidsrc": f"https://vsembed.su/embed/movie/{media_id}"}[source]
-        else:
-            url = {"videasy": f"https://player.videasy.to/tv/{media_id}/{season or 1}/{episode or 1}",
-                   "vidking": f"https://www.vidking.net/embed/tv/{media_id}/{season or 1}/{episode or 1}",
-                   "vidsrc": f"https://vsembed.su/embed/tv/{media_id}/{season or 1}/{episode or 1}"}[source]
-        # The browser is the player: the embed brings its own player.
-        open_in_browser(url)
-        print(url)
-        return
-    if kind == "anime":
-        # The name is what ani-cli's search understands.
-        name = ""
-        for item in anime_search(media_id):
-            if str(item["id"]) == str(media_id):
-                name = item["romaji"] or item["title"]
-                break
-        print(name)
-        return
-    sys.exit(f"stream.py: unknown kind {kind!r}")
-
-
 def main():
     args = sys.argv[1:]
     if not args:
@@ -500,9 +476,6 @@ def main():
         rows()
     elif args[0] == "search" and len(args) > 1:
         search(" ".join(args[1:]))
-    elif args[0] == "play" and len(args) > 2:
-        play(args[1], args[2], args[3] if len(args) > 3 else None,
-             args[4] if len(args) > 4 else None)
     elif args[0] == "resolve" and len(args) > 1:
         episode = 1
         if "--episode" in args:
@@ -533,7 +506,9 @@ def main():
     elif args[0] == "token":
         TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
         if len(args) > 1:
+            # The token is a secret: the file was world-readable.
             TOKEN_FILE.write_text(args[1].strip() + "\n")
+            os.chmod(TOKEN_FILE, 0o600)
             print(f"stream: the token is in {TOKEN_FILE}")
         else:
             print(TOKEN_FILE)
