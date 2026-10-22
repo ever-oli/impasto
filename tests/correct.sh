@@ -179,14 +179,44 @@ if [ -f "$ledger" ]; then
     else
         no "every installed skill is in the ledger" "$missing"
     fi
+    # The number has to be the one the table implies, not a number
+    # someone typed: the count drifted twice while the table was right.
     claimed=$(grep -oE '[0-9]+ of the [0-9]+ applied' "$ledger" | head -1)
-    if [ -n "$claimed" ]; then
-        ok "the ledger claims a number: $claimed"
+    implied=$(printf '%s\n' "$listed" | grep -c . )
+    notapplying=$(sed -n '/^## Does not apply/,$p' "$ledger" | grep -cE '^\| `[a-z0-9-]+` \|')
+    total=$(ls -d "$HOME"/.agents/skills/*/ 2>/dev/null | wc -l)
+    truth=$((total - notapplying))
+    if [ "$claimed" = "$truth of the $total applied" ]; then
+        ok "the ledger's number is the one its table implies: $claimed"
     else
-        no "the ledger claims a number"
+        no "the ledger's number is the one its table implies" "claims '$claimed', the table says $truth of $total"
     fi
 else
     no "the skills ledger is there"
+fi
+
+# ── the decision log ────────────────────────────────────────────────────────
+# A long run says what it decided and why, in a form a human can read
+# after stepping away. The log lives in the repository, not in a scratch
+# directory nobody opens again.
+head_ "the decision log"
+log=docs/show-me-your-work.tsv
+if [ -f "$log" ]; then
+    ok "the decision log is in the repository"
+    header=$(head -1 "$log" | cut -f1-6)
+    if [ "$header" = "$(printf 'ts\tphase\tdecision\twhy\tevidence\topen')" ]; then
+        ok "the decision log has its columns"
+    else
+        no "the decision log has its columns" "$header"
+    fi
+    open_rows=$(awk -F'\t' 'NR>1 && $6=="open"' "$log" | wc -l)
+    if [ "$open_rows" -eq 0 ]; then
+        ok "every decision in the log is closed"
+    else
+        no "every decision in the log is closed" "$open_rows still open"
+    fi
+else
+    no "the decision log is in the repository"
 fi
 
 # ── the lessons that have no check yet ─────────────────────────────────────

@@ -8,7 +8,7 @@ has not.
 **The done predicate:** every skill has been applied to this repo, or it
 has a recorded reason why it does not apply.
 
-**Where they stand: 47 of the 60 applied, 13 recorded as not applying.**
+**Where they stand: 48 of the 61 applied, 13 recorded as not applying.**
 The thirteen are the ones about other things: TypeScript (there is none
 in the notch), a bot's interface (the notch is not a bot), poteto's own
 agent style and guide, the four instabox skills (for moving a repo to a
@@ -17,6 +17,10 @@ rather than working (`bro`, `ketchup`, `recall`,
 `maintain-formal-verification-skill`, which keeps a prover in line with
 code that has no prover here). Every one of them is listed with its
 reason in the last table, and no skill is missing.
+
+The number is not typed: `tests/correct.sh` reads the table, counts the
+installed skills, and fails if the two disagree. It drifted twice while
+the table underneath was right, which is what a written number does.
 
 ## Applied, and it changed something
 
@@ -37,6 +41,7 @@ reason in the last table, and no skill is missing.
 | `principle-encode-lessons-in-structure` | nine lessons moved out of a file only the agent read, into the skills that carry them |
 | `setup-pstack` | the free models written into the agent's prompt, so it never picks a paid one |
 | `swarm` | four workers, each with a slice of the repo and its own skills, run in parallel |
+| `everardo-mode` | the conventions for a session: act on go-words, one workstream at a time, free models only, and a decision log for a long run. The decision log is the part this repo was missing: `docs/show-me-your-work.tsv` now carries the rows |
 | `how` and `teach` | the map of the shell and the whole thing in plain words, both in `docs/` |
 
 ## Applied, and it found nothing
