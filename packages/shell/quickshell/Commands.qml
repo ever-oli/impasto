@@ -291,8 +291,8 @@ Scope {
 
         // Hand a piece of the work over: the posting or the platform, on
         // the clipboard, with T3 in front. The notch does not think about
-        // it — it says what it knows and lets the agent on the other side
-        // do the thinking.
+        // it: it says what it knows, and whoever is in front takes it
+        // from there.
         function hand(kind: string, index: string): string {
             const what = kind === "platform" ? AnimeService.platforms
                                              : AnimeService.jobs
@@ -330,7 +330,8 @@ Scope {
             }))
         }
 
-        // The whole context, handed over: on the clipboard and in front.
+        // The whole context, handed over: on the clipboard, and whatever
+        // is in front of it takes it from there.
         function hand(): string {
             return root.hand("the notch right now:\n" + get() +
                              "\n\nwhat should I do about this?")
