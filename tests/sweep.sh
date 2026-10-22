@@ -197,8 +197,11 @@ rm -rf "$work"
 
 # ── the capture ──────────────────────────────────────────────────────────────
 head_ "capture"
+# The capture asks the shell to read the screen; the answer says the
+# capture was asked for. The old check read "ok" and so passed on an
+# empty answer: it could not fail.
 answer=$(timeout 90 "$HOME/.local/bin/notch" capture text 2>&1)
-if echo "$answer" | grep -qE '"ok": ?true'; then
+if echo "$answer" | grep -qE '"(capturing|copied)"'; then
     ok "the screen can be read"
 else
     no "the screen can be read" "$answer"

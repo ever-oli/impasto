@@ -191,8 +191,12 @@ Scope {
         }
 
         function text(): string {
+            // The capture runs and the report comes back later, so the
+            // answer says the capture was asked for, and the report says
+            // whether any text was found. A verb that answers ok with
+            // nothing in it cannot fail.
             CaptureService.open("region", "photo", "text", CaptureService.settle)
-            return root.ok()
+            return root.ok({ capturing: true })
         }
 
         function record(): string {
