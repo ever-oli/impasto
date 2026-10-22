@@ -67,16 +67,21 @@ cannot tell how old it is. That is the next thing to fix, and it is a
 small thing: a date per row, and the bench will show whether anything
 has moved.
 
-## The media is the reason the repo exists
+## The media is the best thing in the repo, and it is not the biggest
 
 **The decision.** The catalogue plays in the island terminal, through
 `mpv --vo=tct`. There is no window and no GPU.
 
-**Why.** It is the one thing in the repo that no agent can do for itself.
-An agent with a terminal can fetch a JSON feed. It cannot put a film on
-the screen of a machine on the other side of a RustDesk session, in a
-notch, with the shelf and the episode row and the resume point. The
-device layer is not a role the shell plays; it is the thing the shell is.
+**Why.** It is the one thing here that no agent can do for itself. An
+agent with a terminal can fetch a JSON feed. It cannot put a film on the
+screen of a machine on the other side of a RustDesk session, in a notch,
+with the shelf and the episode row and the resume point.
+
+**The correction.** I had this backwards for a while, and said the media
+was the biggest thing in the repo. It is 984 lines, four percent of the
+code: the shell is 23,507. The media is the best thing, not the biggest,
+and the distinction matters, because "the biggest thing" is what decides
+what gets the attention when the two compete.
 
 **The counter-argument.** The media is also the part that depends on
 third parties: the film's own api was down for part of one session, and
@@ -88,6 +93,11 @@ platforms table do not depend on anything: four boards that publish
 plain JSON, and a table of six platforms. The media is the best thing
 here and the least reliable; the work band is the least impressive and
 the most reliable. A device layer wants both.
+
+**And the reason the media is small is the point.** The catalogue is
+984 lines because it is a client: a feed, a shelf, a resolver, and a
+player. The rest of the repo is the device, and the device is where the
+work is.
 
 ## The tests check the shell's answers, not its behaviour
 
