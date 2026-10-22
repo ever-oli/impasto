@@ -40,15 +40,19 @@ and a raised window are the oldest and most portable handoff there is,
 and they work over RustDesk from an iPad, which is how Ever actually
 reaches this machine.
 
-**The cost, stated plainly.** It is a gesture, not an API. The agent has
-to be *told* to read the clipboard, and nothing tells it. The skill says
-the notch is a device it stands on, which is the honest version: the
-notch can be driven, and it can hand over, but the loop between them is
-the agent's judgement, not the shell's wiring.
+**The cost, stated plainly.** The clipboard is a gesture, not an API:
+the agent has to be *told* to read it, and nothing tells it.
 
-**What would settle it.** A caller that does not need a human in the
-loop: the agent starting a task, and the notch showing its result. Until
-that exists, the seam is a handoff and not a pipe.
+**What closed it.** The handoff now lands in two places: the clipboard,
+for Ever, and `~/.local/state/notch/handoff.json`, for the agent. Every
+agent's prompt says to read that file when it is newer than its last
+look, so the loop does not need a human in it. The notch writes it, the
+agent finds it, and the answer comes back. The clipboard was the part
+that needed Ever; the file is the part that does not.
+
+**What is still missing.** The answer comes back to Ever, but not to the
+notch. The other half of the pipe: the agent would have to write its
+result somewhere the island can show it.
 
 ## The AI training platforms are a table
 

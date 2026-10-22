@@ -56,13 +56,41 @@ Scope {
         handProcess.running = false
         handProcess.running = true
         T3Service.open()
+        // The clipboard is for Ever. This is for the agent: a file it can
+        // find without being told, so the loop does not need a human in it.
+        root.writeHandoff(brief)
         return root.ok({ handing: true })
     }
 
+    // The handoff, where the agent will look for it.
+    // The handoff lives with the rest of the notch's state, and the
+    // agent is told where: ~/.local/state/notch/handoff.json
+    readonly property string handoffPath:
+        `${Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state"}/notch/handoff.json`
+
+    function writeHandoff(brief: string): void {
+        const payload = JSON.stringify({
+            at: new Date().toISOString(),
+            panel: root.island?.state.openPanel || "",
+            brief: brief
+        })
+        handoffProcess.payload = payload
+        handoffProcess.running = false
+        handoffProcess.running = true
+    }
+
+    readonly property Process handoffProcess: Process {
+        id: handWrite
+        property string payload: ""
+        command: ["sh", "-c",
+                  "mkdir -p \"$(dirname \"$1\")\" && printf %s \"$2\" > \"$1\"",
+                  "sh", root.handoffPath, handWrite.payload]
+    }
+
     readonly property Process handProcess: Process {
-        id: hand
+        id: handCopy
         property string brief: ""
-        command: ["sh", "-c", "wl-copy -- \"$1\"", "sh", hand.brief]
+        command: ["sh", "-c", "wl-copy -- \"$1\"", "sh", handCopy.brief]
         onExited: (code) => {
             root.handed = code === 0
             if (code !== 0) {
