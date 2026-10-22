@@ -134,7 +134,7 @@ screenshot-path "~/Pictures/Screenshots/%Y-%m-%d_%H-%M-%S.png"
 // is in the logind session, which the polkit agent needs. No mako: the shell
 // is the notification server.
 spawn-at-startup "notch-theme" "restore"
-spawn-at-startup "qs" "-n"
+spawn-at-startup "sh" "-c" "exec /usr/bin/qs -n >> ~/.local/state/notch/qs.log 2>&1"
 
 // ==== bindings.kdl ====
 // Alt is the main key: Cmd/Super is eaten by iPadOS (Spotlight, app switcher)
