@@ -158,6 +158,25 @@ for tool in packages/*/bin/notch*; do
     fi
 done
 
+# ── the lessons that have no check yet ─────────────────────────────────────
+# The harness writes a lesson when a mistake happens. A lesson nobody can
+# break by accident is worth keeping; one that lives only in a file is a
+# wish. These are the ones that are still wishes, checked here instead.
+head_ "the lessons that are still wishes"
+# The pkill that killed the session doing the killing.
+if grep -rn "pkill -f" --include=*.sh --include=*.md . 2>/dev/null \
+   | grep -v "^./.git/" | grep -v "tests/correct.sh" | grep -qv "proc"; then
+    no "no pkill pattern that could match the command running it"
+else
+    ok "no pkill pattern that could match the command running it"
+fi
+# The check that a background job landed, not just that it was started.
+if [ -x "$HOME/.local/bin/notch" ] && notch context get >/dev/null 2>&1; then
+    ok "the handoff answers when the shell is up"
+else
+    no "the handoff answers when the shell is up"
+fi
+
 # ── the python has no undefined names ──────────────────────────────────────
 # compose() called context() as if it were its own; it lives in
 # ask_extras. The name error killed every question the shell asked, and
