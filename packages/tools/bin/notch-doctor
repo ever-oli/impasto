@@ -37,6 +37,8 @@ gsettings get org.gnome.desktop.interface font-name 2>/dev/null | grep -q " $fsz
 echo "The agent"
 command -v t3 >/dev/null && ok "T3 Code is installed" || warn "no T3 Code: the notch hands its context over, but there is nothing to hand it to"
 [ -f "$HOME/.config/opencode/skill/notch/SKILL.md" ] && ok "the notch skill is in place" || warn "no notch skill for the agent"
+[ -f "$HOME/.config/opencode/agent/looking-for-work.md" ] && ok "the agents are in place" || warn "no agents for the agent"
+grep -q '"cua"' "$HOME/.config/opencode/opencode.json" 2>/dev/null && ok "the cua driver is an mcp server" || warn "the cua driver is not an mcp server"
 ls "$HOME"/.cache/notch/chrome/chrome-headless-shell/*/*/chrome-headless-shell >/dev/null 2>&1 && ok "mermaid renderer (chrome-headless-shell)" || no "no chrome-headless-shell: ./setup fonts (Helium breaks mmdc)"
 echo "Dependencies (deps.tsv)"
 deps=${XDG_DATA_HOME:-$HOME/.local/share}/notch/deps.tsv
