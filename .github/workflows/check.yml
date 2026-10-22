@@ -23,6 +23,8 @@ jobs:
         run: |
           pip install --quiet pyflakes
           python3 -m pyflakes packages/*/scripts/*.py
+      - name: The bugs that were found
+        run: sh tests/regressions.sh
       - name: The mistakes that keep happening
         # correct.sh needs no shell: it reads the tree and the docs. The
         # gates that need a live shell cannot run here, and the ci said so

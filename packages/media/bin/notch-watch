@@ -131,6 +131,28 @@ def node():
     raise RuntimeError("node is not on this machine")
 
 
+def player_command(url, title=None, referer=None, subtitle=None):
+    """The command the terminal runs.
+
+    It goes to tmux through a shell, so every value is quoted the way
+    the shell needs it: a title with an apostrophe in it ("Ocean's
+    Eleven") ended the quoting and the film never started.
+    """
+    def quoted(value):
+        return "'" + str(value).replace("'", "'\\''") + "'"
+
+    command = f"notch-video {quoted(url)}"
+    if referer:
+        command += f" --referer {quoted(referer)}"
+    if title:
+        command += f" --title {quoted(title)}"
+    if subtitle:
+        local = subtitle_file(subtitle, referer)
+        if local:
+            command += f" --sub '{local}'"
+    return command
+
+
 def main():
     args = sys.argv[1:]
     if not args or args[0] in ("-h", "--help"):
@@ -205,21 +227,7 @@ def main():
         print(__doc__)
         sys.exit(0)
 
-    # The command goes to tmux through a shell, so every value is quoted
-    # the way the shell needs it: a title with an apostrophe in it
-    # ("Ocean's Eleven") ended the quoting and the film never started.
-    def quoted(value):
-        return "'" + str(value).replace("'", "'\\''") + "'"
-
-    command = f"notch-video {quoted(url)}"
-    if referer:
-        command += f" --referer {quoted(referer)}"
-    if title:
-        command += f" --title {quoted(title)}"
-    if subtitle:
-        local = subtitle_file(subtitle, referer)
-        if local:
-            command += f" --sub '{local}'"
+    command = player_command(url, title, referer, subtitle)
     if media_kind:
         command += f" --kind {media_kind}"
     if media_id:
