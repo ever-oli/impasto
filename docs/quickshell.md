@@ -126,6 +126,18 @@ where everything landed.
 7. **The IPC documentation is not in the type reference**, where you
    would look for it.
 
+## What this does not cover
+
+This was written with a nearly spent context, and the gaps are named
+rather than hidden: the `Process` property list and the `Quickshell`
+singleton's members were not read page by page; the reload semantics
+are described from what this shell does, not from the documentation;
+the Wayland, Widgets, DBusMenu, Hyprland and Services modules were
+listed from the navigation and not read. The version gap above is the
+reason to check the source before trusting any of it. A full pass over
+`Process`, `Quickshell` and the reload behaviour is the work that would
+finish this document.
+
 ## Sources
 
 - <https://quickshell.org/docs/v0.1.0/types/Quickshell.Io/> — the
