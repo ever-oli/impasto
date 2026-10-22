@@ -30,7 +30,9 @@ verb, what it answers with. The map of the shell itself, for whoever
 has to change it, is in [docs/how.md](docs/how.md). The decisions behind the shape, and what
 settled them, are in [docs/decisions.md](docs/decisions.md). How the
 stack scores against Natively's own benchmark is in
-[docs/PARITY.md](docs/PARITY.md).
+[docs/PARITY.md](docs/PARITY.md). What a pass over the repo with
+pstack's skills found, and what it fixed, is in
+[docs/skills.md](docs/skills.md).
 
 ## The packages
 
